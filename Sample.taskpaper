@@ -1,0 +1,28 @@
+Inbox:
+	- Review pull requests @today
+	- Check email @today
+	- Update project documentation
+
+Work Projects:
+	Mobile App Refactor:
+		- Implement new authentication flow @priority(1)
+		- Add unit tests for login service @priority(2)
+		- Update API client for v2 endpoints
+			Note: Check with backend team about breaking changes
+		- Design review with team @waiting
+		- Merge feature branch @done(2024-01-20)
+
+	Backend Services:
+		- Deploy database migration @priority(1) @due(2024-01-25)
+		- Monitor performance metrics
+		- Document API changes @done(2024-01-18)
+
+Personal:
+	- Grocery shopping @today
+	- Schedule dentist appointment @waiting
+	- Read new book @started
+	- Complete online course @progress(50%)
+
+Archive @done:
+	- Setup development environment @done(2024-01-10)
+	- Initial project planning @done(2024-01-08)
