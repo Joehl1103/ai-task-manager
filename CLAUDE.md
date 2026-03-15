@@ -27,7 +27,7 @@ The current goal is to keep the product as small as possible before layering on 
 Current focus:
 
 - Keep the app very small
-- Preserve add, edit, delete, and task-level agent calls
+- Preserve add, edit, delete, task-level agent calls, and deletion of saved agent contributions
 - Keep the main overview compact and move agent history into task drill-down
 - Keep the agent model to one built-in path, not multiple agent types
 - Support local OpenAI configuration for real task-level agent calls first

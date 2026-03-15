@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  buildDeleteAgentContributionConfirmationMessage,
+  buildDeleteTaskConfirmationMessage,
+} from "@/features/workspace/delete-confirmation";
+import {
   addTask,
+  deleteAgentCall,
   deleteTask,
   recordAgentCall,
   updateTask,
@@ -216,6 +221,23 @@ export function WorkspaceApp() {
    * Deletes a task from the single list and closes related UI if that task was active.
    */
   function handleDeleteTask(taskId: string) {
+    const task = workspace.tasks.find((candidate) => candidate.id === taskId);
+
+    if (!task) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        buildDeleteTaskConfirmationMessage({
+          taskTitle: task.title,
+          agentCallCount: task.agentCalls.length,
+        }),
+      )
+    ) {
+      return;
+    }
+
     setWorkspace((currentWorkspace) => deleteTask(currentWorkspace, taskId));
 
     if (editingTaskId === taskId) {
@@ -233,6 +255,32 @@ export function WorkspaceApp() {
     if (pendingTaskId === taskId) {
       setPendingTaskId(null);
     }
+  }
+
+  /**
+   * Deletes one saved agent contribution from a task while keeping the rest of the task intact.
+   */
+  function handleDeleteAgentContribution(taskId: string, agentCallId: string) {
+    const task = workspace.tasks.find((candidate) => candidate.id === taskId);
+    const agentCall = task?.agentCalls.find((candidate) => candidate.id === agentCallId);
+
+    if (!task || !agentCall) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        buildDeleteAgentContributionConfirmationMessage({
+          taskTitle: task.title,
+        }),
+      )
+    ) {
+      return;
+    }
+
+    setWorkspace((currentWorkspace) =>
+      deleteAgentCall(currentWorkspace, taskId, agentCallId),
+    );
   }
 
   /**
@@ -541,6 +589,7 @@ export function WorkspaceApp() {
               onCallAgent={handleCallAgent}
               onCancelEdit={handleCancelEdit}
               onCloseAgentPanel={() => setOpenAgentTaskId(null)}
+              onDeleteAgentContribution={handleDeleteAgentContribution}
               onDeleteTask={handleDeleteTask}
               onReturnToOverview={handleReturnToOverview}
               onSaveEdit={handleSaveEdit}
@@ -663,6 +712,7 @@ interface TaskDrillDownProps {
   onStartEdit: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
+  onDeleteAgentContribution: (taskId: string, agentCallId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onToggleAgentPanel: (taskId: string) => void;
   onSetEditTitle: (value: string) => void;
@@ -689,6 +739,7 @@ function TaskDrillDown({
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
+  onDeleteAgentContribution,
   onDeleteTask,
   onToggleAgentPanel,
   onSetEditTitle,
@@ -797,27 +848,11 @@ function TaskDrillDown({
         {task.agentCalls.length > 0 ? (
           <div className="mt-3 space-y-2">
             {task.agentCalls.map((agentCall) => (
-              <div
-                className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2"
+              <AgentContributionCard
                 key={agentCall.id}
-              >
-                <p className="text-sm font-medium">Agent · {agentCall.status}</p>
-                <p className="mt-1 text-xs text-[color:var(--muted)]">
-                  {getProviderLabel(agentCall.providerId)} · {agentCall.model}
-                </p>
-                <p className="mt-1 text-sm text-[color:var(--muted)]">
-                  {agentCall.brief}
-                </p>
-                {agentCall.result ? (
-                  <FormattedAgentResponse className="mt-2" content={agentCall.result} />
-                ) : null}
-                {agentCall.error ? (
-                  <p className="mt-1 text-sm text-rose-700">{agentCall.error}</p>
-                ) : null}
-                <p className="mt-1 text-xs text-[color:var(--muted)]">
-                  {agentCall.createdAt}
-                </p>
-              </div>
+                agentCall={agentCall}
+                onDelete={() => onDeleteAgentContribution(task.id, agentCall.id)}
+              />
             ))}
           </div>
         ) : (
@@ -870,6 +905,46 @@ function TaskDrillDown({
         </div>
       ) : null}
     </article>
+  );
+}
+
+interface AgentContributionCardProps {
+  agentCall: Task["agentCalls"][number];
+  onDelete: () => void;
+}
+
+/**
+ * Keeps one saved agent contribution self-contained so the drill-down stays readable.
+ */
+function AgentContributionCard({ agentCall, onDelete }: AgentContributionCardProps) {
+  return (
+    <div className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Agent contribution · {agentCall.status}</p>
+          <p className="mt-1 text-xs text-[color:var(--muted)]">
+            {getProviderLabel(agentCall.providerId)} · {agentCall.model}
+          </p>
+          <p className="mt-1 text-sm text-[color:var(--muted)]">{agentCall.brief}</p>
+          {agentCall.result ? (
+            <FormattedAgentResponse className="mt-2" content={agentCall.result} />
+          ) : null}
+          {agentCall.error ? <p className="mt-1 text-sm text-rose-700">{agentCall.error}</p> : null}
+          <p className="mt-1 text-xs text-[color:var(--muted)]">{agentCall.createdAt}</p>
+        </div>
+
+        <Button
+          aria-label="Delete contribution"
+          className="shrink-0 self-start whitespace-nowrap"
+          onClick={onDelete}
+          size="sm"
+          variant="outline"
+        >
+          <Trash2 className="size-4" />
+          Delete
+        </Button>
+      </div>
+    </div>
   );
 }
 

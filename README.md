@@ -10,6 +10,7 @@ Relay is now a very small task manager starter.
 - Edit a task inside the drill-down
 - Delete a task
 - Call one built-in agent from inside a task drill-down
+- Delete one saved agent contribution from a task drill-down
 - Configure OpenAI with a local API key and model
 - Make live OpenAI-backed agent calls through the app
 - Render basic markdown and safe HTML formatting inside saved agent responses

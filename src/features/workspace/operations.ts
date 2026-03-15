@@ -62,6 +62,27 @@ export function deleteTask(
 }
 
 /**
+ * Removes one saved agent call from a task while leaving the rest of the task intact.
+ */
+export function deleteAgentCall(
+  workspace: WorkspaceSnapshot,
+  taskId: string,
+  agentCallId: string,
+): WorkspaceSnapshot {
+  return {
+    ...workspace,
+    tasks: workspace.tasks.map((task) =>
+      task.id === taskId
+        ? {
+            ...task,
+            agentCalls: task.agentCalls.filter((agentCall) => agentCall.id !== agentCallId),
+          }
+        : task,
+    ),
+  };
+}
+
+/**
  * Records the outcome of an agent call directly on the task that triggered it.
  */
 export function recordAgentCall(

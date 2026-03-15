@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { workspaceSeed } from "./mock-data";
 import {
   addTask,
+  deleteAgentCall,
   deleteTask,
   recordAgentCall,
   updateTask,
@@ -50,6 +51,41 @@ describe("workspace operations", () => {
 
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")).toBeUndefined();
     expect(updatedWorkspace.tasks).toHaveLength(workspaceSeed.tasks.length - 1);
+  });
+
+  /**
+   * Removes one saved agent contribution without disturbing the rest of the task data.
+   */
+  it("deletes one agent call from a task", () => {
+    const updatedWorkspace = deleteAgentCall(workspaceSeed, "task-2", "call-1");
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")).toMatchObject({
+      id: "task-2",
+      title: "List the next three product decisions",
+      details: "Use this as an example of a normal editable task.",
+      agentCalls: [],
+    });
+  });
+
+  /**
+   * Keeps deletion scoped so one task's agent history never edits another task.
+   */
+  it("only deletes the requested agent call from the requested task", () => {
+    const workspaceWithExtraCall = recordAgentCall(workspaceSeed, {
+      taskId: "task-1",
+      providerId: "openai",
+      model: "gpt-5",
+      brief: "Suggest a sharper problem statement.",
+      now: "Later",
+      status: "done",
+      result: "Focus on compact task review plus drill-down detail.",
+    });
+    const updatedWorkspace = deleteAgentCall(workspaceWithExtraCall, "task-2", "call-1");
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")?.agentCalls).toEqual([]);
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")?.agentCalls).toHaveLength(
+      1,
+    );
   });
 
   /**
