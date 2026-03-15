@@ -1,0 +1,712 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Bot, Pencil, Plus, Trash2, X } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  addTask,
+  deleteTask,
+  recordAgentCall,
+  updateTask,
+} from "@/features/workspace/operations";
+import {
+  agentConfigStorageKey,
+  createDefaultAgentConfig,
+  getProviderLabel,
+  normalizeAgentConfig,
+  providerCatalog,
+} from "@/features/workspace/provider-config";
+import { type AgentConfigState, type ProviderId } from "@/features/workspace/types";
+import {
+  createDefaultWorkspaceSnapshot,
+  normalizeWorkspaceSnapshot,
+  workspaceStorageKey,
+} from "@/features/workspace/workspace-storage";
+
+interface AgentDraft {
+  brief: string;
+  error: string | null;
+}
+
+/**
+ * Hosts the single-list task manager plus the live provider-backed agent settings.
+ */
+export function WorkspaceApp() {
+  const [workspace, setWorkspace] = useState(createDefaultWorkspaceSnapshot);
+  const [agentConfig, setAgentConfig] = useState<AgentConfigState>(createDefaultAgentConfig);
+  const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
+  const [hasLoadedAgentConfig, setHasLoadedAgentConfig] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDetails, setNewTaskDetails] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDetails, setEditDetails] = useState("");
+  const [openAgentTaskId, setOpenAgentTaskId] = useState<string | null>(null);
+  const [agentDrafts, setAgentDrafts] = useState<Record<string, AgentDraft>>({});
+  const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+
+  const activeProvider: ProviderId = "openai";
+  const activeProviderSettings = agentConfig.providers.openai;
+  const activeProviderLabel = getProviderLabel(activeProvider);
+  const isActiveProviderReady = Boolean(activeProviderSettings.apiKey.trim());
+
+  /**
+   * Hydrates saved workspace data after mount so task edits survive a browser refresh.
+   */
+  useEffect(() => {
+    const savedWorkspace = window.localStorage.getItem(workspaceStorageKey);
+
+    if (!savedWorkspace) {
+      setHasLoadedWorkspace(true);
+      return;
+    }
+
+    try {
+      setWorkspace(normalizeWorkspaceSnapshot(JSON.parse(savedWorkspace)));
+    } catch {
+      setWorkspace(createDefaultWorkspaceSnapshot());
+    }
+
+    setHasLoadedWorkspace(true);
+  }, []);
+
+  /**
+   * Persists tasks and agent history locally after the initial browser hydration is complete.
+   */
+  useEffect(() => {
+    if (!hasLoadedWorkspace) {
+      return;
+    }
+
+    window.localStorage.setItem(workspaceStorageKey, JSON.stringify(workspace));
+  }, [workspace, hasLoadedWorkspace]);
+
+  /**
+   * Hydrates saved provider settings after mount so browser-only storage stays optional.
+   */
+  useEffect(() => {
+    const savedConfig = window.localStorage.getItem(agentConfigStorageKey);
+
+    if (!savedConfig) {
+      setHasLoadedAgentConfig(true);
+      return;
+    }
+
+    try {
+      setAgentConfig(normalizeAgentConfig(JSON.parse(savedConfig)));
+    } catch {
+      setAgentConfig(createDefaultAgentConfig());
+    }
+
+    setHasLoadedAgentConfig(true);
+  }, []);
+
+  /**
+   * Persists provider settings locally after the initial browser hydration is complete.
+   */
+  useEffect(() => {
+    if (!hasLoadedAgentConfig) {
+      return;
+    }
+
+    window.localStorage.setItem(agentConfigStorageKey, JSON.stringify(agentConfig));
+  }, [agentConfig, hasLoadedAgentConfig]);
+
+  /**
+   * Creates a task when the title is present, then clears the draft fields for the next entry.
+   */
+  function handleAddTask() {
+    if (!newTaskTitle.trim()) {
+      return;
+    }
+
+    setWorkspace((currentWorkspace) =>
+      addTask(currentWorkspace, {
+        title: newTaskTitle,
+        details: newTaskDetails,
+      }),
+    );
+    setNewTaskTitle("");
+    setNewTaskDetails("");
+  }
+
+  /**
+   * Loads the selected task into local edit state so the row can switch into edit mode.
+   */
+  function handleStartEdit(taskId: string) {
+    const task = workspace.tasks.find((candidate) => candidate.id === taskId);
+
+    if (!task) {
+      return;
+    }
+
+    setEditingTaskId(task.id);
+    setEditTitle(task.title);
+    setEditDetails(task.details);
+  }
+
+  /**
+   * Persists the current edit draft back into the task list and closes edit mode.
+   */
+  function handleSaveEdit(taskId: string) {
+    if (!editTitle.trim()) {
+      return;
+    }
+
+    setWorkspace((currentWorkspace) =>
+      updateTask(currentWorkspace, {
+        taskId,
+        title: editTitle,
+        details: editDetails,
+      }),
+    );
+    setEditingTaskId(null);
+    setEditTitle("");
+    setEditDetails("");
+  }
+
+  /**
+   * Cancels row editing and clears the temporary draft values.
+   */
+  function handleCancelEdit() {
+    setEditingTaskId(null);
+    setEditTitle("");
+    setEditDetails("");
+  }
+
+  /**
+   * Deletes a task from the single list and closes related UI if that task was active.
+   */
+  function handleDeleteTask(taskId: string) {
+    setWorkspace((currentWorkspace) => deleteTask(currentWorkspace, taskId));
+
+    if (editingTaskId === taskId) {
+      handleCancelEdit();
+    }
+
+    if (openAgentTaskId === taskId) {
+      setOpenAgentTaskId(null);
+    }
+  }
+
+  /**
+   * Opens or closes the inline composer used to send one built-in agent request from a task.
+   */
+  function handleToggleAgentPanel(taskId: string) {
+    setOpenAgentTaskId((currentTaskId) => (currentTaskId === taskId ? null : taskId));
+    setAgentDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [taskId]: readAgentDraft(currentDrafts, taskId),
+    }));
+  }
+
+  /**
+   * Stores the latest brief text for a task's inline agent request and clears stale errors.
+   */
+  function handleAgentBriefChange(taskId: string, brief: string) {
+    setAgentDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [taskId]: {
+        brief,
+        error: null,
+      },
+    }));
+  }
+
+  /**
+   * Stores the latest API key for a provider in browser local storage.
+   */
+  function handleProviderApiKeyChange(providerId: ProviderId, apiKey: string) {
+    setAgentConfig((currentConfig) => ({
+      ...currentConfig,
+      providers: {
+        ...currentConfig.providers,
+        [providerId]: {
+          ...currentConfig.providers[providerId],
+          apiKey,
+        },
+      },
+    }));
+  }
+
+  /**
+   * Stores the selected model name for a provider in browser local storage.
+   */
+  function handleProviderModelChange(providerId: ProviderId, model: string) {
+    setAgentConfig((currentConfig) => ({
+      ...currentConfig,
+      providers: {
+        ...currentConfig.providers,
+        [providerId]: {
+          ...currentConfig.providers[providerId],
+          model,
+        },
+      },
+    }));
+  }
+
+  /**
+   * Makes a live provider request for the task and stores the outcome in task history.
+   */
+  async function handleCallAgent(taskId: string) {
+    const task = workspace.tasks.find((candidate) => candidate.id === taskId);
+    const draft = readAgentDraft(agentDrafts, taskId);
+    const trimmedBrief = draft.brief.trim();
+
+    if (!task) {
+      return;
+    }
+
+    if (!trimmedBrief) {
+      setAgentDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [taskId]: {
+          ...draft,
+          error: "Describe what the agent should do for this task.",
+        },
+      }));
+      return;
+    }
+
+    if (!activeProviderSettings.apiKey.trim()) {
+      setAgentDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [taskId]: {
+          ...draft,
+          error: `Add a ${activeProviderLabel} API key in Agent settings before making a live call.`,
+        },
+      }));
+      return;
+    }
+
+    if (!activeProviderSettings.model.trim()) {
+      setAgentDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [taskId]: {
+          ...draft,
+          error: `Add a ${activeProviderLabel} model in Agent settings before making a live call.`,
+        },
+      }));
+      return;
+    }
+
+    setPendingTaskId(taskId);
+    setAgentDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [taskId]: {
+        ...draft,
+        error: null,
+      },
+    }));
+
+    try {
+      const response = await fetch("/api/agent-call", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          providerId: activeProvider,
+          apiKey: activeProviderSettings.apiKey,
+          model: activeProviderSettings.model,
+          taskTitle: task.title,
+          taskDetails: task.details,
+          brief: trimmedBrief,
+        }),
+      });
+      const payload = await readJsonSafely(response);
+      const createdAt = formatCallTimestamp(new Date());
+
+      if (!response.ok) {
+        const errorMessage = readApiErrorMessage(payload);
+
+        setWorkspace((currentWorkspace) =>
+          recordAgentCall(currentWorkspace, {
+            taskId,
+            providerId: activeProvider,
+            model: activeProviderSettings.model.trim(),
+            brief: trimmedBrief,
+            now: createdAt,
+            status: "error",
+            error: errorMessage,
+          }),
+        );
+        setAgentDrafts((currentDrafts) => ({
+          ...currentDrafts,
+          [taskId]: {
+            ...readAgentDraft(currentDrafts, taskId),
+            error: errorMessage,
+          },
+        }));
+        return;
+      }
+
+      setWorkspace((currentWorkspace) =>
+        recordAgentCall(currentWorkspace, {
+          taskId,
+          providerId: activeProvider,
+          model: readApiModel(payload, activeProviderSettings.model),
+          brief: trimmedBrief,
+          now: createdAt,
+          status: "done",
+          result: readApiResult(payload),
+        }),
+      );
+      setAgentDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [taskId]: createEmptyAgentDraft(),
+      }));
+      setOpenAgentTaskId(null);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "The live agent call failed unexpectedly.";
+      const createdAt = formatCallTimestamp(new Date());
+
+      setWorkspace((currentWorkspace) =>
+        recordAgentCall(currentWorkspace, {
+          taskId,
+          providerId: activeProvider,
+          model: activeProviderSettings.model.trim(),
+          brief: trimmedBrief,
+          now: createdAt,
+          status: "error",
+          error: errorMessage,
+        }),
+      );
+      setAgentDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [taskId]: {
+          ...readAgentDraft(currentDrafts, taskId),
+          error: errorMessage,
+        },
+      }));
+    } finally {
+      setPendingTaskId(null);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--foreground)]">
+      <section className="mx-auto max-w-4xl rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+        <header className="border-b border-[color:var(--border)] pb-6">
+          <p className="text-sm text-[color:var(--muted)]">Bare-bones starter</p>
+          <h1 className="mt-2 text-3xl font-semibold">Tasks</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
+            One list for all tasks. Add, edit, delete, and send a task to one built-in
+            agent with an OpenAI-backed first pass.
+          </p>
+        </header>
+
+        <section className="mt-6 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-medium">Agent settings</p>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
+                OpenAI compatibility is wired first here. Add an OpenAI API key and
+                adjust the model used for live task calls.
+              </p>
+            </div>
+            <Badge variant={isActiveProviderReady ? "success" : "warning"}>
+              {isActiveProviderReady ? "Live provider ready" : "API key needed"}
+            </Badge>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-[1.4fr_0.8fr]">
+            <label className="grid gap-2 text-sm">
+              <span className="text-[color:var(--muted)]">
+                {activeProviderLabel} API key
+              </span>
+              <Input
+                onChange={(event) =>
+                  handleProviderApiKeyChange(activeProvider, event.target.value)
+                }
+                placeholder={providerCatalog[activeProvider].apiKeyPlaceholder}
+                type="password"
+                value={activeProviderSettings.apiKey}
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm">
+              <span className="text-[color:var(--muted)]">{activeProviderLabel} model</span>
+              <Input
+                onChange={(event) =>
+                  handleProviderModelChange(activeProvider, event.target.value)
+                }
+                placeholder={providerCatalog[activeProvider].defaultModel}
+                value={activeProviderSettings.model}
+              />
+            </label>
+          </div>
+
+          <p className="mt-3 text-xs leading-5 text-[color:var(--muted)]">
+            Your OpenAI key stays in this browser&apos;s local storage and is only sent to
+            the app when you trigger a live task agent call.
+          </p>
+        </section>
+
+        <div className="mt-6 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] p-4">
+          <div className="grid gap-3">
+            <Input
+              onChange={(event) => setNewTaskTitle(event.target.value)}
+              placeholder="Task title"
+              value={newTaskTitle}
+            />
+            <Textarea
+              onChange={(event) => setNewTaskDetails(event.target.value)}
+              placeholder="Optional task details"
+              value={newTaskDetails}
+            />
+            <div className="flex justify-end">
+              <Button onClick={handleAddTask}>
+                <Plus className="size-4" />
+                Add task
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          {workspace.tasks.map((task) => {
+            const isEditing = editingTaskId === task.id;
+            const isAgentPanelOpen = openAgentTaskId === task.id;
+            const agentDraft = readAgentDraft(agentDrafts, task.id);
+            const isCallingTask = pendingTaskId === task.id;
+
+            return (
+              <article
+                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] p-4"
+                key={task.id}
+              >
+                {isEditing ? (
+                  <div className="grid gap-3">
+                    <Input
+                      onChange={(event) => setEditTitle(event.target.value)}
+                      placeholder="Task title"
+                      value={editTitle}
+                    />
+                    <Textarea
+                      onChange={(event) => setEditDetails(event.target.value)}
+                      placeholder="Task details"
+                      value={editDetails}
+                    />
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button onClick={() => handleSaveEdit(task.id)}>Save</Button>
+                      <Button onClick={handleCancelEdit} variant="outline">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <h2 className="text-lg font-medium">{task.title}</h2>
+                        {task.details ? (
+                          <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                            {task.details}
+                          </p>
+                        ) : (
+                          <p className="mt-2 text-sm text-[color:var(--muted)]">
+                            No details yet.
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button onClick={() => handleStartEdit(task.id)} variant="outline">
+                          <Pencil className="size-4" />
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => handleToggleAgentPanel(task.id)}
+                          variant="outline"
+                        >
+                          <Bot className="size-4" />
+                          Call agent
+                        </Button>
+                        <Button onClick={() => handleDeleteTask(task.id)} variant="outline">
+                          <Trash2 className="size-4" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+
+                    {task.agentCalls.length > 0 ? (
+                      <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                          Agent activity
+                        </p>
+                        <div className="mt-3 space-y-2">
+                          {task.agentCalls.map((agentCall) => (
+                            <div
+                              className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface-strong)] px-3 py-2"
+                              key={agentCall.id}
+                            >
+                              <p className="text-sm font-medium">Agent · {agentCall.status}</p>
+                              <p className="mt-1 text-xs text-[color:var(--muted)]">
+                                {getProviderLabel(agentCall.providerId)} · {agentCall.model}
+                              </p>
+                              <p className="mt-1 text-sm text-[color:var(--muted)]">
+                                {agentCall.brief}
+                              </p>
+                              {agentCall.result ? (
+                                <p className="mt-1 text-sm text-[color:var(--muted-strong)]">
+                                  {agentCall.result}
+                                </p>
+                              ) : null}
+                              {agentCall.error ? (
+                                <p className="mt-1 text-sm text-rose-700">
+                                  {agentCall.error}
+                                </p>
+                              ) : null}
+                              <p className="mt-1 text-xs text-[color:var(--muted)]">
+                                {agentCall.createdAt}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {isAgentPanelOpen ? (
+                      <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium">Call the built-in agent</p>
+                            <p className="mt-1 text-xs text-[color:var(--muted)]">
+                              Using OpenAI · {activeProviderSettings.model}
+                            </p>
+                          </div>
+                          <button
+                            className="text-[color:var(--muted)] transition hover:text-[color:var(--foreground)]"
+                            onClick={() => setOpenAgentTaskId(null)}
+                            type="button"
+                          >
+                            <X className="size-4" />
+                          </button>
+                        </div>
+
+                        <div className="mt-3 grid gap-3">
+                          <Textarea
+                            onChange={(event) =>
+                              handleAgentBriefChange(task.id, event.target.value)
+                            }
+                            placeholder="What should the agent do for this task?"
+                            value={agentDraft.brief}
+                          />
+
+                          {agentDraft.error ? (
+                            <p className="text-sm text-rose-700">{agentDraft.error}</p>
+                          ) : null}
+
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs text-[color:var(--muted)]">
+                              This first pass is wired to OpenAI only, so update the OpenAI
+                              key or model above if you want different behavior.
+                            </p>
+                            <Button
+                              disabled={isCallingTask}
+                              onClick={() => handleCallAgent(task.id)}
+                            >
+                              <Bot className="size-4" />
+                              {isCallingTask ? "Calling..." : "Send to agent"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+/**
+ * Supplies the default task composer state when a task has not opened the agent yet.
+ */
+function createEmptyAgentDraft(): AgentDraft {
+  return {
+    brief: "",
+    error: null,
+  };
+}
+
+/**
+ * Returns a stable task draft shape so the task UI does not branch on undefined state.
+ */
+function readAgentDraft(
+  agentDrafts: Record<string, AgentDraft>,
+  taskId: string,
+): AgentDraft {
+  return agentDrafts[taskId] ?? createEmptyAgentDraft();
+}
+
+/**
+ * Formats timestamps for task-level agent activity in a short human-readable style.
+ */
+function formatCallTimestamp(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+/**
+ * Reads the provider result string from the route response with a clear fallback.
+ */
+function readApiResult(payload: unknown) {
+  if (isRecord(payload) && typeof payload.result === "string" && payload.result.trim()) {
+    return payload.result.trim();
+  }
+
+  return "The provider call completed without returning visible text.";
+}
+
+/**
+ * Reads the model echoed back by the route so task history reflects the actual request.
+ */
+function readApiModel(payload: unknown, fallbackModel: string) {
+  if (isRecord(payload) && typeof payload.model === "string" && payload.model.trim()) {
+    return payload.model.trim();
+  }
+
+  return fallbackModel.trim();
+}
+
+/**
+ * Reads a human-friendly error string from the route response body.
+ */
+function readApiErrorMessage(payload: unknown) {
+  if (isRecord(payload) && typeof payload.error === "string" && payload.error.trim()) {
+    return payload.error.trim();
+  }
+
+  return "The live agent call failed.";
+}
+
+/**
+ * Handles route responses that may fail before sending back JSON.
+ */
+async function readJsonSafely(response: Response) {
+  try {
+    return (await response.json()) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Keeps small unknown-value parsing helpers readable in the client component.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
+}

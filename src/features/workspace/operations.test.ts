@@ -1,0 +1,80 @@
+import { describe, expect, it } from "vitest";
+
+import { workspaceSeed } from "./mock-data";
+import {
+  addTask,
+  deleteTask,
+  recordAgentCall,
+  updateTask,
+} from "./operations";
+
+describe("workspace operations", () => {
+  /**
+   * Ensures the app can create a new task from a bare minimum title.
+   */
+  it("adds a new task to the single task container", () => {
+    const updatedWorkspace = addTask(workspaceSeed, {
+      title: "Write Monday priorities",
+      details: "Keep it short and practical.",
+    });
+
+    expect(updatedWorkspace.tasks).toHaveLength(workspaceSeed.tasks.length + 1);
+    expect(updatedWorkspace.tasks[0]).toMatchObject({
+      title: "Write Monday priorities",
+      details: "Keep it short and practical.",
+      agentCalls: [],
+    });
+  });
+
+  /**
+   * Keeps editing behavior explicit by replacing the task title and details in one step.
+   */
+  it("updates an existing task", () => {
+    const updatedWorkspace = updateTask(workspaceSeed, {
+      taskId: "task-1",
+      title: "Tighten the starter task manager",
+      details: "Only keep the features needed for a first pass.",
+    });
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
+      title: "Tighten the starter task manager",
+      details: "Only keep the features needed for a first pass.",
+    });
+  });
+
+  /**
+   * Verifies that delete removes the task entirely instead of only hiding it.
+   */
+  it("deletes a task", () => {
+    const updatedWorkspace = deleteTask(workspaceSeed, "task-2");
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")).toBeUndefined();
+    expect(updatedWorkspace.tasks).toHaveLength(workspaceSeed.tasks.length - 1);
+  });
+
+  /**
+   * Models a successful provider-backed call by attaching the response to the task.
+   */
+  it("calls an agent from within a task", () => {
+    const updatedWorkspace = recordAgentCall(workspaceSeed, {
+      taskId: "task-1",
+      providerId: "openai",
+      model: "gpt-5",
+      brief: "Return with three examples of simple task manager layouts.",
+      now: "Now",
+      status: "done",
+      result: "Use one list, plain editing, and task-level agent actions.",
+    });
+
+    const updatedTask = updatedWorkspace.tasks.find((task) => task.id === "task-1");
+
+    expect(updatedTask?.agentCalls[0]).toMatchObject({
+      providerId: "openai",
+      model: "gpt-5",
+      brief: "Return with three examples of simple task manager layouts.",
+      status: "done",
+      createdAt: "Now",
+      result: "Use one list, plain editing, and task-level agent actions.",
+    });
+  });
+});

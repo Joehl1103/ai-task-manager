@@ -1,147 +1,66 @@
-# TaskPaper iOS Client
+# Relay Tasks Starter
 
-A minimalist iOS TaskPaper client built with SwiftUI, featuring iCloud sync and tag-based filtering.
+Relay is now a very small task manager starter.
 
-## Features
+## Current Scope
 
-- **Native SwiftUI Interface**: Modern, clean UI optimized for iPhone
-- **iCloud Sync**: Automatic document synchronization via iCloud Documents
-- **Tag-Based Filtering**: Powerful search with boolean logic (`@done`, `not @done`, `@priority(1) and not @done`)
-- **TaskPaper Format Compatibility**: Full support for the standard `.taskpaper` format
-- **Gesture-Based Interactions**: Swipe to complete, swipe to delete, pinch to fold/unfold
+- One container holding all tasks
+- Add a task
+- Edit a task
+- Delete a task
+- Call one built-in agent from inside a task
+- Configure OpenAI with a local API key and model
+- Make live OpenAI-backed agent calls through the app
+- Persist tasks and agent history in browser local storage
 
-## Architecture
+## Stack
 
-```
-TaskPaperApp/
-├── App/
-│   └── TaskPaperApp.swift          # App entry point
-├── Models/
-│   ├── Document.swift              # TaskPaper document model
-│   ├── Item.swift                  # Item (project/task/note) model
-│   └── Tag.swift                   # Tag parsing and model
-├── ViewModels/
-│   ├── DocumentViewModel.swift     # Document editing state
-│   ├── SidebarViewModel.swift      # Document list management
-│   └── SearchViewModel.swift       # Search/filter state
-├── Views/
-│   ├── ContentView.swift           # Main navigation
-│   ├── SidebarView.swift           # Document list
-│   ├── EditorView.swift            # Document editor
-│   └── ItemRowView.swift           # Individual item display
-├── Services/
-│   ├── Parser.swift                # TaskPaper format parser
-│   └── FileService.swift           # iCloud document management
-└── Utilities/
-    ├── SearchEngine.swift          # Tag-based search
-    ├── GestureModifiers.swift      # Custom gestures
-    └── ViewModifiers.swift         # UI polish components
+- Next.js 16
+- TypeScript
+- Tailwind CSS v4
+- Small component primitives
+- Vitest
+
+## Commands
+
+```bash
+npm install
+npm run dev
+npm run lint
+npm test
+npm run build
 ```
 
-## File Format
+## Git Version Control
 
-Plain text `.taskpaper` files matching the desktop TaskPaper format:
+The app lives inside the existing git repository for this project.
 
-```
-Project Name:
-	- Task item @tag
-	- Another task @priority(1)
-		Note underneath task
-	- Completed @done(2024-01-15)
-```
+- Source files in the repo root are intended to be tracked by git
+- Build output, dependencies, env files, csv files, and xlsx files are ignored
+- Typical workflow: `git status`, `git add .`, `git commit`
 
-### Item Types
-- **Project**: Line ending with `:` (after content, before tags)
-- **Task**: Line starting with `- ` (after indentation)
-- **Note**: Any other line
+## File Map
 
-### Tags
-- Simple tag: `@tagname`
-- Tag with value: `@tagname(value)`
-- Tags are parsed from anywhere in the line
+- `src/app/page.tsx`: page entry
+- `src/app/api/agent-call/route.ts`: provider proxy route for live agent calls
+- `src/features/workspace/workspace-app.tsx`: single-container task UI
+- `src/features/workspace/operations.ts`: pure task and agent-call updates
+- `src/features/workspace/mock-data.ts`: starter tasks and sample agent history
+- `src/features/workspace/provider-api.ts`: shared provider request and response helpers
+- `src/features/workspace/workspace-storage.ts`: workspace local storage helpers and normalization
+- `src/components/ui/*`: reusable UI primitives
 
-## Search Query Syntax
+## Product Assumptions
 
-| Query | Description |
-|-------|-------------|
-| `@done` | Items with @done tag |
-| `not @done` | Items without @done tag |
-| `@priority(1)` | Items with @priority tag value of 1 |
-| `@work and not @done` | Work items that aren't done |
-| `project` | Only project items |
-| `task` | Only task items |
-| `note` | Only note items |
+- The goal right now is simplicity, not completeness.
+- There is one built-in agent flow rather than multiple agent types.
+- Provider settings, tasks, and agent history are stored in browser local storage for this prototype.
+- OpenAI is the only live provider wired in during this pass.
+- More task-manager features can be layered in after this baseline feels right.
 
-## Requirements
+## Suggested Next Steps
 
-- iOS 17.0+
-- Xcode 15.0+
-- Swift 5.9+
-
-## Setup
-
-1. Open `TaskPaperApp.xcodeproj` in Xcode
-2. Update the `PRODUCT_BUNDLE_IDENTIFIER` to your own
-3. Configure your development team for code signing
-4. Enable iCloud capability in Signing & Capabilities
-5. Build and run
-
-## iCloud Configuration
-
-The app requires iCloud Documents capability:
-- Container identifier: `iCloud.$(PRODUCT_BUNDLE_IDENTIFIER)`
-- Documents are stored in the app's iCloud Documents container
-
-## Next Steps
-
-### Before First Run
-
-1. **Open the project in Xcode**
-   ```bash
-   open TaskPaperApp.xcodeproj
-   ```
-
-2. **Update Bundle Identifier**
-   - Open project settings (click on TaskPaperApp in the navigator)
-   - Change `PRODUCT_BUNDLE_IDENTIFIER` from `com.yourcompany.TaskPaperApp` to your own identifier
-
-3. **Configure Code Signing**
-   - Select your development team in Signing & Capabilities
-   - Xcode will create the necessary provisioning profiles
-
-4. **Enable iCloud Capability**
-   - Go to Signing & Capabilities tab
-   - Click "+ Capability" and add "iCloud"
-   - Check "iCloud Documents"
-   - Verify the container identifier matches: `iCloud.$(PRODUCT_BUNDLE_IDENTIFIER)`
-
-5. **Build and Run**
-   - Select an iPhone simulator or device
-   - Press Cmd+R to build and run
-
-### Testing Checklist
-
-- [ ] Create a new document and add items
-- [ ] Test swipe-right to toggle @done
-- [ ] Test swipe-left to delete
-- [ ] Test search filters: `@done`, `not @done`, `project`
-- [ ] Verify documents appear in iCloud Drive (Files app)
-- [ ] Open the included `Sample.taskpaper` to test parsing
-
-### Recommended Enhancements
-
-1. **Add App Icon**: Replace placeholder in `Assets.xcassets/AppIcon.appiconset`
-2. **Customize Accent Color**: Modify `Assets.xcassets/AccentColor.colorset`
-3. **Add Unit Tests**: Create test targets for Parser and SearchEngine
-4. **Localization**: Add string catalogs for internationalization
-
-### Known Limitations (v1)
-
-- iPhone only (no iPad optimization)
-- No keyboard shortcuts
-- Basic conflict resolution (UIDocument default behavior)
-- No offline sync queue
-
-## License
-
-MIT License - See LICENSE file for details
+- Add persistence beyond browser local storage when multi-device or shared access matters
+- Add task completion state
+- Add ordering, filtering, or grouping if needed
+- Add stronger security around provider secrets before any shared deployment
