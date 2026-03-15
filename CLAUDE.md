@@ -4,18 +4,19 @@
 
 Relay is currently a minimal web starter for task management with two primary ideas:
 
-- A single task list
-- A single built-in agent call action inside each task
+- A compact task overview list
+- A selected-task drill-down for editing and agent activity
 
 The current goal is to keep the product as small as possible before layering on more capabilities.
 
 ## Architecture
 
 - `src/app/page.tsx`: app entry point
-- `src/features/workspace/workspace-app.tsx`: single task container UI
+- `src/features/workspace/workspace-app.tsx`: compact task overview plus selected-task drill-down UI
 - `src/features/workspace/mock-data.ts`: local seed data for tasks and sample agent history
 - `src/features/workspace/operations.ts`: pure task and agent-call helpers
 - `src/features/workspace/provider-api.ts`: provider request and response helpers
+- `src/features/workspace/task-overview.ts`: compact summary helpers for overview cards
 - `src/features/workspace/workspace-storage.ts`: workspace local storage helpers
 - `src/app/api/agent-call/route.ts`: live provider-backed agent endpoint
 - `src/components/ui/*`: small shared UI primitives
@@ -26,6 +27,7 @@ Current focus:
 
 - Keep the app very small
 - Preserve add, edit, delete, and task-level agent calls
+- Keep the main overview compact and move agent history into task drill-down
 - Keep the agent model to one built-in path, not multiple agent types
 - Support local OpenAI configuration for real task-level agent calls first
 - Persist tasks and task-scoped agent history locally in the browser
