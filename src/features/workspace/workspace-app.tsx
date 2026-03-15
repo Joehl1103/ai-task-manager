@@ -32,6 +32,7 @@ import {
   normalizeWorkspaceSnapshot,
   workspaceStorageKey,
 } from "@/features/workspace/workspace-storage";
+import { FormattedAgentResponse } from "@/features/workspace/formatted-agent-response";
 
 interface AgentDraft {
   brief: string;
@@ -808,9 +809,7 @@ function TaskDrillDown({
                   {agentCall.brief}
                 </p>
                 {agentCall.result ? (
-                  <p className="mt-1 text-sm text-[color:var(--muted-strong)]">
-                    {agentCall.result}
-                  </p>
+                  <FormattedAgentResponse className="mt-2" content={agentCall.result} />
                 ) : null}
                 {agentCall.error ? (
                   <p className="mt-1 text-sm text-rose-700">{agentCall.error}</p>

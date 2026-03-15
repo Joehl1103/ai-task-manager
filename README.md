@@ -12,6 +12,7 @@ Relay is now a very small task manager starter.
 - Call one built-in agent from inside a task drill-down
 - Configure OpenAI with a local API key and model
 - Make live OpenAI-backed agent calls through the app
+- Render basic markdown and safe HTML formatting inside saved agent responses
 - Persist tasks and agent history in browser local storage
 
 ## Stack
@@ -44,6 +45,7 @@ The app lives inside the existing git repository for this project.
 
 - `src/app/page.tsx`: page entry
 - `src/app/api/agent-call/route.ts`: provider proxy route for live agent calls
+- `src/features/workspace/formatted-agent-response.tsx`: safe basic markdown and HTML renderer for agent history
 - `src/features/workspace/workspace-app.tsx`: task overview and drill-down UI
 - `src/features/workspace/operations.ts`: pure task and agent-call updates
 - `src/features/workspace/mock-data.ts`: starter tasks and sample agent history

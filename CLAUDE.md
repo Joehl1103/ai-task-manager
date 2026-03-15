@@ -12,6 +12,7 @@ The current goal is to keep the product as small as possible before layering on 
 ## Architecture
 
 - `src/app/page.tsx`: app entry point
+- `src/features/workspace/formatted-agent-response.tsx`: safe formatter for basic markdown and HTML agent responses
 - `src/features/workspace/workspace-app.tsx`: compact task overview plus selected-task drill-down UI
 - `src/features/workspace/mock-data.ts`: local seed data for tasks and sample agent history
 - `src/features/workspace/operations.ts`: pure task and agent-call helpers
@@ -30,6 +31,7 @@ Current focus:
 - Keep the main overview compact and move agent history into task drill-down
 - Keep the agent model to one built-in path, not multiple agent types
 - Support local OpenAI configuration for real task-level agent calls first
+- Keep task-level agent responses readable with safe basic markdown and HTML formatting
 - Persist tasks and task-scoped agent history locally in the browser
 
 Likely next tasks:
