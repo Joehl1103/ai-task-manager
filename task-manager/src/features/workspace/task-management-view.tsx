@@ -102,7 +102,7 @@ export function TaskManagementView({
       </header>
 
       {!isActiveProviderReady ? (
-        <section className="mt-6 rounded-xl border border-dashed border-amber-200 bg-amber-50 p-4 text-amber-900">
+        <section className="mt-6 border-l-2 border-amber-300 bg-amber-50/80 px-4 py-3 text-amber-900">
           <p className="text-sm font-medium">Live agent calls need configuration first</p>
           <p className="mt-2 max-w-2xl text-sm leading-6">
             Task editing already works, but live agent calls will stay unavailable until
@@ -111,8 +111,8 @@ export function TaskManagementView({
         </section>
       ) : null}
 
-      <section className="mt-6 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] p-4">
-        <div className="grid gap-3">
+      <section className="mt-6 border-b border-[color:var(--row-divider)] pb-6">
+        <div className="grid max-w-2xl gap-3">
           <Input
             onChange={(event) => onSetNewTaskTitle(event.target.value)}
             placeholder="Task title"
@@ -132,7 +132,7 @@ export function TaskManagementView({
         </div>
       </section>
 
-      <section className="mt-6 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] p-4">
+      <section className="mt-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-medium">
@@ -193,75 +193,70 @@ interface TaskOverviewListProps {
 function TaskOverviewList({ tasks, onOpenTask, onDeleteTask }: TaskOverviewListProps) {
   if (tasks.length === 0) {
     return (
-      <div className="mt-4 rounded-lg border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center">
+      <div className="task-overview-empty mt-6 py-8 text-center">
         <p className="text-sm font-medium">No tasks yet</p>
         <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
-          Add your first task above and it will appear here as a compact overview card.
+          Add your first task above and it will appear as a simple line item.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="mt-4 space-y-3">
+    <ul className="task-overview-line-list mt-4 divide-y divide-[color:var(--row-divider)] border-y border-[color:var(--row-divider)]">
       {tasks.map((task) => (
-        <TaskOverviewCard
+        <TaskOverviewRow
           key={task.id}
           onDeleteTask={onDeleteTask}
           onOpenTask={onOpenTask}
           task={task}
         />
       ))}
-    </div>
+    </ul>
   );
 }
 
-interface TaskOverviewCardProps {
+interface TaskOverviewRowProps {
   task: Task;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
 }
 
 /**
- * Shows the light task summary used in the main overview list.
+ * Shows each task as a lightweight line item so scanning stays fast.
  */
-function TaskOverviewCard({ task, onOpenTask, onDeleteTask }: TaskOverviewCardProps) {
+function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProps) {
   const taskOverview = buildTaskOverviewSummary(task);
+  const latestStatusText = taskOverview.latestAgentStatus
+    ? readLatestAgentStatusLabel(taskOverview.latestAgentStatus)
+    : null;
 
   return (
-    <article className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <li className="task-overview-line-item py-3 transition-colors hover:bg-[color:var(--row-hover)] sm:py-4">
+      <div className="flex flex-col gap-3 px-1 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-lg font-medium">{task.title}</h2>
-          <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+          <h2 className="text-base font-medium sm:text-lg">{task.title}</h2>
+          <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">
             {taskOverview.detailsPreview}
           </p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge variant="neutral">{readAgentActivityLabel(taskOverview.agentCallCount)}</Badge>
-            {taskOverview.latestAgentStatus ? (
-              <Badge variant={readAgentStatusBadgeVariant(taskOverview.latestAgentStatus)}>
-                {readLatestAgentStatusLabel(taskOverview.latestAgentStatus)}
-              </Badge>
-            ) : null}
-          </div>
-
-          {taskOverview.latestAgentTimestamp ? (
-            <p className="mt-2 text-xs text-[color:var(--muted)]">
-              Latest activity {taskOverview.latestAgentTimestamp}
-            </p>
-          ) : null}
+          <p className="mt-2 text-xs text-[color:var(--muted)]">
+            {readAgentActivityLabel(taskOverview.agentCallCount)}
+            {latestStatusText ? ` · ${latestStatusText}` : ""}
+            {taskOverview.latestAgentTimestamp ? ` · ${taskOverview.latestAgentTimestamp}` : ""}
+          </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 sm:justify-end">
-          <Button onClick={() => onOpenTask(task.id)}>Open task</Button>
-          <Button onClick={() => onDeleteTask(task.id)} variant="outline">
+        <div className="flex min-h-11 shrink-0 items-center gap-1 sm:justify-end">
+          <Button onClick={() => onOpenTask(task.id)} size="sm" variant="ghost">
+            Open
+          </Button>
+          <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
             <Trash2 className="size-4" />
-            Delete
+            Remove
           </Button>
         </div>
       </div>
-    </article>
+    </li>
   );
 }
 

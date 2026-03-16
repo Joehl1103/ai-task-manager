@@ -35,6 +35,8 @@ yarn-error.log*
 .env*
 *.csv
 *.xlsx
+input/
+output/
 
 # vercel
 task-manager/.vercel

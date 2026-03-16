@@ -30,7 +30,7 @@ export function WorkspaceTopMenu({
   onToggleMenu,
 }: WorkspaceTopMenuProps) {
   return (
-    <section className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-3">
+    <section className="workspace-top-menu-shell border-b border-[color:var(--border)] px-1 pb-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--muted)]">
