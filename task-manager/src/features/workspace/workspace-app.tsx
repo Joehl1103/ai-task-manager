@@ -494,8 +494,8 @@ export function WorkspaceApp() {
   }
 
   return (
-    <main className="min-h-screen bg-[color:var(--background)] px-4 py-8 text-[color:var(--foreground)]">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--foreground)]">
+      <div className="mx-auto max-w-4xl">
         <WorkspaceTopMenu
           activeView={activeView}
           isExpanded={isTopMenuExpanded}
@@ -503,7 +503,7 @@ export function WorkspaceApp() {
           onToggleMenu={handleToggleTopMenu}
         />
 
-        <section className="mt-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+        <section className="mt-3">
           {activeView === "tasks" ? (
             <TaskManagementView
               activeProviderLabel={activeProviderLabel}

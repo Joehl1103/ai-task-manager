@@ -2,13 +2,11 @@
 
 import { Menu } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import {
   type WorkspaceView,
-  readWorkspaceViewHint,
   readWorkspaceViewLabel,
   workspaceViews,
 } from "./workspace-navigation";
@@ -30,37 +28,24 @@ export function WorkspaceTopMenu({
   onToggleMenu,
 }: WorkspaceTopMenuProps) {
   return (
-    <section className="workspace-top-menu-shell border-b border-[color:var(--border)] px-1 pb-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--muted)]">
-            Relay workspace
-          </p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <p className="text-sm font-medium">{readWorkspaceViewLabel(activeView)}</p>
-            <Badge variant={activeView === "tasks" ? "accent" : "neutral"}>
-              {readWorkspaceViewHint(activeView)}
-            </Badge>
-          </div>
-        </div>
+    <section className="workspace-top-menu-shell pb-2">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <p className="text-[color:var(--muted)]">{readWorkspaceViewLabel(activeView)}</p>
 
         <Button
           aria-expanded={isExpanded}
           className="shrink-0"
           onClick={onToggleMenu}
           size="sm"
-          variant={isExpanded ? "subtle" : "ghost"}
+          variant="ghost"
         >
           <Menu className="size-4" />
-          Menu
+          Views
         </Button>
       </div>
 
       {isExpanded ? (
-        <nav
-          aria-label="Workspace views"
-          className="mt-3 flex flex-wrap gap-2 border-t border-[color:var(--border)] pt-3"
-        >
+        <nav aria-label="Workspace views" className="mt-2 flex flex-wrap gap-3 text-sm">
           {workspaceViews.map((view) => {
             const isActive = activeView === view;
 
@@ -68,10 +53,10 @@ export function WorkspaceTopMenu({
               <button
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-sm transition-colors",
+                  "text-left transition-colors",
                   isActive
-                    ? "border-[color:var(--border-strong)] bg-[color:var(--surface)] text-[color:var(--foreground)]"
-                    : "border-[color:var(--border)] bg-[color:var(--surface-strong)] text-[color:var(--muted-strong)] hover:bg-[color:var(--surface)]",
+                    ? "font-medium text-[color:var(--foreground)]"
+                    : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]",
                 )}
                 key={view}
                 onClick={() => onSelectView(view)}

@@ -1,15 +1,15 @@
 "use client";
 
+import { useState } from "react";
+
 import { ArrowLeft, Bot, Pencil, Plus, Trash2, X } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormattedAgentResponse } from "@/features/workspace/formatted-agent-response";
 import { getProviderLabel } from "@/features/workspace/provider-config";
-import { buildTaskOverviewSummary } from "@/features/workspace/task-overview";
-import { type AgentCallStatus, type AgentDraft, type Task } from "@/features/workspace/types";
+import { type AgentDraft, type Task } from "@/features/workspace/types";
 
 interface TaskManagementViewProps {
   tasks: Task[];
@@ -77,78 +77,80 @@ export function TaskManagementView({
   onAgentBriefChange,
   onCallAgent,
 }: TaskManagementViewProps) {
+  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
+
+  function handleExpandComposer() {
+    setIsComposerExpanded(true);
+  }
+
+  function handleAddTaskAndCollapse() {
+    if (!newTaskTitle.trim()) {
+      return;
+    }
+
+    onAddTask();
+    setIsComposerExpanded(false);
+  }
+
+  function handleCollapseComposer() {
+    setIsComposerExpanded(false);
+    onSetNewTaskTitle("");
+    onSetNewTaskDetails("");
+  }
+
   return (
     <>
-      <header className="border-b border-[color:var(--border)] pb-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm text-[color:var(--muted)]">Bare-bones starter</p>
-            <h1 className="mt-2 text-3xl font-semibold">Tasks</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-              One list for all tasks. Add, edit, delete, and send a task to one built-in
-              agent while keeping configuration in its own separate view.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Badge variant={selectedTask ? "accent" : "neutral"}>
-              {selectedTask ? "Drill-down open" : readTaskCountLabel(tasks.length)}
-            </Badge>
-            <Badge variant={isActiveProviderReady ? "success" : "warning"}>
-              {isActiveProviderReady ? "Configuration ready" : "Configuration needed"}
-            </Badge>
-          </div>
-        </div>
+      <header>
+        <h1 className="text-2xl font-semibold">Tasks</h1>
       </header>
 
       {!isActiveProviderReady ? (
-        <section className="mt-6 border-l-2 border-amber-300 bg-amber-50/80 px-4 py-3 text-amber-900">
-          <p className="text-sm font-medium">Live agent calls need configuration first</p>
-          <p className="mt-2 max-w-2xl text-sm leading-6">
-            Task editing already works, but live agent calls will stay unavailable until
-            you add an API key in the Configuration view from the top menu.
-          </p>
-        </section>
+        <p className="mt-2 text-sm text-amber-700">
+          Live agent calls stay unavailable until configuration is added.
+        </p>
       ) : null}
 
-      <section className="mt-6 border-b border-[color:var(--row-divider)] pb-6">
-        <div className="grid max-w-2xl gap-3">
-          <Input
-            onChange={(event) => onSetNewTaskTitle(event.target.value)}
-            placeholder="Task title"
-            value={newTaskTitle}
-          />
-          <Textarea
-            onChange={(event) => onSetNewTaskDetails(event.target.value)}
-            placeholder="Optional task details"
-            value={newTaskDetails}
-          />
-          <div className="flex justify-end">
-            <Button onClick={onAddTask}>
-              <Plus className="size-4" />
-              Add task
-            </Button>
+      <section className="mt-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+        <button
+          className="flex w-full items-center gap-2 text-left text-sm text-[color:var(--muted-strong)]"
+          onClick={handleExpandComposer}
+          type="button"
+        >
+          <Plus className="size-4" />
+          Add task
+        </button>
+
+        {isComposerExpanded ? (
+          <div className="mt-3 grid gap-3">
+            <Input
+              autoFocus
+              onChange={(event) => onSetNewTaskTitle(event.target.value)}
+              placeholder="Task title"
+              value={newTaskTitle}
+            />
+            <Textarea
+              onChange={(event) => onSetNewTaskDetails(event.target.value)}
+              placeholder="Optional task details"
+              value={newTaskDetails}
+            />
+            <div className="flex justify-end gap-2">
+              <Button onClick={handleCollapseComposer} variant="ghost">
+                Cancel
+              </Button>
+              <Button disabled={!newTaskTitle.trim()} onClick={handleAddTaskAndCollapse}>
+                <Plus className="size-4" />
+                Add
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <p className="mt-2 text-xs text-[color:var(--muted)]">
+            Click to open the full task composer.
+          </p>
+        )}
       </section>
 
       <section className="mt-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-medium">
-              {selectedTask ? "Task drill-down" : "Task overview"}
-            </p>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-              {selectedTask
-                ? "Editing and agent activity live here so the main overview can stay compact."
-                : "Scan tasks in a lightweight overview, then open one when you want the full task context and agent history."}
-            </p>
-          </div>
-          <Badge variant={selectedTask ? "accent" : "neutral"}>
-            {selectedTask ? "Focused task" : readTaskCountLabel(tasks.length)}
-          </Badge>
-        </div>
-
         {selectedTask ? (
           <TaskDrillDown
             activeProviderLabel={activeProviderLabel}
@@ -192,18 +194,11 @@ interface TaskOverviewListProps {
  */
 function TaskOverviewList({ tasks, onOpenTask, onDeleteTask }: TaskOverviewListProps) {
   if (tasks.length === 0) {
-    return (
-      <div className="task-overview-empty mt-6 py-8 text-center">
-        <p className="text-sm font-medium">No tasks yet</p>
-        <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
-          Add your first task above and it will appear as a simple line item.
-        </p>
-      </div>
-    );
+    return <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">No tasks yet.</p>;
   }
 
   return (
-    <ul className="task-overview-line-list mt-4 divide-y divide-[color:var(--row-divider)] border-y border-[color:var(--row-divider)]">
+    <ul className="task-overview-line-list mt-2 border-t border-[color:var(--row-divider)]">
       {tasks.map((task) => (
         <TaskOverviewRow
           key={task.id}
@@ -226,36 +221,23 @@ interface TaskOverviewRowProps {
  * Shows each task as a lightweight line item so scanning stays fast.
  */
 function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProps) {
-  const taskOverview = buildTaskOverviewSummary(task);
-  const latestStatusText = taskOverview.latestAgentStatus
-    ? readLatestAgentStatusLabel(taskOverview.latestAgentStatus)
-    : null;
-
   return (
-    <li className="task-overview-line-item py-3 transition-colors hover:bg-[color:var(--row-hover)] sm:py-4">
-      <div className="flex flex-col gap-3 px-1 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-base font-medium sm:text-lg">{task.title}</h2>
-          <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">
-            {taskOverview.detailsPreview}
-          </p>
-          <p className="mt-2 text-xs text-[color:var(--muted)]">
-            {readAgentActivityLabel(taskOverview.agentCallCount)}
-            {latestStatusText ? ` · ${latestStatusText}` : ""}
-            {taskOverview.latestAgentTimestamp ? ` · ${taskOverview.latestAgentTimestamp}` : ""}
-          </p>
-        </div>
+    <li className="task-overview-line-item flex min-h-11 items-center gap-2 border-b border-[color:var(--row-divider)] py-1">
+      <button
+        className="min-w-0 flex-1 truncate text-left text-sm hover:text-[color:var(--muted-strong)]"
+        onClick={() => onOpenTask(task.id)}
+        type="button"
+      >
+        {task.title}
+      </button>
 
-        <div className="flex min-h-11 shrink-0 items-center gap-1 sm:justify-end">
-          <Button onClick={() => onOpenTask(task.id)} size="sm" variant="ghost">
-            Open
-          </Button>
-          <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
-            <Trash2 className="size-4" />
-            Remove
-          </Button>
-        </div>
-      </div>
+      <Button onClick={() => onOpenTask(task.id)} size="sm" variant="ghost">
+        Open
+      </Button>
+      <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
+        <Trash2 className="size-4" />
+        Remove
+      </Button>
     </li>
   );
 }
@@ -285,7 +267,7 @@ interface TaskDrillDownProps {
 }
 
 /**
- * Renders the focused task view where editing and agent history can expand freely.
+ * Keeps drill-down controls functional while dropping boxed surfaces.
  */
 function TaskDrillDown({
   task,
@@ -310,59 +292,33 @@ function TaskDrillDown({
   onAgentBriefChange,
   onCallAgent,
 }: TaskDrillDownProps) {
-  const taskOverview = buildTaskOverviewSummary(task);
   const isEditing = editingTaskId === task.id;
   const isAgentPanelOpen = openAgentTaskId === task.id;
   const isCallingTask = pendingTaskId === task.id;
 
   return (
-    <article className="mt-4 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+    <article className="mt-2 space-y-4">
       <Button onClick={onReturnToOverview} size="sm" variant="ghost">
         <ArrowLeft className="size-4" />
-        Back to overview
+        Back
       </Button>
 
-      <div className="mt-4 flex flex-col gap-4 border-b border-[color:var(--border)] pb-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)]">
-            Task drill-down
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold">{task.title}</h2>
-          <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
-            {task.details || "No details yet."}
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Badge variant="accent">{readAgentActivityLabel(taskOverview.agentCallCount)}</Badge>
-            {taskOverview.latestAgentStatus ? (
-              <Badge variant={readAgentStatusBadgeVariant(taskOverview.latestAgentStatus)}>
-                {readLatestAgentStatusLabel(taskOverview.latestAgentStatus)}
-              </Badge>
-            ) : (
-              <Badge variant="neutral">No agent activity yet</Badge>
-            )}
-          </div>
-
-          {taskOverview.latestAgentTimestamp ? (
-            <p className="mt-2 text-xs text-[color:var(--muted)]">
-              Latest activity {taskOverview.latestAgentTimestamp}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="flex flex-wrap gap-2 sm:justify-end">
-          <Button disabled={isEditing} onClick={() => onStartEdit(task.id)} variant="outline">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-semibold">{task.title}</h2>
+        <div className="flex flex-wrap gap-1">
+          <Button disabled={isEditing} onClick={() => onStartEdit(task.id)} size="sm" variant="ghost">
             <Pencil className="size-4" />
             {isEditing ? "Editing" : "Edit"}
           </Button>
           <Button
             onClick={() => onToggleAgentPanel(task.id)}
-            variant={isAgentPanelOpen ? "default" : "outline"}
+            size="sm"
+            variant={isAgentPanelOpen ? "default" : "ghost"}
           >
             <Bot className="size-4" />
             {isAgentPanelOpen ? "Hide agent" : "Call agent"}
           </Button>
-          <Button onClick={() => onDeleteTask(task.id)} variant="outline">
+          <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
             <Trash2 className="size-4" />
             Delete
           </Button>
@@ -370,68 +326,57 @@ function TaskDrillDown({
       </div>
 
       {isEditing ? (
-        <div className="mt-4 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-strong)] p-4">
-          <div className="grid gap-3">
-            <Input
-              onChange={(event) => onSetEditTitle(event.target.value)}
-              placeholder="Task title"
-              value={editTitle}
-            />
-            <Textarea
-              onChange={(event) => onSetEditDetails(event.target.value)}
-              placeholder="Task details"
-              value={editDetails}
-            />
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button onClick={() => onSaveEdit(task.id)}>Save</Button>
-              <Button onClick={onCancelEdit} variant="outline">
-                Cancel
-              </Button>
-            </div>
+        <div className="space-y-3">
+          <Input
+            className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
+            onChange={(event) => onSetEditTitle(event.target.value)}
+            placeholder="Task title"
+            value={editTitle}
+          />
+          <Textarea
+            className="rounded-none border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
+            onChange={(event) => onSetEditDetails(event.target.value)}
+            placeholder="Task details"
+            value={editDetails}
+          />
+          <div className="flex justify-end gap-2">
+            <Button onClick={onCancelEdit} size="sm" variant="ghost">
+              Cancel
+            </Button>
+            <Button onClick={() => onSaveEdit(task.id)} size="sm">
+              Save
+            </Button>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <p className="text-sm text-[color:var(--muted)]">{task.details || "No details yet."}</p>
+      )}
 
-      <div className="mt-4 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-strong)] p-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-medium">Agent activity</p>
-            <p className="mt-1 text-xs leading-5 text-[color:var(--muted)]">
-              Detailed call history stays in the drill-down so the main overview can stay
-              compact.
-            </p>
-          </div>
-          <Badge variant={task.agentCalls.length > 0 ? "accent" : "neutral"}>
-            {readAgentActivityLabel(task.agentCalls.length)}
-          </Badge>
-        </div>
-
+      <section className="space-y-2">
+        <p className="text-xs uppercase tracking-[0.14em] text-[color:var(--muted)]">
+          {readAgentActivityLabel(task.agentCalls.length)}
+        </p>
         {task.agentCalls.length > 0 ? (
-          <div className="mt-3 space-y-2">
+          <ul className="divide-y divide-[color:var(--row-divider)] border-y border-[color:var(--row-divider)]">
             {task.agentCalls.map((agentCall) => (
-              <AgentContributionCard
+              <AgentContributionRow
                 agentCall={agentCall}
                 key={agentCall.id}
                 onDelete={() => onDeleteAgentContribution(task.id, agentCall.id)}
               />
             ))}
-          </div>
+          </ul>
         ) : (
-          <p className="mt-3 text-sm text-[color:var(--muted)]">
-            No agent calls yet for this task.
-          </p>
+          <p className="text-sm text-[color:var(--muted)]">No agent calls yet.</p>
         )}
-      </div>
+      </section>
 
       {isAgentPanelOpen ? (
-        <div className="mt-4 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-strong)] p-3">
+        <section className="space-y-3 border-t border-[color:var(--row-divider)] pt-3">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium">Call the built-in agent</p>
-              <p className="mt-1 text-xs text-[color:var(--muted)]">
-                Using {activeProviderLabel} · {activeProviderModel}
-              </p>
-            </div>
+            <p className="text-sm text-[color:var(--muted)]">
+              Using {activeProviderLabel} · {activeProviderModel}
+            </p>
             <button
               className="text-[color:var(--muted)] transition hover:text-[color:var(--foreground)]"
               onClick={onCloseAgentPanel}
@@ -441,79 +386,55 @@ function TaskDrillDown({
             </button>
           </div>
 
-          <div className="mt-3 grid gap-3">
-            <Textarea
-              onChange={(event) => onAgentBriefChange(task.id, event.target.value)}
-              placeholder="What should the agent do for this task?"
-              value={agentDraft.brief}
-            />
+          <Textarea
+            onChange={(event) => onAgentBriefChange(task.id, event.target.value)}
+            placeholder="What should the agent do for this task?"
+            value={agentDraft.brief}
+          />
 
-            {agentDraft.error ? (
-              <p className="text-sm text-rose-700">{agentDraft.error}</p>
-            ) : null}
+          {agentDraft.error ? <p className="text-sm text-rose-700">{agentDraft.error}</p> : null}
 
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-[color:var(--muted)]">
-                Use the Configuration view if you want to change the {activeProviderLabel}
-                {" "}key or model before sending this task.
-              </p>
-              <Button disabled={isCallingTask} onClick={() => onCallAgent(task.id)}>
-                <Bot className="size-4" />
-                {isCallingTask ? "Calling..." : "Send to agent"}
-              </Button>
-            </div>
+          <div className="flex justify-end">
+            <Button disabled={isCallingTask} onClick={() => onCallAgent(task.id)} size="sm">
+              <Bot className="size-4" />
+              {isCallingTask ? "Calling..." : "Send to agent"}
+            </Button>
           </div>
-        </div>
+        </section>
       ) : null}
     </article>
   );
 }
 
-interface AgentContributionCardProps {
+interface AgentContributionRowProps {
   agentCall: Task["agentCalls"][number];
   onDelete: () => void;
 }
 
 /**
- * Keeps one saved agent contribution self-contained so the drill-down stays readable.
+ * Keeps one saved agent contribution readable without card chrome.
  */
-function AgentContributionCard({ agentCall, onDelete }: AgentContributionCardProps) {
+function AgentContributionRow({ agentCall, onDelete }: AgentContributionRowProps) {
   return (
-    <div className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <li className="py-3">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium">Agent contribution · {agentCall.status}</p>
-          <p className="mt-1 text-xs text-[color:var(--muted)]">
-            {getProviderLabel(agentCall.providerId)} · {agentCall.model}
+          <p className="text-sm">
+            {getProviderLabel(agentCall.providerId)} · {agentCall.status}
           </p>
+          <p className="text-xs text-[color:var(--muted)]">{agentCall.createdAt}</p>
           <p className="mt-1 text-sm text-[color:var(--muted)]">{agentCall.brief}</p>
-          {agentCall.result ? (
-            <FormattedAgentResponse className="mt-2" content={agentCall.result} />
-          ) : null}
+          {agentCall.result ? <FormattedAgentResponse className="mt-2" content={agentCall.result} /> : null}
           {agentCall.error ? <p className="mt-1 text-sm text-rose-700">{agentCall.error}</p> : null}
-          <p className="mt-1 text-xs text-[color:var(--muted)]">{agentCall.createdAt}</p>
         </div>
 
-        <Button
-          aria-label="Delete contribution"
-          className="shrink-0 self-start whitespace-nowrap"
-          onClick={onDelete}
-          size="sm"
-          variant="outline"
-        >
+        <Button aria-label="Delete contribution" onClick={onDelete} size="sm" variant="ghost">
           <Trash2 className="size-4" />
           Delete
         </Button>
       </div>
-    </div>
+    </li>
   );
-}
-
-/**
- * Reads a compact label for the number of tasks in the overview.
- */
-function readTaskCountLabel(taskCount: number) {
-  return taskCount === 1 ? "1 task" : `${taskCount} tasks`;
 }
 
 /**
@@ -525,18 +446,4 @@ function readAgentActivityLabel(agentCallCount: number) {
   }
 
   return agentCallCount === 1 ? "1 agent call" : `${agentCallCount} agent calls`;
-}
-
-/**
- * Maps the latest agent status to the badge variant used in overview and drill-down views.
- */
-function readAgentStatusBadgeVariant(status: AgentCallStatus) {
-  return status === "done" ? "success" : "danger";
-}
-
-/**
- * Converts the latest agent status into a short human-readable label.
- */
-function readLatestAgentStatusLabel(status: AgentCallStatus) {
-  return status === "done" ? "Latest call done" : "Latest call error";
 }
