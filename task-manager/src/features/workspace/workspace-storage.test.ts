@@ -16,7 +16,7 @@ describe("workspace storage", () => {
   it("falls back when saved workspace data is invalid", () => {
     const workspace = normalizeWorkspaceSnapshot("not-json-shape");
 
-    expect(workspace.tasks).toHaveLength(2);
+    expect(workspace.tasks).toHaveLength(3);
     expect(workspace.tasks[0]?.title).toBe("Define the smallest possible task manager");
   });
 
@@ -41,6 +41,7 @@ describe("workspace storage", () => {
           id: "task-custom",
           title: "Follow up with daycare",
           details: 123,
+          project: "Personal",
           agentCalls: [
             {
               id: "call-custom",
@@ -68,6 +69,7 @@ describe("workspace storage", () => {
       id: "task-custom",
       title: "Follow up with daycare",
       details: "",
+      project: "Personal",
     });
     expect(workspace.tasks[0]?.agentCalls[0]).toMatchObject({
       id: "call-custom",
@@ -85,6 +87,29 @@ describe("workspace storage", () => {
       brief: "",
       status: "error",
       createdAt: "Unknown time",
+    });
+  });
+
+  /**
+   * Normalizes tasks without a project field to an empty string for backward compatibility.
+   */
+  it("normalizes tasks without a project field", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      tasks: [
+        {
+          id: "task-old",
+          title: "Legacy task without project",
+          details: "Some details",
+          agentCalls: [],
+        },
+      ],
+    });
+
+    expect(workspace.tasks[0]).toMatchObject({
+      id: "task-old",
+      title: "Legacy task without project",
+      details: "Some details",
+      project: "",
     });
   });
 });

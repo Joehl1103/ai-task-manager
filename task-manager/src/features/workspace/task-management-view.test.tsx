@@ -14,9 +14,11 @@ function buildTaskManagementViewProps() {
     },
     newTaskTitle: "",
     newTaskDetails: "",
+    newTaskProject: "",
     editingTaskId: null,
     editTitle: "",
     editDetails: "",
+    editProject: "",
     openAgentTaskId: null,
     pendingTaskId: null,
     activeProviderLabel: "OpenAI",
@@ -24,6 +26,7 @@ function buildTaskManagementViewProps() {
     isActiveProviderReady: true,
     onSetNewTaskTitle: vi.fn(),
     onSetNewTaskDetails: vi.fn(),
+    onSetNewTaskProject: vi.fn(),
     onAddTask: vi.fn(),
     onOpenTask: vi.fn(),
     onDeleteTask: vi.fn(),
@@ -35,6 +38,7 @@ function buildTaskManagementViewProps() {
     onToggleAgentPanel: vi.fn(),
     onSetEditTitle: vi.fn(),
     onSetEditDetails: vi.fn(),
+    onSetEditProject: vi.fn(),
     onCloseAgentPanel: vi.fn(),
     onAgentBriefChange: vi.fn(),
     onCallAgent: vi.fn(),
@@ -43,12 +47,13 @@ function buildTaskManagementViewProps() {
 
 describe("task management view", () => {
   /**
-   * Keeps the overview in a Things-like line-item format instead of boxed cards.
+   * Renders tasks grouped by project with minimalist line items.
    */
-  it("renders task rows as minimalist line items", () => {
+  it("renders task rows as minimalist line items grouped by project", () => {
     const markup = renderToStaticMarkup(<TaskManagementView {...buildTaskManagementViewProps()} />);
 
-    expect(markup).toContain("task-overview-line-list");
     expect(markup).toContain("task-overview-line-item");
+    expect(markup).toContain("Relay MVP");
+    expect(markup).toContain("No project");
   });
 });

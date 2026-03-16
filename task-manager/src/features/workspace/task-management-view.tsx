@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormattedAgentResponse } from "@/features/workspace/formatted-agent-response";
 import { getProviderLabel } from "@/features/workspace/provider-config";
+import { groupTasksByProject, type TaskGroup } from "@/features/workspace/task-grouping";
 import { type AgentDraft, type Task } from "@/features/workspace/types";
 
 interface TaskManagementViewProps {
@@ -17,9 +18,11 @@ interface TaskManagementViewProps {
   selectedAgentDraft: AgentDraft;
   newTaskTitle: string;
   newTaskDetails: string;
+  newTaskProject: string;
   editingTaskId: string | null;
   editTitle: string;
   editDetails: string;
+  editProject: string;
   openAgentTaskId: string | null;
   pendingTaskId: string | null;
   activeProviderLabel: string;
@@ -27,6 +30,7 @@ interface TaskManagementViewProps {
   isActiveProviderReady: boolean;
   onSetNewTaskTitle: (value: string) => void;
   onSetNewTaskDetails: (value: string) => void;
+  onSetNewTaskProject: (value: string) => void;
   onAddTask: () => void;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
@@ -38,6 +42,7 @@ interface TaskManagementViewProps {
   onToggleAgentPanel: (taskId: string) => void;
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
+  onSetEditProject: (value: string) => void;
   onCloseAgentPanel: () => void;
   onAgentBriefChange: (taskId: string, brief: string) => void;
   onCallAgent: (taskId: string) => void;
@@ -52,9 +57,11 @@ export function TaskManagementView({
   selectedAgentDraft,
   newTaskTitle,
   newTaskDetails,
+  newTaskProject,
   editingTaskId,
   editTitle,
   editDetails,
+  editProject,
   openAgentTaskId,
   pendingTaskId,
   activeProviderLabel,
@@ -62,6 +69,7 @@ export function TaskManagementView({
   isActiveProviderReady,
   onSetNewTaskTitle,
   onSetNewTaskDetails,
+  onSetNewTaskProject,
   onAddTask,
   onOpenTask,
   onDeleteTask,
@@ -73,6 +81,7 @@ export function TaskManagementView({
   onToggleAgentPanel,
   onSetEditTitle,
   onSetEditDetails,
+  onSetEditProject,
   onCloseAgentPanel,
   onAgentBriefChange,
   onCallAgent,
@@ -96,6 +105,7 @@ export function TaskManagementView({
     setIsComposerExpanded(false);
     onSetNewTaskTitle("");
     onSetNewTaskDetails("");
+    onSetNewTaskProject("");
   }
 
   return (
@@ -128,6 +138,11 @@ export function TaskManagementView({
               placeholder="Task title"
               value={newTaskTitle}
             />
+            <Input
+              onChange={(event) => onSetNewTaskProject(event.target.value)}
+              placeholder="Project (optional)"
+              value={newTaskProject}
+            />
             <Textarea
               onChange={(event) => onSetNewTaskDetails(event.target.value)}
               placeholder="Optional task details"
@@ -158,6 +173,7 @@ export function TaskManagementView({
             agentDraft={selectedAgentDraft}
             editDetails={editDetails}
             editingTaskId={editingTaskId}
+            editProject={editProject}
             editTitle={editTitle}
             onAgentBriefChange={onAgentBriefChange}
             onCallAgent={onCallAgent}
@@ -168,6 +184,7 @@ export function TaskManagementView({
             onReturnToOverview={onReturnToOverview}
             onSaveEdit={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
+            onSetEditProject={onSetEditProject}
             onSetEditTitle={onSetEditTitle}
             onStartEdit={onStartEdit}
             onToggleAgentPanel={onToggleAgentPanel}
@@ -176,38 +193,70 @@ export function TaskManagementView({
             task={selectedTask}
           />
         ) : (
-          <TaskOverviewList onDeleteTask={onDeleteTask} onOpenTask={onOpenTask} tasks={tasks} />
+          <GroupedTaskOverview onDeleteTask={onDeleteTask} onOpenTask={onOpenTask} tasks={tasks} />
         )}
       </section>
     </>
   );
 }
 
-interface TaskOverviewListProps {
+interface GroupedTaskOverviewProps {
   tasks: Task[];
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
 }
 
 /**
- * Renders the compact list of task summaries shown before a task is opened.
+ * Renders tasks grouped by project with lightweight section headings.
  */
-function TaskOverviewList({ tasks, onOpenTask, onDeleteTask }: TaskOverviewListProps) {
-  if (tasks.length === 0) {
+function GroupedTaskOverview({ tasks, onOpenTask, onDeleteTask }: GroupedTaskOverviewProps) {
+  const groups = groupTasksByProject(tasks);
+
+  if (groups.length === 0) {
     return <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">No tasks yet.</p>;
   }
 
   return (
-    <ul className="task-overview-line-list mt-2 border-t border-[color:var(--row-divider)]">
-      {tasks.map((task) => (
-        <TaskOverviewRow
-          key={task.id}
+    <div className="mt-2 space-y-6">
+      {groups.map((group) => (
+        <ProjectSection
+          group={group}
+          key={group.project || "__no_project__"}
           onDeleteTask={onDeleteTask}
           onOpenTask={onOpenTask}
-          task={task}
         />
       ))}
-    </ul>
+    </div>
+  );
+}
+
+interface ProjectSectionProps {
+  group: TaskGroup;
+  onOpenTask: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
+}
+
+/**
+ * Renders a single project section with its tasks as line items.
+ */
+function ProjectSection({ group, onOpenTask, onDeleteTask }: ProjectSectionProps) {
+  return (
+    <section>
+      <h3 className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
+        {group.label}
+        <span className="ml-2 text-[color:var(--muted)]">({group.tasks.length})</span>
+      </h3>
+      <ul className="mt-1 border-t border-[color:var(--row-divider)]">
+        {group.tasks.map((task) => (
+          <TaskOverviewRow
+            key={task.id}
+            onDeleteTask={onDeleteTask}
+            onOpenTask={onOpenTask}
+            task={task}
+          />
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -247,6 +296,7 @@ interface TaskDrillDownProps {
   editingTaskId: string | null;
   editTitle: string;
   editDetails: string;
+  editProject: string;
   openAgentTaskId: string | null;
   pendingTaskId: string | null;
   activeProviderLabel: string;
@@ -261,6 +311,7 @@ interface TaskDrillDownProps {
   onToggleAgentPanel: (taskId: string) => void;
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
+  onSetEditProject: (value: string) => void;
   onCloseAgentPanel: () => void;
   onAgentBriefChange: (taskId: string, brief: string) => void;
   onCallAgent: (taskId: string) => void;
@@ -274,6 +325,7 @@ function TaskDrillDown({
   editingTaskId,
   editTitle,
   editDetails,
+  editProject,
   openAgentTaskId,
   pendingTaskId,
   activeProviderLabel,
@@ -288,6 +340,7 @@ function TaskDrillDown({
   onToggleAgentPanel,
   onSetEditTitle,
   onSetEditDetails,
+  onSetEditProject,
   onCloseAgentPanel,
   onAgentBriefChange,
   onCallAgent,
@@ -304,7 +357,12 @@ function TaskDrillDown({
       </Button>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold">{task.title}</h2>
+        <div>
+          <h2 className="text-xl font-semibold">{task.title}</h2>
+          {task.project ? (
+            <p className="text-xs text-[color:var(--muted)]">{task.project}</p>
+          ) : null}
+        </div>
         <div className="flex flex-wrap gap-1">
           <Button disabled={isEditing} onClick={() => onStartEdit(task.id)} size="sm" variant="ghost">
             <Pencil className="size-4" />
@@ -332,6 +390,12 @@ function TaskDrillDown({
             onChange={(event) => onSetEditTitle(event.target.value)}
             placeholder="Task title"
             value={editTitle}
+          />
+          <Input
+            className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
+            onChange={(event) => onSetEditProject(event.target.value)}
+            placeholder="Project (optional)"
+            value={editProject}
           />
           <Textarea
             className="rounded-none border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
