@@ -19,10 +19,12 @@ interface TaskManagementViewProps {
   newTaskTitle: string;
   newTaskDetails: string;
   newTaskProject: string;
+  newTaskTags: string;
   editingTaskId: string | null;
   editTitle: string;
   editDetails: string;
   editProject: string;
+  editTags: string;
   openAgentTaskId: string | null;
   pendingTaskId: string | null;
   activeProviderLabel: string;
@@ -31,6 +33,7 @@ interface TaskManagementViewProps {
   onSetNewTaskTitle: (value: string) => void;
   onSetNewTaskDetails: (value: string) => void;
   onSetNewTaskProject: (value: string) => void;
+  onSetNewTaskTags: (value: string) => void;
   onAddTask: () => void;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
@@ -43,6 +46,7 @@ interface TaskManagementViewProps {
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
+  onSetEditTags: (value: string) => void;
   onCloseAgentPanel: () => void;
   onAgentBriefChange: (taskId: string, brief: string) => void;
   onCallAgent: (taskId: string) => void;
@@ -58,10 +62,12 @@ export function TaskManagementView({
   newTaskTitle,
   newTaskDetails,
   newTaskProject,
+  newTaskTags,
   editingTaskId,
   editTitle,
   editDetails,
   editProject,
+  editTags,
   openAgentTaskId,
   pendingTaskId,
   activeProviderLabel,
@@ -70,6 +76,7 @@ export function TaskManagementView({
   onSetNewTaskTitle,
   onSetNewTaskDetails,
   onSetNewTaskProject,
+  onSetNewTaskTags,
   onAddTask,
   onOpenTask,
   onDeleteTask,
@@ -82,6 +89,7 @@ export function TaskManagementView({
   onSetEditTitle,
   onSetEditDetails,
   onSetEditProject,
+  onSetEditTags,
   onCloseAgentPanel,
   onAgentBriefChange,
   onCallAgent,
@@ -106,6 +114,7 @@ export function TaskManagementView({
     onSetNewTaskTitle("");
     onSetNewTaskDetails("");
     onSetNewTaskProject("");
+    onSetNewTaskTags("");
   }
 
   return (
@@ -143,6 +152,11 @@ export function TaskManagementView({
               placeholder="Project (optional)"
               value={newTaskProject}
             />
+            <Input
+              onChange={(event) => onSetNewTaskTags(event.target.value)}
+              placeholder="Tags (optional, comma-separated)"
+              value={newTaskTags}
+            />
             <Textarea
               onChange={(event) => onSetNewTaskDetails(event.target.value)}
               placeholder="Optional task details"
@@ -174,6 +188,7 @@ export function TaskManagementView({
             editDetails={editDetails}
             editingTaskId={editingTaskId}
             editProject={editProject}
+            editTags={editTags}
             editTitle={editTitle}
             onAgentBriefChange={onAgentBriefChange}
             onCallAgent={onCallAgent}
@@ -185,6 +200,7 @@ export function TaskManagementView({
             onSaveEdit={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
             onSetEditProject={onSetEditProject}
+            onSetEditTags={onSetEditTags}
             onSetEditTitle={onSetEditTitle}
             onStartEdit={onStartEdit}
             onToggleAgentPanel={onToggleAgentPanel}
@@ -271,22 +287,34 @@ interface TaskOverviewRowProps {
  */
 function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProps) {
   return (
-    <li className="task-overview-line-item flex min-h-11 items-center gap-2 border-b border-[color:var(--row-divider)] py-1">
-      <button
-        className="min-w-0 flex-1 truncate text-left text-sm hover:text-[color:var(--muted-strong)]"
-        onClick={() => onOpenTask(task.id)}
-        type="button"
-      >
-        {task.title}
-      </button>
+    <li className="task-overview-line-item flex flex-col gap-1 border-b border-[color:var(--row-divider)] py-2">
+      <div className="flex min-h-8 items-center gap-2">
+        <button
+          className="min-w-0 flex-1 truncate text-left text-sm hover:text-[color:var(--muted-strong)]"
+          onClick={() => onOpenTask(task.id)}
+          type="button"
+        >
+          {task.title}
+        </button>
 
-      <Button onClick={() => onOpenTask(task.id)} size="sm" variant="ghost">
-        Open
-      </Button>
-      <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
-        <Trash2 className="size-4" />
-        Remove
-      </Button>
+        <Button onClick={() => onOpenTask(task.id)} size="sm" variant="ghost">
+          Open
+        </Button>
+        <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
+          <Trash2 className="size-4" />
+          Remove
+        </Button>
+      </div>
+
+      {task.tags.length > 0 ? (
+        <div className="flex flex-wrap gap-1 pl-0">
+          {task.tags.map((tag) => (
+            <span key={tag} className="rounded bg-[color:var(--surface-alt)] px-1.5 py-0.5 text-xs text-[color:var(--muted-strong)]">
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </li>
   );
 }
@@ -297,6 +325,7 @@ interface TaskDrillDownProps {
   editTitle: string;
   editDetails: string;
   editProject: string;
+  editTags: string;
   openAgentTaskId: string | null;
   pendingTaskId: string | null;
   activeProviderLabel: string;
@@ -312,6 +341,7 @@ interface TaskDrillDownProps {
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
+  onSetEditTags: (value: string) => void;
   onCloseAgentPanel: () => void;
   onAgentBriefChange: (taskId: string, brief: string) => void;
   onCallAgent: (taskId: string) => void;
@@ -326,6 +356,7 @@ function TaskDrillDown({
   editTitle,
   editDetails,
   editProject,
+  editTags,
   openAgentTaskId,
   pendingTaskId,
   activeProviderLabel,
@@ -341,6 +372,7 @@ function TaskDrillDown({
   onSetEditTitle,
   onSetEditDetails,
   onSetEditProject,
+  onSetEditTags,
   onCloseAgentPanel,
   onAgentBriefChange,
   onCallAgent,
@@ -361,6 +393,15 @@ function TaskDrillDown({
           <h2 className="text-xl font-semibold">{task.title}</h2>
           {task.project ? (
             <p className="text-xs text-[color:var(--muted)]">{task.project}</p>
+          ) : null}
+          {task.tags.length > 0 ? (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {task.tags.map((tag) => (
+                <span key={tag} className="rounded bg-[color:var(--surface-alt)] px-2 py-0.5 text-xs text-[color:var(--muted-strong)]">
+                  {tag}
+                </span>
+              ))}
+            </div>
           ) : null}
         </div>
         <div className="flex flex-wrap gap-1">
@@ -396,6 +437,12 @@ function TaskDrillDown({
             onChange={(event) => onSetEditProject(event.target.value)}
             placeholder="Project (optional)"
             value={editProject}
+          />
+          <Input
+            className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
+            onChange={(event) => onSetEditTags(event.target.value)}
+            placeholder="Tags (optional, comma-separated)"
+            value={editTags}
           />
           <Textarea
             className="rounded-none border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"

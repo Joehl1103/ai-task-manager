@@ -8,6 +8,29 @@ import {
 } from "./types";
 
 /**
+ * Normalizes tags by trimming, removing duplicates case-insensitively, and filtering empty strings.
+ */
+function normalizeTags(tags: string[] | undefined): string[] {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const tag of tags) {
+    const trimmed = tag.trim();
+
+    if (trimmed && !seen.has(trimmed.toLowerCase())) {
+      seen.add(trimmed.toLowerCase());
+      normalized.push(trimmed);
+    }
+  }
+
+  return normalized;
+}
+
+/**
  * Adds a new task to the front of the task list so fresh tasks are immediately visible.
  */
 export function addTask(
@@ -19,6 +42,7 @@ export function addTask(
     title: input.title.trim(),
     details: input.details.trim(),
     project: input.project?.trim() ?? "",
+    tags: normalizeTags(input.tags),
     agentCalls: [],
   };
 
@@ -29,7 +53,7 @@ export function addTask(
 }
 
 /**
- * Updates the title and details for a task so inline editing can stay simple.
+ * Updates the title, details, project, and tags for a task so inline editing can stay simple.
  */
 export function updateTask(
   workspace: WorkspaceSnapshot,
@@ -44,6 +68,7 @@ export function updateTask(
             title: input.title.trim(),
             details: input.details.trim(),
             project: input.project?.trim() ?? task.project,
+            tags: input.tags !== undefined ? normalizeTags(input.tags) : task.tags,
           }
         : task,
     ),

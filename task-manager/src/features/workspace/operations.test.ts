@@ -46,6 +46,61 @@ describe("workspace operations", () => {
   });
 
   /**
+   * Creates a task with tags.
+   */
+  it("adds a task with tags", () => {
+    const updatedWorkspace = addTask(workspaceSeed, {
+      title: "Review sprint goals",
+      details: "Check alignment with Q1 objectives.",
+      tags: ["planning", "review"],
+    });
+
+    expect(updatedWorkspace.tasks[0]).toMatchObject({
+      title: "Review sprint goals",
+      tags: ["planning", "review"],
+    });
+  });
+
+  /**
+   * Removes duplicate tags case-insensitively.
+   */
+  it("normalizes duplicate tags case-insensitively", () => {
+    const updatedWorkspace = addTask(workspaceSeed, {
+      title: "Test task",
+      details: "",
+      tags: ["work", "Work", "WORK", "planning"],
+    });
+
+    expect(updatedWorkspace.tasks[0].tags).toEqual(["work", "planning"]);
+  });
+
+  /**
+   * Filters out empty tags.
+   */
+  it("removes empty tags", () => {
+    const updatedWorkspace = addTask(workspaceSeed, {
+      title: "Test task",
+      details: "",
+      tags: ["", "work", "  ", "planning"],
+    });
+
+    expect(updatedWorkspace.tasks[0].tags).toEqual(["work", "planning"]);
+  });
+
+  /**
+   * Trims whitespace from tags.
+   */
+  it("trims whitespace from tags", () => {
+    const updatedWorkspace = addTask(workspaceSeed, {
+      title: "Test task",
+      details: "",
+      tags: ["  work  ", "planning "],
+    });
+
+    expect(updatedWorkspace.tasks[0].tags).toEqual(["work", "planning"]);
+  });
+
+  /**
    * Keeps editing behavior explicit by replacing the task title and details in one step.
    */
   it("updates an existing task", () => {
@@ -89,6 +144,37 @@ describe("workspace operations", () => {
 
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
       project: "Relay MVP",
+    });
+  });
+
+  /**
+   * Updates a task's tags while preserving other fields.
+   */
+  it("updates a task tags", () => {
+    const updatedWorkspace = updateTask(workspaceSeed, {
+      taskId: "task-1",
+      title: "Define the smallest possible task manager",
+      details: "Keep only create, edit, delete, and call-agent actions.",
+      tags: ["ui", "feature"],
+    });
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
+      tags: ["ui", "feature"],
+    });
+  });
+
+  /**
+   * Preserves the existing tags when not explicitly updated.
+   */
+  it("preserves existing tags when not provided in update", () => {
+    const updatedWorkspace = updateTask(workspaceSeed, {
+      taskId: "task-1",
+      title: "Updated title",
+      details: "Updated details",
+    });
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
+      tags: ["planning", "design"],
     });
   });
 

@@ -48,11 +48,13 @@ export function WorkspaceApp() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
   const [newTaskProject, setNewTaskProject] = useState("");
+  const [newTaskTags, setNewTaskTags] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDetails, setEditDetails] = useState("");
   const [editProject, setEditProject] = useState("");
+  const [editTags, setEditTags] = useState("");
   const [openAgentTaskId, setOpenAgentTaskId] = useState<string | null>(null);
   const [agentDrafts, setAgentDrafts] = useState<Record<string, AgentDraft>>({});
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
@@ -146,6 +148,16 @@ export function WorkspaceApp() {
   }
 
   /**
+   * Parses comma-separated tags string into an array.
+   */
+  function parseTagsFromString(tagsString: string): string[] {
+    return tagsString
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+  }
+
+  /**
    * Creates a task when the title is present, then clears the draft fields for the next entry.
    */
   function handleAddTask() {
@@ -158,11 +170,13 @@ export function WorkspaceApp() {
         title: newTaskTitle,
         details: newTaskDetails,
         project: newTaskProject,
+        tags: parseTagsFromString(newTaskTags),
       }),
     );
     setNewTaskTitle("");
     setNewTaskDetails("");
     setNewTaskProject("");
+    setNewTaskTags("");
   }
 
   /**
@@ -204,6 +218,7 @@ export function WorkspaceApp() {
     setEditTitle(task.title);
     setEditDetails(task.details);
     setEditProject(task.project);
+    setEditTags(task.tags.join(", "));
   }
 
   /**
@@ -220,12 +235,14 @@ export function WorkspaceApp() {
         title: editTitle,
         details: editDetails,
         project: editProject,
+        tags: parseTagsFromString(editTags),
       }),
     );
     setEditingTaskId(null);
     setEditTitle("");
     setEditDetails("");
     setEditProject("");
+    setEditTags("");
   }
 
   /**
@@ -236,6 +253,7 @@ export function WorkspaceApp() {
     setEditTitle("");
     setEditDetails("");
     setEditProject("");
+    setEditTags("");
   }
 
   /**
@@ -519,10 +537,12 @@ export function WorkspaceApp() {
               editDetails={editDetails}
               editingTaskId={editingTaskId}
               editProject={editProject}
+              editTags={editTags}
               editTitle={editTitle}
               isActiveProviderReady={isActiveProviderReady}
               newTaskDetails={newTaskDetails}
               newTaskProject={newTaskProject}
+              newTaskTags={newTaskTags}
               newTaskTitle={newTaskTitle}
               onAddTask={handleAddTask}
               onAgentBriefChange={handleAgentBriefChange}
@@ -536,9 +556,11 @@ export function WorkspaceApp() {
               onSaveEdit={handleSaveEdit}
               onSetEditDetails={setEditDetails}
               onSetEditProject={setEditProject}
+              onSetEditTags={setEditTags}
               onSetEditTitle={setEditTitle}
               onSetNewTaskDetails={setNewTaskDetails}
               onSetNewTaskProject={setNewTaskProject}
+              onSetNewTaskTags={setNewTaskTags}
               onSetNewTaskTitle={setNewTaskTitle}
               onStartEdit={handleStartEdit}
               onToggleAgentPanel={handleToggleAgentPanel}

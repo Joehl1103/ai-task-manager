@@ -43,6 +43,21 @@ export function normalizeWorkspaceSnapshot(value: unknown): WorkspaceSnapshot {
 }
 
 /**
+ * Normalizes tags from storage, filtering out invalid entries.
+ */
+function normalizeTags(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((tag) => {
+    const normalized = readString(tag);
+
+    return normalized ? [normalized] : [];
+  });
+}
+
+/**
  * Normalizes one saved task entry and applies lightweight fallbacks for missing fields.
  */
 function normalizeTask(value: unknown, index: number): Task | null {
@@ -55,6 +70,7 @@ function normalizeTask(value: unknown, index: number): Task | null {
     title: readString(value.title) || "Untitled task",
     details: readString(value.details),
     project: readString(value.project),
+    tags: normalizeTags(value.tags),
     agentCalls: Array.isArray(value.agentCalls)
       ? value.agentCalls.flatMap((agentCall, agentCallIndex) => {
           const normalizedAgentCall = normalizeAgentCall(agentCall, agentCallIndex);

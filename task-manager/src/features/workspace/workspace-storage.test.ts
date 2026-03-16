@@ -112,4 +112,53 @@ describe("workspace storage", () => {
       project: "",
     });
   });
+
+  /**
+   * Normalizes tasks without a tags field to an empty array for backward compatibility.
+   */
+  it("normalizes tasks without a tags field", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      tasks: [
+        {
+          id: "task-old",
+          title: "Legacy task without tags",
+          details: "Some details",
+          project: "Old Project",
+          agentCalls: [],
+        },
+      ],
+    });
+
+    expect(workspace.tasks[0]).toMatchObject({
+      id: "task-old",
+      title: "Legacy task without tags",
+      details: "Some details",
+      project: "Old Project",
+      tags: [],
+    });
+  });
+
+  /**
+   * Normalizes tasks with tags, filtering out invalid entries.
+   */
+  it("normalizes tasks with tags", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      tasks: [
+        {
+          id: "task-with-tags",
+          title: "Task with tags",
+          details: "Some details",
+          project: "Project",
+          tags: ["work", "priority", 123, null, "", "   "],
+          agentCalls: [],
+        },
+      ],
+    });
+
+    expect(workspace.tasks[0]).toMatchObject({
+      id: "task-with-tags",
+      title: "Task with tags",
+      tags: ["work", "priority"],
+    });
+  });
 });
