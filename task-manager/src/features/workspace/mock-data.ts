@@ -5,12 +5,14 @@ export const workspaceSeed: WorkspaceSnapshot = {
     {
       id: "task-1",
       title: "Define the smallest possible task manager",
+      project: "Relay foundation",
       details: "Keep only create, edit, delete, and call-agent actions.",
       agentCalls: [],
     },
     {
       id: "task-2",
       title: "List the next three product decisions",
+      project: "Product direction",
       details: "Use this as an example of a normal editable task.",
       agentCalls: [
         {

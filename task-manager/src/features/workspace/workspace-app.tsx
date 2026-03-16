@@ -46,10 +46,12 @@ export function WorkspaceApp() {
   const [activeView, setActiveView] = useState(createDefaultWorkspaceView);
   const [isTopMenuExpanded, setIsTopMenuExpanded] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskProject, setNewTaskProject] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editProject, setEditProject] = useState("");
   const [editDetails, setEditDetails] = useState("");
   const [openAgentTaskId, setOpenAgentTaskId] = useState<string | null>(null);
   const [agentDrafts, setAgentDrafts] = useState<Record<string, AgentDraft>>({});
@@ -154,10 +156,12 @@ export function WorkspaceApp() {
     setWorkspace((currentWorkspace) =>
       addTask(currentWorkspace, {
         title: newTaskTitle,
+        project: newTaskProject,
         details: newTaskDetails,
       }),
     );
     setNewTaskTitle("");
+    setNewTaskProject("");
     setNewTaskDetails("");
   }
 
@@ -198,6 +202,7 @@ export function WorkspaceApp() {
     setSelectedTaskId(task.id);
     setEditingTaskId(task.id);
     setEditTitle(task.title);
+    setEditProject(task.project);
     setEditDetails(task.details);
   }
 
@@ -213,11 +218,13 @@ export function WorkspaceApp() {
       updateTask(currentWorkspace, {
         taskId,
         title: editTitle,
+        project: editProject,
         details: editDetails,
       }),
     );
     setEditingTaskId(null);
     setEditTitle("");
+    setEditProject("");
     setEditDetails("");
   }
 
@@ -227,6 +234,7 @@ export function WorkspaceApp() {
   function handleCancelEdit() {
     setEditingTaskId(null);
     setEditTitle("");
+    setEditProject("");
     setEditDetails("");
   }
 
@@ -509,10 +517,12 @@ export function WorkspaceApp() {
               activeProviderLabel={activeProviderLabel}
               activeProviderModel={activeProviderSettings.model}
               editDetails={editDetails}
+              editProject={editProject}
               editingTaskId={editingTaskId}
               editTitle={editTitle}
               isActiveProviderReady={isActiveProviderReady}
               newTaskDetails={newTaskDetails}
+              newTaskProject={newTaskProject}
               newTaskTitle={newTaskTitle}
               onAddTask={handleAddTask}
               onAgentBriefChange={handleAgentBriefChange}
@@ -525,8 +535,10 @@ export function WorkspaceApp() {
               onReturnToOverview={handleReturnToOverview}
               onSaveEdit={handleSaveEdit}
               onSetEditDetails={setEditDetails}
+              onSetEditProject={setEditProject}
               onSetEditTitle={setEditTitle}
               onSetNewTaskDetails={setNewTaskDetails}
+              onSetNewTaskProject={setNewTaskProject}
               onSetNewTaskTitle={setNewTaskTitle}
               onStartEdit={handleStartEdit}
               onToggleAgentPanel={handleToggleAgentPanel}

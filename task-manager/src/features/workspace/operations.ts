@@ -17,6 +17,7 @@ export function addTask(
   const nextTask: Task = {
     id: buildNextTaskId(workspace.tasks),
     title: input.title.trim(),
+    project: input.project.trim(),
     details: input.details.trim(),
     agentCalls: [],
   };
@@ -41,6 +42,7 @@ export function updateTask(
         ? {
             ...task,
             title: input.title.trim(),
+            project: input.project.trim(),
             details: input.details.trim(),
           }
         : task,

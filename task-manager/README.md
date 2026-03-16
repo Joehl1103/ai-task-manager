@@ -6,11 +6,12 @@ This app lives in `task-manager/` inside the broader `productivity` git reposito
 
 ## Current Scope
 
-- One compact overview list holding all tasks
+- One compact overview grouped by project
 - One drill-down view for a selected task
 - A thin desktop top menu that switches between Tasks and Configuration
 - Add a task
 - Edit a task inside the drill-down
+- Assign an optional project to each task
 - Delete a task
 - Call one built-in agent from inside a task drill-down
 - Delete one saved agent contribution from a task drill-down
@@ -59,6 +60,7 @@ The app lives inside the existing git repository for this project.
 - `src/features/workspace/workspace-app.tsx`: app shell and state wiring for top-level views
 - `src/features/workspace/operations.ts`: pure task and agent-call updates
 - `src/features/workspace/mock-data.ts`: starter tasks and sample agent history
+- `src/features/workspace/task-grouping.ts`: project section helpers for the overview
 - `src/features/workspace/provider-api.ts`: shared provider request and response helpers
 - `src/features/workspace/task-overview.ts`: compact task-summary helpers for overview cards
 - `src/features/workspace/workspace-storage.ts`: workspace local storage helpers and normalization
@@ -77,5 +79,5 @@ The app lives inside the existing git repository for this project.
 
 - Add persistence beyond browser local storage when multi-device or shared access matters
 - Add task completion state
-- Add ordering, filtering, or grouping if needed
+- Add ordering or filtering if they are truly needed
 - Add stronger security around provider secrets before any shared deployment

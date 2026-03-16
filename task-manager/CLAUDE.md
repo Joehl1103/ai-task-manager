@@ -9,7 +9,7 @@ Run app commands from this directory. Git commands can be run from here or from 
 
 Relay is currently a minimal web starter for task management with two primary ideas:
 
-- A compact task overview list
+- A compact task overview grouped by project
 - A selected-task drill-down for editing and agent activity
 - A thin top-menu shell that separates Tasks from Configuration
 
@@ -25,6 +25,7 @@ The current goal is to keep the product as small as possible before layering on 
 - `src/features/workspace/workspace-app.tsx`: app shell and state orchestration
 - `src/features/workspace/mock-data.ts`: local seed data for tasks and sample agent history
 - `src/features/workspace/operations.ts`: pure task and agent-call helpers
+- `src/features/workspace/task-grouping.ts`: lightweight project grouping helpers for the overview
 - `src/features/workspace/provider-api.ts`: provider request and response helpers
 - `src/features/workspace/task-overview.ts`: compact summary helpers for overview cards
 - `src/features/workspace/workspace-storage.ts`: workspace local storage helpers
@@ -38,7 +39,7 @@ Current focus:
 - Keep the app very small
 - Keep the top-level shell thin and desktop-oriented
 - Preserve add, edit, delete, task-level agent calls, and deletion of saved agent contributions
-- Keep the main overview compact and move agent history into task drill-down
+- Keep the main overview compact while grouping tasks by project and moving agent history into task drill-down
 - Keep configuration separate from the task workflow
 - Keep the agent model to one built-in path, not multiple agent types
 - Support local OpenAI configuration for real task-level agent calls first
@@ -50,4 +51,5 @@ Likely next tasks:
 - Add persistence beyond browser local storage when shared sync becomes important
 - Add completion state
 - Add ordering and filtering only if they are truly needed
+- Consider a normalized project model only if rename/canonicalization becomes important
 - Harden secret handling before any shared deployment

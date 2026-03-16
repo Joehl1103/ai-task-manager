@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormattedAgentResponse } from "@/features/workspace/formatted-agent-response";
 import { getProviderLabel } from "@/features/workspace/provider-config";
+import { buildTaskGroups, noProjectGroupLabel } from "@/features/workspace/task-grouping";
 import { buildTaskOverviewSummary } from "@/features/workspace/task-overview";
 import { type AgentCallStatus, type AgentDraft, type Task } from "@/features/workspace/types";
 
@@ -16,9 +17,11 @@ interface TaskManagementViewProps {
   selectedTask: Task | null;
   selectedAgentDraft: AgentDraft;
   newTaskTitle: string;
+  newTaskProject: string;
   newTaskDetails: string;
   editingTaskId: string | null;
   editTitle: string;
+  editProject: string;
   editDetails: string;
   openAgentTaskId: string | null;
   pendingTaskId: string | null;
@@ -26,6 +29,7 @@ interface TaskManagementViewProps {
   activeProviderModel: string;
   isActiveProviderReady: boolean;
   onSetNewTaskTitle: (value: string) => void;
+  onSetNewTaskProject: (value: string) => void;
   onSetNewTaskDetails: (value: string) => void;
   onAddTask: () => void;
   onOpenTask: (taskId: string) => void;
@@ -37,6 +41,7 @@ interface TaskManagementViewProps {
   onDeleteAgentContribution: (taskId: string, agentCallId: string) => void;
   onToggleAgentPanel: (taskId: string) => void;
   onSetEditTitle: (value: string) => void;
+  onSetEditProject: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onCloseAgentPanel: () => void;
   onAgentBriefChange: (taskId: string, brief: string) => void;
@@ -51,9 +56,11 @@ export function TaskManagementView({
   selectedTask,
   selectedAgentDraft,
   newTaskTitle,
+  newTaskProject,
   newTaskDetails,
   editingTaskId,
   editTitle,
+  editProject,
   editDetails,
   openAgentTaskId,
   pendingTaskId,
@@ -61,6 +68,7 @@ export function TaskManagementView({
   activeProviderModel,
   isActiveProviderReady,
   onSetNewTaskTitle,
+  onSetNewTaskProject,
   onSetNewTaskDetails,
   onAddTask,
   onOpenTask,
@@ -72,6 +80,7 @@ export function TaskManagementView({
   onDeleteAgentContribution,
   onToggleAgentPanel,
   onSetEditTitle,
+  onSetEditProject,
   onSetEditDetails,
   onCloseAgentPanel,
   onAgentBriefChange,
@@ -85,8 +94,8 @@ export function TaskManagementView({
             <p className="text-sm text-[color:var(--muted)]">Bare-bones starter</p>
             <h1 className="mt-2 text-3xl font-semibold">Tasks</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-              One list for all tasks. Add, edit, delete, and send a task to one built-in
-              agent while keeping configuration in its own separate view.
+              Keep one lightweight workspace for all tasks, but scan them in project
+              groups before opening a focused drill-down.
             </p>
           </div>
 
@@ -118,6 +127,11 @@ export function TaskManagementView({
             placeholder="Task title"
             value={newTaskTitle}
           />
+          <Input
+            onChange={(event) => onSetNewTaskProject(event.target.value)}
+            placeholder="Project (optional)"
+            value={newTaskProject}
+          />
           <Textarea
             onChange={(event) => onSetNewTaskDetails(event.target.value)}
             placeholder="Optional task details"
@@ -141,7 +155,7 @@ export function TaskManagementView({
             <p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
               {selectedTask
                 ? "Editing and agent activity live here so the main overview can stay compact."
-                : "Scan tasks in a lightweight overview, then open one when you want the full task context and agent history."}
+                : "Scan tasks in lightweight project sections, then open one when you want the full task context and agent history."}
             </p>
           </div>
           <Badge variant={selectedTask ? "accent" : "neutral"}>
@@ -155,6 +169,7 @@ export function TaskManagementView({
             activeProviderModel={activeProviderModel}
             agentDraft={selectedAgentDraft}
             editDetails={editDetails}
+            editProject={editProject}
             editingTaskId={editingTaskId}
             editTitle={editTitle}
             onAgentBriefChange={onAgentBriefChange}
@@ -166,6 +181,7 @@ export function TaskManagementView({
             onReturnToOverview={onReturnToOverview}
             onSaveEdit={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
+            onSetEditProject={onSetEditProject}
             onSetEditTitle={onSetEditTitle}
             onStartEdit={onStartEdit}
             onToggleAgentPanel={onToggleAgentPanel}
@@ -196,21 +212,44 @@ function TaskOverviewList({ tasks, onOpenTask, onDeleteTask }: TaskOverviewListP
       <div className="mt-4 rounded-lg border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center">
         <p className="text-sm font-medium">No tasks yet</p>
         <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
-          Add your first task above and it will appear here as a compact overview card.
+          Add your first task above and it will appear in the matching project section.
         </p>
       </div>
     );
   }
 
+  const taskGroups = buildTaskGroups(tasks);
+
   return (
-    <div className="mt-4 space-y-3">
-      {tasks.map((task) => (
-        <TaskOverviewCard
-          key={task.id}
-          onDeleteTask={onDeleteTask}
-          onOpenTask={onOpenTask}
-          task={task}
-        />
+    <div className="mt-4 space-y-4">
+      {taskGroups.map((taskGroup) => (
+        <section
+          className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
+          key={taskGroup.key}
+        >
+          <div className="flex flex-col gap-2 border-b border-[color:var(--border)] pb-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                Project
+              </p>
+              <h2 className="mt-1 text-lg font-medium">{taskGroup.title}</h2>
+            </div>
+            <Badge variant={taskGroup.title === noProjectGroupLabel ? "neutral" : "accent"}>
+              {readTaskCountLabel(taskGroup.taskCount)}
+            </Badge>
+          </div>
+
+          <div className="mt-3 space-y-3">
+            {taskGroup.tasks.map((task) => (
+              <TaskOverviewCard
+                key={task.id}
+                onDeleteTask={onDeleteTask}
+                onOpenTask={onOpenTask}
+                task={task}
+              />
+            ))}
+          </div>
+        </section>
       ))}
     </div>
   );
@@ -227,17 +266,19 @@ interface TaskOverviewCardProps {
  */
 function TaskOverviewCard({ task, onOpenTask, onDeleteTask }: TaskOverviewCardProps) {
   const taskOverview = buildTaskOverviewSummary(task);
+  const hasProject = Boolean(task.project.trim());
 
   return (
-    <article className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+    <article className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-lg font-medium">{task.title}</h2>
+          <h3 className="text-lg font-medium">{task.title}</h3>
           <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
             {taskOverview.detailsPreview}
           </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
+            {hasProject ? <Badge variant="accent">{task.project.trim()}</Badge> : null}
             <Badge variant="neutral">{readAgentActivityLabel(taskOverview.agentCallCount)}</Badge>
             {taskOverview.latestAgentStatus ? (
               <Badge variant={readAgentStatusBadgeVariant(taskOverview.latestAgentStatus)}>
@@ -269,6 +310,7 @@ interface TaskDrillDownProps {
   task: Task;
   editingTaskId: string | null;
   editTitle: string;
+  editProject: string;
   editDetails: string;
   openAgentTaskId: string | null;
   pendingTaskId: string | null;
@@ -283,6 +325,7 @@ interface TaskDrillDownProps {
   onDeleteTask: (taskId: string) => void;
   onToggleAgentPanel: (taskId: string) => void;
   onSetEditTitle: (value: string) => void;
+  onSetEditProject: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onCloseAgentPanel: () => void;
   onAgentBriefChange: (taskId: string, brief: string) => void;
@@ -296,6 +339,7 @@ function TaskDrillDown({
   task,
   editingTaskId,
   editTitle,
+  editProject,
   editDetails,
   openAgentTaskId,
   pendingTaskId,
@@ -310,6 +354,7 @@ function TaskDrillDown({
   onDeleteTask,
   onToggleAgentPanel,
   onSetEditTitle,
+  onSetEditProject,
   onSetEditDetails,
   onCloseAgentPanel,
   onAgentBriefChange,
@@ -332,6 +377,11 @@ function TaskDrillDown({
           <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)]">
             Task drill-down
           </p>
+          {task.project.trim() ? (
+            <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)]">
+              Project · {task.project.trim()}
+            </p>
+          ) : null}
           <h2 className="mt-2 text-2xl font-semibold">{task.title}</h2>
           <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
             {task.details || "No details yet."}
@@ -381,6 +431,11 @@ function TaskDrillDown({
               onChange={(event) => onSetEditTitle(event.target.value)}
               placeholder="Task title"
               value={editTitle}
+            />
+            <Input
+              onChange={(event) => onSetEditProject(event.target.value)}
+              placeholder="Project (optional)"
+              value={editProject}
             />
             <Textarea
               onChange={(event) => onSetEditDetails(event.target.value)}

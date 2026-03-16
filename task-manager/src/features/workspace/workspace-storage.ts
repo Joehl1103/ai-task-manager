@@ -53,6 +53,7 @@ function normalizeTask(value: unknown, index: number): Task | null {
   return {
     id: readString(value.id) || `task-${index + 1}`,
     title: readString(value.title) || "Untitled task",
+    project: readString(value.project),
     details: readString(value.details),
     agentCalls: Array.isArray(value.agentCalls)
       ? value.agentCalls.flatMap((agentCall, agentCallIndex) => {

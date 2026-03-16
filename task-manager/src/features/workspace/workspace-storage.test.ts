@@ -40,6 +40,7 @@ describe("workspace storage", () => {
         {
           id: "task-custom",
           title: "Follow up with daycare",
+          project: "Family admin",
           details: 123,
           agentCalls: [
             {
@@ -67,6 +68,7 @@ describe("workspace storage", () => {
     expect(workspace.tasks[0]).toMatchObject({
       id: "task-custom",
       title: "Follow up with daycare",
+      project: "Family admin",
       details: "",
     });
     expect(workspace.tasks[0]?.agentCalls[0]).toMatchObject({
@@ -86,5 +88,23 @@ describe("workspace storage", () => {
       status: "error",
       createdAt: "Unknown time",
     });
+  });
+
+  /**
+   * Keeps older saved tasks visible by defaulting the new project field to a blank value.
+   */
+  it("defaults missing project data to an empty string", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      tasks: [
+        {
+          id: "task-custom",
+          title: "Follow up with daycare",
+          details: "Ask about the new pickup flow.",
+          agentCalls: [],
+        },
+      ],
+    });
+
+    expect(workspace.tasks[0]?.project).toBe("");
   });
 });

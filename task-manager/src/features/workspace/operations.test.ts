@@ -16,12 +16,14 @@ describe("workspace operations", () => {
   it("adds a new task to the single task container", () => {
     const updatedWorkspace = addTask(workspaceSeed, {
       title: "Write Monday priorities",
+      project: "Weekly planning",
       details: "Keep it short and practical.",
     });
 
     expect(updatedWorkspace.tasks).toHaveLength(workspaceSeed.tasks.length + 1);
     expect(updatedWorkspace.tasks[0]).toMatchObject({
       title: "Write Monday priorities",
+      project: "Weekly planning",
       details: "Keep it short and practical.",
       agentCalls: [],
     });
@@ -34,11 +36,13 @@ describe("workspace operations", () => {
     const updatedWorkspace = updateTask(workspaceSeed, {
       taskId: "task-1",
       title: "Tighten the starter task manager",
+      project: "Relay foundation",
       details: "Only keep the features needed for a first pass.",
     });
 
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
       title: "Tighten the starter task manager",
+      project: "Relay foundation",
       details: "Only keep the features needed for a first pass.",
     });
   });
@@ -62,6 +66,7 @@ describe("workspace operations", () => {
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")).toMatchObject({
       id: "task-2",
       title: "List the next three product decisions",
+      project: "Product direction",
       details: "Use this as an example of a normal editable task.",
       agentCalls: [],
     });
