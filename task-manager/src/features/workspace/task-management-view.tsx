@@ -309,7 +309,7 @@ function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProp
       {task.tags.length > 0 ? (
         <div className="flex flex-wrap gap-1 pl-0">
           {task.tags.map((tag) => (
-            <span key={tag} className="rounded bg-[color:var(--surface-alt)] px-1.5 py-0.5 text-xs text-[color:var(--muted-strong)]">
+            <span key={tag} className="rounded-full bg-[#9ca3af] px-2 py-0.5 text-xs font-medium text-white">
               {tag}
             </span>
           ))}
@@ -397,7 +397,7 @@ function TaskDrillDown({
           {task.tags.length > 0 ? (
             <div className="mt-1 flex flex-wrap gap-1">
               {task.tags.map((tag) => (
-                <span key={tag} className="rounded bg-[color:var(--surface-alt)] px-2 py-0.5 text-xs text-[color:var(--muted-strong)]">
+                <span key={tag} className="rounded-full bg-[#9ca3af] px-2.5 py-1 text-xs font-medium text-white">
                   {tag}
                 </span>
               ))}
