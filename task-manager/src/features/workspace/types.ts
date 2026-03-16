@@ -12,6 +12,11 @@ export interface AgentConfigState {
   providers: Record<ProviderId, ProviderSettings>;
 }
 
+export interface AgentDraft {
+  brief: string;
+  error: string | null;
+}
+
 export interface AgentCall {
   id: string;
   providerId: ProviderId;
