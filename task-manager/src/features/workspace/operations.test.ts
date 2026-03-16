@@ -23,7 +23,25 @@ describe("workspace operations", () => {
     expect(updatedWorkspace.tasks[0]).toMatchObject({
       title: "Write Monday priorities",
       details: "Keep it short and practical.",
+      project: "",
       agentCalls: [],
+    });
+  });
+
+  /**
+   * Creates a task with a project assignment.
+   */
+  it("adds a task with a project", () => {
+    const updatedWorkspace = addTask(workspaceSeed, {
+      title: "Review sprint goals",
+      details: "Check alignment with Q1 objectives.",
+      project: "Planning",
+    });
+
+    expect(updatedWorkspace.tasks[0]).toMatchObject({
+      title: "Review sprint goals",
+      details: "Check alignment with Q1 objectives.",
+      project: "Planning",
     });
   });
 
@@ -40,6 +58,37 @@ describe("workspace operations", () => {
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
       title: "Tighten the starter task manager",
       details: "Only keep the features needed for a first pass.",
+    });
+  });
+
+  /**
+   * Updates a task's project while preserving other fields.
+   */
+  it("updates a task project", () => {
+    const updatedWorkspace = updateTask(workspaceSeed, {
+      taskId: "task-1",
+      title: "Define the smallest possible task manager",
+      details: "Keep only create, edit, delete, and call-agent actions.",
+      project: "New Project",
+    });
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
+      project: "New Project",
+    });
+  });
+
+  /**
+   * Preserves the existing project when not explicitly updated.
+   */
+  it("preserves existing project when not provided in update", () => {
+    const updatedWorkspace = updateTask(workspaceSeed, {
+      taskId: "task-1",
+      title: "Updated title",
+      details: "Updated details",
+    });
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
+      project: "Relay MVP",
     });
   });
 

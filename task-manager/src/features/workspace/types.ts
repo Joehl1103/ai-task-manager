@@ -32,6 +32,7 @@ export interface Task {
   id: string;
   title: string;
   details: string;
+  project: string;
   agentCalls: AgentCall[];
 }
 
@@ -42,12 +43,14 @@ export interface WorkspaceSnapshot {
 export interface AddTaskInput {
   title: string;
   details: string;
+  project?: string;
 }
 
 export interface UpdateTaskInput {
   taskId: string;
   title: string;
   details: string;
+  project?: string;
 }
 
 export interface CallAgentInput {
