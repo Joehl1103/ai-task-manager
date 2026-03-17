@@ -6,7 +6,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import { type Initiative, type Project, type Task } from "./api";
+import { type Initiative, type Project, type Task } from "./types";
 
 interface ProjectViewProps {
   projects: Project[];

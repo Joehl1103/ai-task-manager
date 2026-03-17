@@ -8,12 +8,24 @@ import {
   buildDeleteTaskConfirmationMessage,
 } from "@/features/workspace/delete-confirmation";
 import {
+  addInitiative,
+  deleteInitiative,
+  updateInitiative,
+} from "@/features/workspace/initiative-operations";
+import { InitiativeView } from "@/features/workspace/initiative-view";
+import {
   addTask,
   deleteAgentCall,
   deleteTask,
   recordAgentCall,
   updateTask,
 } from "@/features/workspace/operations";
+import {
+  addProject,
+  deleteProject,
+  updateProject,
+} from "@/features/workspace/project-operations";
+import { ProjectView } from "@/features/workspace/project-view";
 import {
   agentConfigStorageKey,
   createDefaultAgentConfig,
@@ -67,6 +79,7 @@ export function WorkspaceApp() {
   const [openAgentTaskId, setOpenAgentTaskId] = useState<string | null>(null);
   const [agentDrafts, setAgentDrafts] = useState<Record<string, AgentDraft>>({});
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+  const [filterInitiativeId, setFilterInitiativeId] = useState<string | null>(null);
 
   const activeProvider: ProviderId = "openai";
   const activeProviderSettings = agentConfig.providers.openai;
@@ -191,6 +204,57 @@ export function WorkspaceApp() {
    */
   function handleToggleGroupingMode() {
     setTaskGroupingMode((currentMode) => (currentMode === "project" ? "tag" : "project"));
+  }
+
+  function handleAddInitiative(data: { name: string; description: string; deadline: string }) {
+    setWorkspace((current) => addInitiative(current, data));
+  }
+
+  function handleUpdateInitiative(data: { id: string; name: string; description: string; deadline: string }) {
+    setWorkspace((current) =>
+      updateInitiative(current, {
+        initiativeId: data.id,
+        name: data.name,
+        description: data.description,
+        deadline: data.deadline,
+      }),
+    );
+  }
+
+  function handleDeleteInitiative(id: string) {
+    setWorkspace((current) => deleteInitiative(current, id));
+  }
+
+  function handleSelectInitiative(initiativeId: string) {
+    setFilterInitiativeId(initiativeId);
+    setActiveMenu("projects");
+  }
+
+  function handleAddProject(data: { name: string; initiativeId: string; deadline: string }) {
+    setWorkspace((current) => addProject(current, data));
+  }
+
+  function handleUpdateProject(data: { id: string; name: string; initiativeId: string; deadline: string }) {
+    setWorkspace((current) =>
+      updateProject(current, {
+        projectId: data.id,
+        name: data.name,
+        initiativeId: data.initiativeId,
+        deadline: data.deadline,
+      }),
+    );
+  }
+
+  function handleDeleteProject(id: string) {
+    setWorkspace((current) => deleteProject(current, id));
+  }
+
+  function handleSelectProject(_projectId: string) {
+    // Future: navigate to project detail or filter tasks
+  }
+
+  function handleClearInitiativeFilter() {
+    setFilterInitiativeId(null);
   }
 
   /**
@@ -576,7 +640,7 @@ export function WorkspaceApp() {
         />
 
         <section className="mt-3">
-          {activeMenu === "tasks" ? (
+          {activeMenu === "tasks" && (
             <TaskManagementView
               activeProviderLabel={activeProviderLabel}
               activeProviderModel={activeProviderSettings.model}
@@ -619,7 +683,31 @@ export function WorkspaceApp() {
               taskGroupingMode={taskGroupingMode}
               tasks={workspace.tasks}
             />
-          ) : (
+          )}
+          {activeMenu === "initiatives" && (
+            <InitiativeView
+              initiatives={workspace.initiatives}
+              onAddInitiative={handleAddInitiative}
+              onDeleteInitiative={handleDeleteInitiative}
+              onSelectInitiative={handleSelectInitiative}
+              onUpdateInitiative={handleUpdateInitiative}
+              projects={workspace.projects}
+            />
+          )}
+          {activeMenu === "projects" && (
+            <ProjectView
+              filterInitiativeId={filterInitiativeId}
+              initiatives={workspace.initiatives}
+              onAddProject={handleAddProject}
+              onClearFilter={handleClearInitiativeFilter}
+              onDeleteProject={handleDeleteProject}
+              onSelectProject={handleSelectProject}
+              onUpdateProject={handleUpdateProject}
+              projects={workspace.projects}
+              tasks={workspace.tasks}
+            />
+          )}
+          {activeMenu === "configuration" && (
             <AgentConfigurationView
               activeProvider={activeProvider}
               activeProviderLabel={activeProviderLabel}
