@@ -83,6 +83,12 @@ export function InitiativeView({
     return getChildProjects(initiativeId).length;
   }
 
+  function getProjectCountLabel(initiativeId: string) {
+    const projectCount = getProjectCount(initiativeId);
+
+    return `${projectCount} ${projectCount === 1 ? "project" : "projects"}`;
+  }
+
   function handleAddChildProject(initiativeId: string) {
     if (!newProjectName.trim()) return;
     onAddProject({
@@ -225,7 +231,7 @@ export function InitiativeView({
                       {initiative.deadline && (
                         <span>Due: {formatDeadline(initiative.deadline)}</span>
                       )}
-                      <span>{getProjectCount(initiative.id)} projects</span>
+                      <span>{getProjectCountLabel(initiative.id)}</span>
                     </div>
                   </div>
                   <div className="flex gap-1">
