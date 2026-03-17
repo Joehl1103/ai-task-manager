@@ -159,11 +159,18 @@ export function TaskManagementView({
               placeholder="Task title"
               value={newTaskTitle}
             />
-            <Input
-              onChange={(event) => onSetNewTaskProject(event.target.value)}
-              placeholder="Project (optional)"
+            <select
+              className="w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+              onChange={(e) => onSetNewTaskProject(e.target.value)}
               value={newTaskProject}
-            />
+            >
+              <option value="">No project</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
             <Input
               onChange={(event) => onSetNewTaskTags(event.target.value)}
               placeholder="Tags (optional, comma-separated)"
@@ -501,12 +508,18 @@ function TaskDrillDown({
             placeholder="Task title"
             value={editTitle}
           />
-          <Input
-            className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
-            onChange={(event) => onSetEditProject(event.target.value)}
-            placeholder="Project (optional)"
+          <select
+            className="w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+            onChange={(e) => onSetEditProject(e.target.value)}
             value={editProject}
-          />
+          >
+            <option value="">No project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
           <Input
             className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
             onChange={(event) => onSetEditTags(event.target.value)}
