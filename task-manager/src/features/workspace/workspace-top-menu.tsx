@@ -34,7 +34,7 @@ export function WorkspaceTopMenu({
 
         <Button
           aria-expanded={isExpanded}
-          className="shrink-0"
+          className="shrink-0 transition-all duration-150 hover:opacity-80 active:scale-95"
           onClick={onToggleMenu}
           size="sm"
           variant="ghost"
@@ -53,7 +53,7 @@ export function WorkspaceTopMenu({
               <button
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "text-left transition-colors",
+                  "text-left transition-all duration-150 cursor-pointer active:opacity-70",
                   isActive
                     ? "font-medium text-[color:var(--foreground)]"
                     : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]",
