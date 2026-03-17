@@ -15,11 +15,12 @@ import {
   groupTasksByTag,
   type TaskGroup,
 } from "@/features/workspace/task-grouping";
-import { type AgentDraft, type Task } from "@/features/workspace/types";
+import { type AgentDraft, type Project, type Task } from "@/features/workspace/types";
 import { type TaskGroupingMode } from "@/features/workspace/workspace-storage";
 
 interface TaskManagementViewProps {
   tasks: Task[];
+  projects: Project[];
   selectedTask: Task | null;
   selectedAgentDraft: AgentDraft;
   newTaskTitle: string;
@@ -65,6 +66,7 @@ interface TaskManagementViewProps {
  */
 export function TaskManagementView({
   tasks,
+  projects,
   selectedTask,
   selectedAgentDraft,
   newTaskTitle,
@@ -216,6 +218,7 @@ export function TaskManagementView({
             onToggleAgentPanel={onToggleAgentPanel}
             openAgentTaskId={openAgentTaskId}
             pendingTaskId={pendingTaskId}
+            projects={projects}
             task={selectedTask}
           />
         ) : (
@@ -223,6 +226,7 @@ export function TaskManagementView({
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
             onToggleGroupingMode={onToggleGroupingMode}
+            projects={projects}
             taskGroupingMode={taskGroupingMode}
             tasks={tasks}
           />
@@ -234,6 +238,7 @@ export function TaskManagementView({
 
 interface GroupedTaskOverviewProps {
   tasks: Task[];
+  projects: Project[];
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   taskGroupingMode: TaskGroupingMode;
@@ -245,13 +250,14 @@ interface GroupedTaskOverviewProps {
  */
 function GroupedTaskOverview({
   tasks,
+  projects,
   onOpenTask,
   onDeleteTask,
   taskGroupingMode,
   onToggleGroupingMode,
 }: GroupedTaskOverviewProps) {
   const groups =
-    taskGroupingMode === "tag" ? groupTasksByTag(tasks) : groupTasksByProject(tasks);
+    taskGroupingMode === "tag" ? groupTasksByTag(tasks) : groupTasksByProject(tasks, projects);
 
   if (groups.length === 0) {
     return <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">No tasks yet.</p>;
@@ -379,6 +385,7 @@ function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProp
 
 interface TaskDrillDownProps {
   task: Task;
+  projects: Project[];
   editingTaskId: string | null;
   editTitle: string;
   editDetails: string;
@@ -410,6 +417,7 @@ interface TaskDrillDownProps {
  */
 function TaskDrillDown({
   task,
+  projects,
   editingTaskId,
   editTitle,
   editDetails,
@@ -438,6 +446,9 @@ function TaskDrillDown({
   const isEditing = editingTaskId === task.id;
   const isAgentPanelOpen = openAgentTaskId === task.id;
   const isCallingTask = pendingTaskId === task.id;
+  const projectName = task.projectId
+    ? projects.find((p) => p.id === task.projectId)?.name
+    : null;
 
   return (
     <article className="mt-2 space-y-4">
@@ -449,8 +460,8 @@ function TaskDrillDown({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-xl font-semibold">{task.title}</h2>
-          {task.project ? (
-            <p className="text-xs text-[color:var(--muted)]">{task.project}</p>
+          {projectName ? (
+            <p className="text-xs text-[color:var(--muted)]">{projectName}</p>
           ) : null}
           {task.tags.length > 0 ? (
             <div className="mt-1 flex flex-wrap gap-1">

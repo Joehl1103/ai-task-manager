@@ -28,23 +28,39 @@ export interface AgentCall {
   error?: string;
 }
 
+export interface Initiative {
+  id: string;
+  name: string;
+  description: string;
+  deadline: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  initiativeId: string;
+  deadline: string;
+}
+
 export interface Task {
   id: string;
   title: string;
   details: string;
-  project: string;
+  projectId: string;
   tags: string[];
   agentCalls: AgentCall[];
 }
 
 export interface WorkspaceSnapshot {
+  initiatives: Initiative[];
+  projects: Project[];
   tasks: Task[];
 }
 
 export interface AddTaskInput {
   title: string;
   details: string;
-  project?: string;
+  projectId?: string;
   tags?: string[];
 }
 
@@ -52,8 +68,34 @@ export interface UpdateTaskInput {
   taskId: string;
   title: string;
   details: string;
-  project?: string;
+  projectId?: string;
   tags?: string[];
+}
+
+export interface AddInitiativeInput {
+  name: string;
+  description: string;
+  deadline: string;
+}
+
+export interface UpdateInitiativeInput {
+  initiativeId: string;
+  name: string;
+  description: string;
+  deadline: string;
+}
+
+export interface AddProjectInput {
+  name: string;
+  initiativeId: string;
+  deadline: string;
+}
+
+export interface UpdateProjectInput {
+  projectId: string;
+  name: string;
+  initiativeId: string;
+  deadline: string;
 }
 
 export interface CallAgentInput {

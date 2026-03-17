@@ -36,12 +36,14 @@ describe("workspace storage", () => {
    */
   it("normalizes saved tasks and agent calls", () => {
     const workspace = normalizeWorkspaceSnapshot({
+      initiatives: [],
+      projects: [{ id: "project-1", name: "Personal", initiativeId: "", deadline: "" }],
       tasks: [
         {
           id: "task-custom",
           title: "Follow up with daycare",
           details: 123,
-          project: "Personal",
+          projectId: "project-1",
           agentCalls: [
             {
               id: "call-custom",
@@ -69,7 +71,7 @@ describe("workspace storage", () => {
       id: "task-custom",
       title: "Follow up with daycare",
       details: "",
-      project: "Personal",
+      projectId: "project-1",
     });
     expect(workspace.tasks[0]?.agentCalls[0]).toMatchObject({
       id: "call-custom",
@@ -91,14 +93,16 @@ describe("workspace storage", () => {
   });
 
   /**
-   * Normalizes tasks without a project field to an empty string for backward compatibility.
+   * Normalizes tasks without a projectId field to an empty string.
    */
-  it("normalizes tasks without a project field", () => {
+  it("normalizes tasks without a projectId field", () => {
     const workspace = normalizeWorkspaceSnapshot({
+      initiatives: [],
+      projects: [],
       tasks: [
         {
           id: "task-old",
-          title: "Legacy task without project",
+          title: "Task without project",
           details: "Some details",
           agentCalls: [],
         },
@@ -107,23 +111,25 @@ describe("workspace storage", () => {
 
     expect(workspace.tasks[0]).toMatchObject({
       id: "task-old",
-      title: "Legacy task without project",
+      title: "Task without project",
       details: "Some details",
-      project: "",
+      projectId: "",
     });
   });
 
   /**
-   * Normalizes tasks without a tags field to an empty array for backward compatibility.
+   * Normalizes tasks without a tags field to an empty array.
    */
   it("normalizes tasks without a tags field", () => {
     const workspace = normalizeWorkspaceSnapshot({
+      initiatives: [],
+      projects: [],
       tasks: [
         {
           id: "task-old",
-          title: "Legacy task without tags",
+          title: "Task without tags",
           details: "Some details",
-          project: "Old Project",
+          projectId: "",
           agentCalls: [],
         },
       ],
@@ -131,9 +137,9 @@ describe("workspace storage", () => {
 
     expect(workspace.tasks[0]).toMatchObject({
       id: "task-old",
-      title: "Legacy task without tags",
+      title: "Task without tags",
       details: "Some details",
-      project: "Old Project",
+      projectId: "",
       tags: [],
     });
   });

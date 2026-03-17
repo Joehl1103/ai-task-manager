@@ -23,7 +23,7 @@ describe("workspace operations", () => {
     expect(updatedWorkspace.tasks[0]).toMatchObject({
       title: "Write Monday priorities",
       details: "Keep it short and practical.",
-      project: "",
+      projectId: "",
       agentCalls: [],
     });
   });
@@ -35,13 +35,13 @@ describe("workspace operations", () => {
     const updatedWorkspace = addTask(workspaceSeed, {
       title: "Review sprint goals",
       details: "Check alignment with Q1 objectives.",
-      project: "Planning",
+      projectId: "project-1",
     });
 
     expect(updatedWorkspace.tasks[0]).toMatchObject({
       title: "Review sprint goals",
       details: "Check alignment with Q1 objectives.",
-      project: "Planning",
+      projectId: "project-1",
     });
   });
 
@@ -124,11 +124,11 @@ describe("workspace operations", () => {
       taskId: "task-1",
       title: "Define the smallest possible task manager",
       details: "Keep only create, edit, delete, and call-agent actions.",
-      project: "New Project",
+      projectId: "project-2",
     });
 
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
-      project: "New Project",
+      projectId: "project-2",
     });
   });
 
@@ -143,7 +143,7 @@ describe("workspace operations", () => {
     });
 
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
-      project: "Relay MVP",
+      projectId: "project-1",
     });
   });
 

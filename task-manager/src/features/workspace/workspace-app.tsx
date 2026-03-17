@@ -215,7 +215,7 @@ export function WorkspaceApp() {
       addTask(currentWorkspace, {
         title: newTaskTitle,
         details: newTaskDetails,
-        project: newTaskProject,
+        projectId: newTaskProject,
         tags: parseTagsFromString(newTaskTags),
       }),
     );
@@ -263,7 +263,7 @@ export function WorkspaceApp() {
     setEditingTaskId(task.id);
     setEditTitle(task.title);
     setEditDetails(task.details);
-    setEditProject(task.project);
+    setEditProject(task.projectId);
     setEditTags(task.tags.join(", "));
   }
 
@@ -280,7 +280,7 @@ export function WorkspaceApp() {
         taskId,
         title: editTitle,
         details: editDetails,
-        project: editProject,
+        projectId: editProject,
         tags: parseTagsFromString(editTags),
       }),
     );
@@ -613,6 +613,7 @@ export function WorkspaceApp() {
               onToggleGroupingMode={handleToggleGroupingMode}
               openAgentTaskId={openAgentTaskId}
               pendingTaskId={pendingTaskId}
+              projects={workspace.projects}
               selectedAgentDraft={selectedAgentDraft}
               selectedTask={selectedTask}
               taskGroupingMode={taskGroupingMode}

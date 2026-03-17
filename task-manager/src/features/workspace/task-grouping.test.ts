@@ -7,33 +7,47 @@ import {
   noProjectLabel,
   noTagsLabel,
 } from "./task-grouping";
-import { type Task } from "./types";
+import { type Project, type Task } from "./types";
 
 function createTask(
   id: string,
   title: string,
-  project: string,
+  projectId: string,
   tags: string[] = [],
 ): Task {
   return {
     id,
     title,
     details: "",
-    project,
+    projectId,
     tags,
     agentCalls: [],
   };
 }
 
+function createProject(id: string, name: string): Project {
+  return {
+    id,
+    name,
+    initiativeId: "",
+    deadline: "",
+  };
+}
+
 describe("task grouping", () => {
+  const projects: Project[] = [
+    createProject("project-alpha", "Project Alpha"),
+    createProject("project-beta", "Project Beta"),
+  ];
+
   it("groups tasks by project", () => {
     const tasks: Task[] = [
-      createTask("task-1", "Task A", "Project Alpha"),
-      createTask("task-2", "Task B", "Project Beta"),
-      createTask("task-3", "Task C", "Project Alpha"),
+      createTask("task-1", "Task A", "project-alpha"),
+      createTask("task-2", "Task B", "project-beta"),
+      createTask("task-3", "Task C", "project-alpha"),
     ];
 
-    const groups = groupTasksByProject(tasks);
+    const groups = groupTasksByProject(tasks, projects);
 
     expect(groups).toHaveLength(2);
     expect(groups[0]?.label).toBe("Project Alpha");
@@ -44,12 +58,12 @@ describe("task grouping", () => {
 
   it("preserves task order within each group", () => {
     const tasks: Task[] = [
-      createTask("task-1", "First", "Project Alpha"),
-      createTask("task-2", "Second", "Project Alpha"),
-      createTask("task-3", "Third", "Project Alpha"),
+      createTask("task-1", "First", "project-alpha"),
+      createTask("task-2", "Second", "project-alpha"),
+      createTask("task-3", "Third", "project-alpha"),
     ];
 
-    const groups = groupTasksByProject(tasks);
+    const groups = groupTasksByProject(tasks, projects);
 
     expect(groups[0]?.tasks[0]?.title).toBe("First");
     expect(groups[0]?.tasks[1]?.title).toBe("Second");
@@ -58,12 +72,12 @@ describe("task grouping", () => {
 
   it("collects tasks without a project into a fallback group", () => {
     const tasks: Task[] = [
-      createTask("task-1", "With project", "Project Alpha"),
+      createTask("task-1", "With project", "project-alpha"),
       createTask("task-2", "No project", ""),
       createTask("task-3", "Also no project", ""),
     ];
 
-    const groups = groupTasksByProject(tasks);
+    const groups = groupTasksByProject(tasks, projects);
 
     expect(groups).toHaveLength(2);
     expect(groups[1]?.label).toBe(noProjectLabel);
@@ -74,29 +88,29 @@ describe("task grouping", () => {
   it("places the no-project group at the end", () => {
     const tasks: Task[] = [
       createTask("task-1", "No project first", ""),
-      createTask("task-2", "With project", "Project Alpha"),
+      createTask("task-2", "With project", "project-alpha"),
     ];
 
-    const groups = groupTasksByProject(tasks);
+    const groups = groupTasksByProject(tasks, projects);
 
     expect(groups[0]?.label).toBe("Project Alpha");
     expect(groups[1]?.label).toBe(noProjectLabel);
   });
 
-  it("trims whitespace-only project names into the no-project group", () => {
+  it("trims whitespace-only project IDs into the no-project group", () => {
     const tasks: Task[] = [
-      createTask("task-1", "Task A", "Project Alpha"),
+      createTask("task-1", "Task A", "project-alpha"),
       createTask("task-2", "Task B", "   "),
     ];
 
-    const groups = groupTasksByProject(tasks);
+    const groups = groupTasksByProject(tasks, projects);
 
     expect(groups[0]?.label).toBe("Project Alpha");
     expect(groups[1]?.label).toBe(noProjectLabel);
   });
 
   it("returns an empty array when there are no tasks", () => {
-    const groups = groupTasksByProject([]);
+    const groups = groupTasksByProject([], projects);
 
     expect(groups).toEqual([]);
   });
@@ -107,7 +121,7 @@ describe("task grouping", () => {
       createTask("task-2", "Task B", ""),
     ];
 
-    const groups = groupTasksByProject(tasks);
+    const groups = groupTasksByProject(tasks, projects);
 
     expect(groups).toHaveLength(1);
     expect(groups[0]?.label).toBe(noProjectLabel);
@@ -116,12 +130,12 @@ describe("task grouping", () => {
 
   it("counts total tasks across all groups", () => {
     const tasks: Task[] = [
-      createTask("task-1", "Task A", "Project Alpha"),
-      createTask("task-2", "Task B", "Project Beta"),
+      createTask("task-1", "Task A", "project-alpha"),
+      createTask("task-2", "Task B", "project-beta"),
       createTask("task-3", "Task C", ""),
     ];
 
-    const groups = groupTasksByProject(tasks);
+    const groups = groupTasksByProject(tasks, projects);
     const count = countGroupedTasks(groups);
 
     expect(count).toBe(3);

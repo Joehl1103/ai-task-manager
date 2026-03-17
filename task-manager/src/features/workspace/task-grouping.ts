@@ -1,4 +1,4 @@
-import { type Task } from "./types";
+import { type Project, type Task } from "./types";
 
 export const noProjectLabel = "No project";
 export const noTagsLabel = "No tags";
@@ -10,14 +10,26 @@ export interface TaskGroup {
 }
 
 /**
+ * Creates a lookup map from project ID to project name.
+ */
+export function createProjectNameMap(projects: Project[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const project of projects) {
+    map.set(project.id, project.name);
+  }
+  return map;
+}
+
+/**
  * Groups tasks by project while preserving task order within each group.
  * Tasks without a project are collected into a fallback group labeled "No project".
  */
-export function groupTasksByProject(tasks: Task[]): TaskGroup[] {
+export function groupTasksByProject(tasks: Task[], projects: Project[]): TaskGroup[] {
+  const projectNameMap = createProjectNameMap(projects);
   const groupMap = new Map<string, Task[]>();
 
   for (const task of tasks) {
-    const projectKey = task.project.trim() || "";
+    const projectKey = task.projectId.trim() || "";
     const existingTasks = groupMap.get(projectKey) ?? [];
     groupMap.set(projectKey, [...existingTasks, task]);
   }
@@ -25,14 +37,15 @@ export function groupTasksByProject(tasks: Task[]): TaskGroup[] {
   const groups: TaskGroup[] = [];
   const noProjectTasks = groupMap.get("");
 
-  for (const [project, projectTasks] of groupMap) {
-    if (project === "") {
+  for (const [projectId, projectTasks] of groupMap) {
+    if (projectId === "") {
       continue;
     }
 
+    const projectName = projectNameMap.get(projectId) || projectId;
     groups.push({
-      project,
-      label: project,
+      project: projectId,
+      label: projectName,
       tasks: projectTasks,
     });
   }

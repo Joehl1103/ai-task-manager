@@ -41,7 +41,7 @@ export function addTask(
     id: buildNextTaskId(workspace.tasks),
     title: input.title.trim(),
     details: input.details.trim(),
-    project: input.project?.trim() ?? "",
+    projectId: input.projectId?.trim() ?? "",
     tags: normalizeTags(input.tags),
     agentCalls: [],
   };
@@ -53,7 +53,7 @@ export function addTask(
 }
 
 /**
- * Updates the title, details, project, and tags for a task so inline editing can stay simple.
+ * Updates the title, details, projectId, and tags for a task so inline editing can stay simple.
  */
 export function updateTask(
   workspace: WorkspaceSnapshot,
@@ -67,7 +67,7 @@ export function updateTask(
             ...task,
             title: input.title.trim(),
             details: input.details.trim(),
-            project: input.project?.trim() ?? task.project,
+            projectId: input.projectId?.trim() ?? task.projectId,
             tags: input.tags !== undefined ? normalizeTags(input.tags) : task.tags,
           }
         : task,
