@@ -10,9 +10,9 @@ describe("workspace top menu", () => {
   it("renders the lightweight top-menu shell class", () => {
     const markup = renderToStaticMarkup(
       <WorkspaceTopMenu
-        activeView="tasks"
+        activeMenu="tasks"
         isExpanded={false}
-        onSelectView={vi.fn()}
+        onSelectMenu={vi.fn()}
         onToggleMenu={vi.fn()}
       />,
     );

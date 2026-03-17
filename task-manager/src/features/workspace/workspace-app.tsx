@@ -23,7 +23,8 @@ import {
 import { TaskManagementView } from "@/features/workspace/task-management-view";
 import { readSelectedTask } from "@/features/workspace/task-overview";
 import { WorkspaceTopMenu } from "@/features/workspace/workspace-top-menu";
-import { createDefaultWorkspaceView } from "@/features/workspace/workspace-navigation";
+import { createDefaultWorkspaceMenu } from "@/features/workspace/workspace-navigation";
+import { type WorkspaceMenu } from "@/features/workspace/workspace-navigation";
 import {
   type AgentConfigState,
   type AgentDraft,
@@ -48,7 +49,7 @@ export function WorkspaceApp() {
   const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
   const [hasLoadedAgentConfig, setHasLoadedAgentConfig] = useState(false);
   const [hasLoadedGroupingMode, setHasLoadedGroupingMode] = useState(false);
-  const [activeView, setActiveView] = useState(createDefaultWorkspaceView);
+  const [activeMenu, setActiveMenu] = useState(createDefaultWorkspaceMenu);
   const [isTopMenuExpanded, setIsTopMenuExpanded] = useState(false);
   const [taskGroupingMode, setTaskGroupingMode] = useState<TaskGroupingMode>(
     defaultTaskGroupingMode,
@@ -179,10 +180,10 @@ export function WorkspaceApp() {
   }
 
   /**
-   * Switches between the task and configuration views, then tucks the menu away again.
+   * Switches between the task and configuration menus, then tucks the menu away again.
    */
-  function handleSelectView(nextView: ReturnType<typeof createDefaultWorkspaceView>) {
-    setActiveView(nextView);
+  function handleSelectMenu(nextMenu: WorkspaceMenu) {
+    setActiveMenu(nextMenu);
     setIsTopMenuExpanded(false);
   }
 
@@ -569,14 +570,14 @@ export function WorkspaceApp() {
     <main className="min-h-screen bg-[color:var(--background)] px-4 py-6 text-[color:var(--foreground)]">
       <div className="mx-auto max-w-4xl">
         <WorkspaceTopMenu
-          activeView={activeView}
+          activeMenu={activeMenu}
           isExpanded={isTopMenuExpanded}
-          onSelectView={handleSelectView}
+          onSelectMenu={handleSelectMenu}
           onToggleMenu={handleToggleTopMenu}
         />
 
         <section className="mt-3">
-          {activeView === "tasks" ? (
+          {activeMenu === "tasks" ? (
             <TaskManagementView
               activeProviderLabel={activeProviderLabel}
               activeProviderModel={activeProviderSettings.model}

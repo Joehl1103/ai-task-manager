@@ -6,15 +6,15 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import {
-  type WorkspaceView,
-  readWorkspaceViewLabel,
-  workspaceViews,
+  type WorkspaceMenu,
+  readWorkspaceMenuLabel,
+  workspaceMenus,
 } from "./workspace-navigation";
 
 interface WorkspaceTopMenuProps {
-  activeView: WorkspaceView;
+  activeMenu: WorkspaceMenu;
   isExpanded: boolean;
-  onSelectView: (view: WorkspaceView) => void;
+  onSelectMenu: (menu: WorkspaceMenu) => void;
   onToggleMenu: () => void;
 }
 
@@ -22,15 +22,15 @@ interface WorkspaceTopMenuProps {
  * Renders a slim desktop top menu that keeps navigation tucked away until it is needed.
  */
 export function WorkspaceTopMenu({
-  activeView,
+  activeMenu,
   isExpanded,
-  onSelectView,
+  onSelectMenu,
   onToggleMenu,
 }: WorkspaceTopMenuProps) {
   return (
     <section className="workspace-top-menu-shell pb-2">
       <div className="flex items-center justify-between gap-3 text-sm">
-        <p className="text-[color:var(--muted)]">{readWorkspaceViewLabel(activeView)}</p>
+        <p className="text-[color:var(--muted)]">{readWorkspaceMenuLabel(activeMenu)}</p>
 
         <Button
           aria-expanded={isExpanded}
@@ -40,14 +40,14 @@ export function WorkspaceTopMenu({
           variant="ghost"
         >
           <Menu className="size-4" />
-          Views
+          Menu
         </Button>
       </div>
 
       {isExpanded ? (
-        <nav aria-label="Workspace views" className="mt-2 flex flex-wrap gap-3 text-sm">
-          {workspaceViews.map((view) => {
-            const isActive = activeView === view;
+        <nav aria-label="Workspace menu" className="mt-2 flex flex-wrap gap-3 text-sm">
+          {workspaceMenus.map((menu) => {
+            const isActive = activeMenu === menu;
 
             return (
               <button
@@ -58,11 +58,11 @@ export function WorkspaceTopMenu({
                     ? "font-medium text-[color:var(--foreground)]"
                     : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]",
                 )}
-                key={view}
-                onClick={() => onSelectView(view)}
+                key={menu}
+                onClick={() => onSelectMenu(menu)}
                 type="button"
               >
-                {readWorkspaceViewLabel(view)}
+                {readWorkspaceMenuLabel(menu)}
               </button>
             );
           })}

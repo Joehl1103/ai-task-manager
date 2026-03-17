@@ -1,24 +1,24 @@
-export type WorkspaceView = "tasks" | "configuration";
+export type WorkspaceMenu = "tasks" | "configuration";
 
-export const workspaceViews: WorkspaceView[] = ["tasks", "configuration"];
+export const workspaceMenus: WorkspaceMenu[] = ["tasks", "configuration"];
 
 /**
- * Keeps task work as the default landing view for the app shell.
+ * Keeps task work as the default landing menu for the app shell.
  */
-export function createDefaultWorkspaceView(): WorkspaceView {
+export function createDefaultWorkspaceMenu(): WorkspaceMenu {
   return "tasks";
 }
 
 /**
- * Converts the internal view id into the short label shown in the top menu.
+ * Converts the internal menu id into the short label shown in the top menu.
  */
-export function readWorkspaceViewLabel(view: WorkspaceView) {
-  return view === "tasks" ? "Tasks" : "Configuration";
+export function readWorkspaceMenuLabel(menu: WorkspaceMenu) {
+  return menu === "tasks" ? "Tasks" : "Configuration";
 }
 
 /**
  * Provides a compact hint so the slim top menu still communicates each destination.
  */
-export function readWorkspaceViewHint(view: WorkspaceView) {
-  return view === "tasks" ? "Task workspace" : "Provider setup";
+export function readWorkspaceMenuHint(menu: WorkspaceMenu) {
+  return menu === "tasks" ? "Task workspace" : "Provider setup";
 }
