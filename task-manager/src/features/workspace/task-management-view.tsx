@@ -7,6 +7,7 @@ import { ArrowLeft, Bot, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { FormattedAgentResponse } from "@/features/workspace/formatted-agent-response";
 import { getProviderLabel } from "@/features/workspace/provider-config";
 import {
@@ -251,22 +252,47 @@ function GroupedTaskOverview({
 }: GroupedTaskOverviewProps) {
   const groups =
     taskGroupingMode === "tag" ? groupTasksByTag(tasks) : groupTasksByProject(tasks);
-  const modeLabel = taskGroupingMode === "tag" ? "By Tag" : "By Project";
-  const toggleLabel = taskGroupingMode === "tag" ? "Switch to projects" : "Switch to tags";
 
   if (groups.length === 0) {
     return <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">No tasks yet.</p>;
   }
 
   return (
-    <div className="mt-2 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mt-2 space-y-4">
+      <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
-          Grouped {modeLabel.toLowerCase()}
+          Grouped by
         </p>
-        <Button onClick={onToggleGroupingMode} size="sm" variant="ghost" title={toggleLabel}>
-          {modeLabel}
-        </Button>
+        <div className="flex gap-1 rounded-md border border-[color:var(--border)] p-0.5 bg-[color:var(--surface-muted)]">
+          <button
+            className={cn(
+              "px-2.5 py-1 text-xs font-medium rounded transition-all duration-150 cursor-pointer",
+              "hover:opacity-80 active:scale-[0.98]",
+              taskGroupingMode === "project"
+                ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-sm"
+                : "text-[color:var(--muted)] hover:text-[color:var(--muted-strong)]",
+            )}
+            onClick={onToggleGroupingMode}
+            title="Group tasks by project"
+            type="button"
+          >
+            Project
+          </button>
+          <button
+            className={cn(
+              "px-2.5 py-1 text-xs font-medium rounded transition-all duration-150 cursor-pointer",
+              "hover:opacity-80 active:scale-[0.98]",
+              taskGroupingMode === "tag"
+                ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-sm"
+                : "text-[color:var(--muted)] hover:text-[color:var(--muted-strong)]",
+            )}
+            onClick={onToggleGroupingMode}
+            title="Group tasks by tag"
+            type="button"
+          >
+            Tag
+          </button>
+        </div>
       </div>
 
       {groups.map((group) => (
