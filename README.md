@@ -1,17 +1,37 @@
-# Productivity
+# Relay Tasks Starter
 
-This repository is a small workspace for productivity-related projects.
+Relay is now a very small task manager starter.
 
-## Current Project
+This app lives at the repository root (`ai-task-manager/`).
 
-- `task-manager/`: the Relay task management application built with Next.js
+## Current Scope
 
-## Working With The App
+- One compact overview list holding all tasks
+- One drill-down view for a selected task
+- A thin desktop top menu that switches between Tasks and Configuration
+- Add a task
+- Edit a task inside the drill-down
+- Delete a task
+- Call one built-in agent from inside a task drill-down
+- Delete one saved agent contribution from a task drill-down
+- Configure OpenAI with a local API key and model
+- Make live OpenAI-backed agent calls through the app
+- Render basic markdown and safe HTML formatting inside saved agent responses
+- Persist tasks and agent history in browser local storage
 
-Run application commands from `task-manager/`:
+## Stack
+
+- Next.js 16
+- TypeScript
+- Tailwind CSS v4
+- Small component primitives
+- Vitest
+
+## Commands
+
+Run these from the repository root:
 
 ```bash
-cd task-manager
 npm install
 npm run dev
 npm run lint
@@ -19,10 +39,43 @@ npm test
 npm run build
 ```
 
-Git stays rooted at `productivity/`, so repo-level commands like `git status` can be run from the repo root or from inside `task-manager/`.
+## Git Version Control
 
-## Docs
+The app is the primary project in this repository.
 
-- `task-manager/README.md`: app overview and commands
-- `task-manager/CLAUDE.md`: app architecture and active focus
-- `task-manager/docs/`: implementation notes and plans
+- Source files at the repository root are intended to be tracked by git
+- Build output, dependencies, env files, csv files, and xlsx files are ignored
+- Git commands should be run from the repository root
+- Typical workflow: `git status`, `git add .`, `git commit`
+
+## File Map
+
+- `src/app/page.tsx`: page entry
+- `src/app/api/agent-call/route.ts`: provider proxy route for live agent calls
+- `src/features/workspace/workspace-top-menu.tsx`: thin desktop menu for switching views
+- `src/features/workspace/task-management-view.tsx`: task-only workspace view
+- `src/features/workspace/agent-configuration-view.tsx`: provider setup view
+- `src/features/workspace/formatted-agent-response.tsx`: safe basic markdown and HTML renderer for agent history
+- `src/features/workspace/workspace-app.tsx`: app shell and state wiring for top-level views
+- `src/features/workspace/operations.ts`: pure task and agent-call updates
+- `src/features/workspace/mock-data.ts`: starter tasks and sample agent history
+- `src/features/workspace/provider-api.ts`: shared provider request and response helpers
+- `src/features/workspace/task-overview.ts`: compact task-summary helpers for overview cards
+- `src/features/workspace/workspace-storage.ts`: workspace local storage helpers and normalization
+- `src/components/ui/*`: reusable UI primitives
+
+## Product Assumptions
+
+- The goal right now is simplicity, not completeness.
+- There is one built-in agent flow rather than multiple agent types.
+- Tasks and provider configuration should stay visually separate.
+- Provider settings, tasks, and agent history are stored in browser local storage for this prototype.
+- OpenAI is the only live provider wired in during this pass.
+- More Relay features can be layered in after this baseline feels right.
+
+## Suggested Next Steps
+
+- Add persistence beyond browser local storage when multi-device or shared access matters
+- Add task completion state
+- Add ordering, filtering, or grouping if needed
+- Add stronger security around provider secrets before any shared deployment

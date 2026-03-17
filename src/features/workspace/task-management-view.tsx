@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ArrowLeft, Bot, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bot, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -358,34 +358,49 @@ interface TaskOverviewRowProps {
  */
 function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProps) {
   return (
-    <li className="task-overview-line-item flex flex-col gap-1 border-b border-[color:var(--row-divider)] py-2">
+    <li className="task-overview-line-item border-b border-[color:var(--row-divider)] py-2">
       <div className="flex min-h-8 items-center gap-2">
         <button
-          className="min-w-0 flex-1 truncate text-left text-sm hover:text-[color:var(--muted-strong)]"
+          className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left hover:text-[color:var(--muted-strong)]"
           onClick={() => onOpenTask(task.id)}
           type="button"
         >
-          {task.title}
+          <span className="shrink truncate text-sm">{task.title}</span>
+          {task.tags.length > 0 ? (
+            <span className="flex min-w-0 items-center gap-1 overflow-hidden">
+              {task.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-[11px] font-medium leading-none text-white"
+                >
+                  {tag}
+                </span>
+              ))}
+            </span>
+          ) : null}
         </button>
 
-        <Button onClick={() => onOpenTask(task.id)} size="sm" variant="ghost">
-          Open
+        <Button
+          aria-label="Open task"
+          className="h-8 w-8 text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+          onClick={() => onOpenTask(task.id)}
+          size="icon"
+          title="Open task"
+          variant="ghost"
+        >
+          <ArrowUpRight className="size-4" />
         </Button>
-        <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
+        <Button
+          aria-label="Remove task"
+          className="h-8 w-8 text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+          onClick={() => onDeleteTask(task.id)}
+          size="icon"
+          title="Remove task"
+          variant="ghost"
+        >
           <Trash2 className="size-4" />
-          Remove
         </Button>
       </div>
-
-      {task.tags.length > 0 ? (
-        <div className="flex flex-wrap gap-1 pl-0">
-          {task.tags.map((tag) => (
-            <span key={tag} className="rounded-full bg-[#9ca3af] px-2 py-0.5 text-xs font-medium text-white">
-              {tag}
-            </span>
-          ))}
-        </div>
-      ) : null}
     </li>
   );
 }

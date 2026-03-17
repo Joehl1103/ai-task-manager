@@ -63,4 +63,17 @@ describe("task management view", () => {
     expect(markup).toContain("Relay MVP");
     expect(markup).toContain("No project");
   });
+
+  /**
+   * Keeps task row chips compact and adds hover color feedback for icon actions.
+   */
+  it("renders thin tag chips and icon buttons with hover color feedback", () => {
+    const markup = renderToStaticMarkup(<TaskManagementView {...buildTaskManagementViewProps()} />);
+
+    expect(markup).toContain("py-px");
+    expect(markup).toContain('aria-label="Open task"');
+    expect(markup).toContain('aria-label="Remove task"');
+    expect(markup).toContain("text-[color:var(--muted)]");
+    expect(markup).toContain("hover:text-[color:var(--foreground)]");
+  });
 });
