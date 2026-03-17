@@ -180,11 +180,10 @@ export function WorkspaceApp() {
   }
 
   /**
-   * Switches between the task and configuration menus, then tucks the menu away again.
+   * Switches between the task and configuration menus while keeping the menu open.
    */
   function handleSelectMenu(nextMenu: WorkspaceMenu) {
     setActiveMenu(nextMenu);
-    setIsTopMenuExpanded(false);
   }
 
   /**
