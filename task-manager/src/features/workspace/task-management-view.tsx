@@ -263,34 +263,33 @@ function GroupedTaskOverview({
         <span className="font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
           Grouped by
         </span>
-        <div className="inline-flex rounded-full border border-[color:var(--border)] p-0.5">
-          <button
-            className={cn(
-              "px-2 py-0.5 text-xs rounded-full transition-all duration-150 cursor-pointer active:scale-95",
-              taskGroupingMode === "project"
-                ? "bg-[color:var(--foreground)] text-[color:var(--surface)]"
-                : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]",
-            )}
-            onClick={onToggleGroupingMode}
-            title="Group tasks by project"
-            type="button"
-          >
-            Project
-          </button>
-          <button
-            className={cn(
-              "px-2 py-0.5 text-xs rounded-full transition-all duration-150 cursor-pointer active:scale-95",
-              taskGroupingMode === "tag"
-                ? "bg-[color:var(--foreground)] text-[color:var(--surface)]"
-                : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]",
-            )}
-            onClick={onToggleGroupingMode}
-            title="Group tasks by tag"
-            type="button"
-          >
-            Tag
-          </button>
-        </div>
+        <button
+          className={cn(
+            "transition-all duration-150 cursor-pointer active:opacity-70",
+            taskGroupingMode === "project"
+              ? "font-medium text-[color:var(--foreground)] underline underline-offset-2"
+              : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]",
+          )}
+          onClick={onToggleGroupingMode}
+          title="Group tasks by project"
+          type="button"
+        >
+          Project
+        </button>
+        <span className="text-[color:var(--muted)]">·</span>
+        <button
+          className={cn(
+            "transition-all duration-150 cursor-pointer active:opacity-70",
+            taskGroupingMode === "tag"
+              ? "font-medium text-[color:var(--foreground)] underline underline-offset-2"
+              : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]",
+          )}
+          onClick={onToggleGroupingMode}
+          title="Group tasks by tag"
+          type="button"
+        >
+          Tag
+        </button>
       </div>
 
       {groups.map((group) => (
