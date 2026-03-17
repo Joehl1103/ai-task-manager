@@ -5,6 +5,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 import { type Initiative, type Project, type Task } from "./types";
 
@@ -18,6 +19,7 @@ interface ProjectViewProps {
   onDeleteProject: (id: string) => void;
   onSelectProject: (projectId: string) => void;
   onClearFilter: () => void;
+  onAddTask: (data: { title: string; details: string; projectId: string; tags: string[] }) => void;
 }
 
 export function ProjectView({
@@ -30,6 +32,7 @@ export function ProjectView({
   onDeleteProject,
   onSelectProject,
   onClearFilter,
+  onAddTask,
 }: ProjectViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [newName, setNewName] = useState("");
@@ -39,6 +42,10 @@ export function ProjectView({
   const [editName, setEditName] = useState("");
   const [editInitiativeId, setEditInitiativeId] = useState("");
   const [editDeadline, setEditDeadline] = useState("");
+  const [addTaskForId, setAddTaskForId] = useState<string | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDetails, setNewTaskDetails] = useState("");
+  const [newTaskTags, setNewTaskTags] = useState("");
 
   const filteredProjects = filterInitiativeId
     ? projects.filter((p) => p.initiativeId === filterInitiativeId)
@@ -83,8 +90,30 @@ export function ProjectView({
     setEditingId(null);
   }
 
+  function getChildTasks(projectId: string) {
+    return tasks.filter((t) => t.projectId === projectId);
+  }
+
   function getTaskCount(projectId: string) {
-    return tasks.filter((t) => t.projectId === projectId).length;
+    return getChildTasks(projectId).length;
+  }
+
+  function handleAddChildTask(projectId: string) {
+    if (!newTaskTitle.trim()) return;
+    const parsedTags = newTaskTags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+    onAddTask({
+      title: newTaskTitle,
+      details: newTaskDetails,
+      projectId,
+      tags: parsedTags,
+    });
+    setNewTaskTitle("");
+    setNewTaskDetails("");
+    setNewTaskTags("");
+    setAddTaskForId(null);
   }
 
   function getInitiativeName(initiativeId: string | null) {
@@ -233,6 +262,7 @@ export function ProjectView({
                   </div>
                 </div>
               ) : (
+                <>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <button
@@ -275,6 +305,77 @@ export function ProjectView({
                     </Button>
                   </div>
                 </div>
+
+                {getChildTasks(project.id).length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    {getChildTasks(project.id).map((task) => (
+                      <p key={task.id} className="text-xs text-[color:var(--muted)]">
+                        • {task.title}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-3">
+                  <button
+                    className="flex items-center gap-1 text-xs text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
+                    onClick={() =>
+                      setAddTaskForId(
+                        addTaskForId === project.id ? null : project.id,
+                      )
+                    }
+                    type="button"
+                  >
+                    <Plus className="size-3" />
+                    Add task
+                  </button>
+
+                  {addTaskForId === project.id && (
+                    <div className="mt-2 grid gap-2">
+                      <Input
+                        autoFocus
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        placeholder="Task title"
+                        value={newTaskTitle}
+                      />
+                      <Textarea
+                        onChange={(e) => setNewTaskDetails(e.target.value)}
+                        placeholder="Details (optional)"
+                        value={newTaskDetails}
+                      />
+                      <Input
+                        onChange={(e) => setNewTaskTags(e.target.value)}
+                        placeholder="Tags (comma-separated, optional)"
+                        value={newTaskTags}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          onClick={() => {
+                            setAddTaskForId(null);
+                            setNewTaskTitle("");
+                            setNewTaskDetails("");
+                            setNewTaskTags("");
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className="transition-all duration-150 active:scale-95"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          disabled={!newTaskTitle.trim()}
+                          onClick={() => handleAddChildTask(project.id)}
+                          size="sm"
+                          className="transition-all duration-150 active:scale-95"
+                        >
+                          <Plus className="size-4" />
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                </>
               )}
             </div>
           ))

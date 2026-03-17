@@ -249,6 +249,10 @@ export function WorkspaceApp() {
     setWorkspace((current) => deleteProject(current, id));
   }
 
+  function handleAddTaskFromProject(data: { title: string; details: string; projectId: string; tags: string[] }) {
+    setWorkspace((current) => addTask(current, data));
+  }
+
   function handleSelectProject(_projectId: string) {
     // Future: navigate to project detail or filter tasks
   }
@@ -688,6 +692,7 @@ export function WorkspaceApp() {
             <InitiativeView
               initiatives={workspace.initiatives}
               onAddInitiative={handleAddInitiative}
+              onAddProject={handleAddProject}
               onDeleteInitiative={handleDeleteInitiative}
               onSelectInitiative={handleSelectInitiative}
               onUpdateInitiative={handleUpdateInitiative}
@@ -699,6 +704,7 @@ export function WorkspaceApp() {
               filterInitiativeId={filterInitiativeId}
               initiatives={workspace.initiatives}
               onAddProject={handleAddProject}
+              onAddTask={handleAddTaskFromProject}
               onClearFilter={handleClearInitiativeFilter}
               onDeleteProject={handleDeleteProject}
               onSelectProject={handleSelectProject}

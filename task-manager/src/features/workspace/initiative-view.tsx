@@ -16,6 +16,7 @@ interface InitiativeViewProps {
   onUpdateInitiative: (data: { id: string; name: string; description: string; deadline: string }) => void;
   onDeleteInitiative: (id: string) => void;
   onSelectInitiative: (initiativeId: string) => void;
+  onAddProject: (data: { name: string; initiativeId: string; deadline: string }) => void;
 }
 
 export function InitiativeView({
@@ -25,6 +26,7 @@ export function InitiativeView({
   onUpdateInitiative,
   onDeleteInitiative,
   onSelectInitiative,
+  onAddProject,
 }: InitiativeViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [newName, setNewName] = useState("");
@@ -34,6 +36,9 @@ export function InitiativeView({
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDeadline, setEditDeadline] = useState("");
+  const [addProjectForId, setAddProjectForId] = useState<string | null>(null);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectDeadline, setNewProjectDeadline] = useState("");
 
   function handleAdd() {
     if (!newName.trim()) return;
@@ -70,8 +75,24 @@ export function InitiativeView({
     setEditingId(null);
   }
 
+  function getChildProjects(initiativeId: string) {
+    return projects.filter((p) => p.initiativeId === initiativeId);
+  }
+
   function getProjectCount(initiativeId: string) {
-    return projects.filter((p) => p.initiativeId === initiativeId).length;
+    return getChildProjects(initiativeId).length;
+  }
+
+  function handleAddChildProject(initiativeId: string) {
+    if (!newProjectName.trim()) return;
+    onAddProject({
+      name: newProjectName,
+      initiativeId,
+      deadline: newProjectDeadline,
+    });
+    setNewProjectName("");
+    setNewProjectDeadline("");
+    setAddProjectForId(null);
   }
 
   function formatDeadline(deadline: string) {
@@ -185,6 +206,7 @@ export function InitiativeView({
                   </div>
                 </div>
               ) : (
+                <>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <button
@@ -229,6 +251,72 @@ export function InitiativeView({
                     </Button>
                   </div>
                 </div>
+
+                {getChildProjects(initiative.id).length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    {getChildProjects(initiative.id).map((project) => (
+                      <p key={project.id} className="text-xs text-[color:var(--muted)]">
+                        • {project.name}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-3">
+                  <button
+                    className="flex items-center gap-1 text-xs text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
+                    onClick={() =>
+                      setAddProjectForId(
+                        addProjectForId === initiative.id ? null : initiative.id,
+                      )
+                    }
+                    type="button"
+                  >
+                    <Plus className="size-3" />
+                    Add project
+                  </button>
+
+                  {addProjectForId === initiative.id && (
+                    <div className="mt-2 grid gap-2">
+                      <Input
+                        autoFocus
+                        onChange={(e) => setNewProjectName(e.target.value)}
+                        placeholder="Project name"
+                        value={newProjectName}
+                      />
+                      <Input
+                        onChange={(e) => setNewProjectDeadline(e.target.value)}
+                        placeholder="Deadline"
+                        type="date"
+                        value={newProjectDeadline}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          onClick={() => {
+                            setAddProjectForId(null);
+                            setNewProjectName("");
+                            setNewProjectDeadline("");
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className="transition-all duration-150 active:scale-95"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          disabled={!newProjectName.trim()}
+                          onClick={() => handleAddChildProject(initiative.id)}
+                          size="sm"
+                          className="transition-all duration-150 active:scale-95"
+                        >
+                          <Plus className="size-4" />
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                </>
               )}
             </div>
           ))
