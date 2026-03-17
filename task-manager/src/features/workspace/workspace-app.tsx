@@ -31,7 +31,11 @@ import {
 } from "@/features/workspace/types";
 import {
   createDefaultWorkspaceSnapshot,
+  defaultTaskGroupingMode,
+  normalizeTaskGroupingMode,
   normalizeWorkspaceSnapshot,
+  taskGroupingModeStorageKey,
+  type TaskGroupingMode,
   workspaceStorageKey,
 } from "@/features/workspace/workspace-storage";
 
@@ -43,8 +47,12 @@ export function WorkspaceApp() {
   const [agentConfig, setAgentConfig] = useState<AgentConfigState>(createDefaultAgentConfig);
   const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
   const [hasLoadedAgentConfig, setHasLoadedAgentConfig] = useState(false);
+  const [hasLoadedGroupingMode, setHasLoadedGroupingMode] = useState(false);
   const [activeView, setActiveView] = useState(createDefaultWorkspaceView);
   const [isTopMenuExpanded, setIsTopMenuExpanded] = useState(false);
+  const [taskGroupingMode, setTaskGroupingMode] = useState<TaskGroupingMode>(
+    defaultTaskGroupingMode,
+  );
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
   const [newTaskProject, setNewTaskProject] = useState("");
@@ -133,6 +141,37 @@ export function WorkspaceApp() {
   }, [agentConfig, hasLoadedAgentConfig]);
 
   /**
+   * Hydrates saved task grouping mode preference after mount.
+   */
+  useEffect(() => {
+    const savedMode = window.localStorage.getItem(taskGroupingModeStorageKey);
+
+    if (!savedMode) {
+      setHasLoadedGroupingMode(true);
+      return;
+    }
+
+    try {
+      setTaskGroupingMode(normalizeTaskGroupingMode(savedMode));
+    } catch {
+      setTaskGroupingMode(defaultTaskGroupingMode);
+    }
+
+    setHasLoadedGroupingMode(true);
+  }, []);
+
+  /**
+   * Persists task grouping mode preference after the initial browser hydration is complete.
+   */
+  useEffect(() => {
+    if (!hasLoadedGroupingMode) {
+      return;
+    }
+
+    window.localStorage.setItem(taskGroupingModeStorageKey, taskGroupingMode);
+  }, [taskGroupingMode, hasLoadedGroupingMode]);
+
+  /**
    * Opens or closes the slim top menu without changing the active workspace view.
    */
   function handleToggleTopMenu() {
@@ -145,6 +184,13 @@ export function WorkspaceApp() {
   function handleSelectView(nextView: ReturnType<typeof createDefaultWorkspaceView>) {
     setActiveView(nextView);
     setIsTopMenuExpanded(false);
+  }
+
+  /**
+   * Toggles between project and tag grouping modes for the task overview.
+   */
+  function handleToggleGroupingMode() {
+    setTaskGroupingMode((currentMode) => (currentMode === "project" ? "tag" : "project"));
   }
 
   /**
@@ -564,10 +610,12 @@ export function WorkspaceApp() {
               onSetNewTaskTitle={setNewTaskTitle}
               onStartEdit={handleStartEdit}
               onToggleAgentPanel={handleToggleAgentPanel}
+              onToggleGroupingMode={handleToggleGroupingMode}
               openAgentTaskId={openAgentTaskId}
               pendingTaskId={pendingTaskId}
               selectedAgentDraft={selectedAgentDraft}
               selectedTask={selectedTask}
+              taskGroupingMode={taskGroupingMode}
               tasks={workspace.tasks}
             />
           ) : (

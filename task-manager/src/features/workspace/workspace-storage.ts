@@ -8,6 +8,11 @@ import {
 } from "./types";
 
 export const workspaceStorageKey = "relay-workspace";
+export const taskGroupingModeStorageKey = "relay-task-grouping-mode";
+
+export type TaskGroupingMode = "project" | "tag";
+
+export const defaultTaskGroupingMode: TaskGroupingMode = "project";
 
 /**
  * Creates a fresh copy of the seed workspace so local state never mutates shared module data.
@@ -129,4 +134,11 @@ function readOptionalString(value: unknown) {
  */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
+}
+
+/**
+ * Normalizes the task grouping mode from saved data with a fallback to the default.
+ */
+export function normalizeTaskGroupingMode(value: unknown): TaskGroupingMode {
+  return value === "tag" ? "tag" : defaultTaskGroupingMode;
 }

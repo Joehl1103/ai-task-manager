@@ -9,8 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormattedAgentResponse } from "@/features/workspace/formatted-agent-response";
 import { getProviderLabel } from "@/features/workspace/provider-config";
-import { groupTasksByProject, type TaskGroup } from "@/features/workspace/task-grouping";
+import {
+  groupTasksByProject,
+  groupTasksByTag,
+  type TaskGroup,
+} from "@/features/workspace/task-grouping";
 import { type AgentDraft, type Task } from "@/features/workspace/types";
+import { type TaskGroupingMode } from "@/features/workspace/workspace-storage";
 
 interface TaskManagementViewProps {
   tasks: Task[];
@@ -30,6 +35,7 @@ interface TaskManagementViewProps {
   activeProviderLabel: string;
   activeProviderModel: string;
   isActiveProviderReady: boolean;
+  taskGroupingMode: TaskGroupingMode;
   onSetNewTaskTitle: (value: string) => void;
   onSetNewTaskDetails: (value: string) => void;
   onSetNewTaskProject: (value: string) => void;
@@ -50,6 +56,7 @@ interface TaskManagementViewProps {
   onCloseAgentPanel: () => void;
   onAgentBriefChange: (taskId: string, brief: string) => void;
   onCallAgent: (taskId: string) => void;
+  onToggleGroupingMode: () => void;
 }
 
 /**
@@ -73,6 +80,7 @@ export function TaskManagementView({
   activeProviderLabel,
   activeProviderModel,
   isActiveProviderReady,
+  taskGroupingMode,
   onSetNewTaskTitle,
   onSetNewTaskDetails,
   onSetNewTaskProject,
@@ -93,6 +101,7 @@ export function TaskManagementView({
   onCloseAgentPanel,
   onAgentBriefChange,
   onCallAgent,
+  onToggleGroupingMode,
 }: TaskManagementViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
 
@@ -209,7 +218,13 @@ export function TaskManagementView({
             task={selectedTask}
           />
         ) : (
-          <GroupedTaskOverview onDeleteTask={onDeleteTask} onOpenTask={onOpenTask} tasks={tasks} />
+          <GroupedTaskOverview
+            onDeleteTask={onDeleteTask}
+            onOpenTask={onOpenTask}
+            onToggleGroupingMode={onToggleGroupingMode}
+            taskGroupingMode={taskGroupingMode}
+            tasks={tasks}
+          />
         )}
       </section>
     </>
@@ -220,13 +235,24 @@ interface GroupedTaskOverviewProps {
   tasks: Task[];
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  taskGroupingMode: TaskGroupingMode;
+  onToggleGroupingMode: () => void;
 }
 
 /**
- * Renders tasks grouped by project with lightweight section headings.
+ * Renders tasks grouped by project or tag with lightweight section headings and a mode toggle.
  */
-function GroupedTaskOverview({ tasks, onOpenTask, onDeleteTask }: GroupedTaskOverviewProps) {
-  const groups = groupTasksByProject(tasks);
+function GroupedTaskOverview({
+  tasks,
+  onOpenTask,
+  onDeleteTask,
+  taskGroupingMode,
+  onToggleGroupingMode,
+}: GroupedTaskOverviewProps) {
+  const groups =
+    taskGroupingMode === "tag" ? groupTasksByTag(tasks) : groupTasksByProject(tasks);
+  const modeLabel = taskGroupingMode === "tag" ? "By Tag" : "By Project";
+  const toggleLabel = taskGroupingMode === "tag" ? "Switch to projects" : "Switch to tags";
 
   if (groups.length === 0) {
     return <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">No tasks yet.</p>;
@@ -234,6 +260,15 @@ function GroupedTaskOverview({ tasks, onOpenTask, onDeleteTask }: GroupedTaskOve
 
   return (
     <div className="mt-2 space-y-6">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
+          Grouped {modeLabel.toLowerCase()}
+        </p>
+        <Button onClick={onToggleGroupingMode} size="sm" variant="ghost" title={toggleLabel}>
+          {modeLabel}
+        </Button>
+      </div>
+
       {groups.map((group) => (
         <ProjectSection
           group={group}
