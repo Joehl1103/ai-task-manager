@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
 export type WorkspaceThemeId =
+  | "relay-original"
   | "linen-ledger"
   | "sage-study"
   | "coastal-signal"
@@ -59,6 +60,73 @@ type WorkspaceThemeStyle = CSSProperties & Record<`--${string}`, string>;
 export const workspaceThemeSelectionStorageKey = "relay.workspace-theme-selection";
 
 export const workspaceThemeFlags: WorkspaceThemeFlag[] = [
+  {
+    id: "relay-original",
+    name: "Relay Original",
+    summary: "The neutral starter palette the workspace originally shipped with, plus a matching night mode.",
+    day: {
+      background: "#f5f5f4",
+      foreground: "#18181b",
+      surface: "#ffffff",
+      surfaceStrong: "#fafafa",
+      surfaceMuted: "#f4f4f5",
+      border: "#d4d4d8",
+      borderStrong: "#a1a1aa",
+      rowDivider: "#e4e4e7",
+      rowHover: "#f9fafb",
+      rowActive: "#f4f4f5",
+      muted: "#71717a",
+      mutedStrong: "#3f3f46",
+      accent: "#18181b",
+      accentForeground: "#fafafa",
+      card: "#ffffff",
+      cardForeground: "#18181b",
+      primary: "#18181b",
+      primaryForeground: "#fafafa",
+      secondary: "#f4f4f5",
+      secondaryForeground: "#3f3f46",
+      popover: "#ffffff",
+      popoverForeground: "#18181b",
+      input: "#d4d4d8",
+      ring: "#a1a1aa",
+      focusRing: "rgba(24, 24, 27, 0.08)",
+      backdropStart: "#fafaf9",
+      backdropEnd: "#f4f4f5",
+      backdropSpotlight: "rgba(63, 63, 70, 0.08)",
+      shadowColor: "rgba(24, 24, 27, 0.16)",
+    },
+    night: {
+      background: "#09090b",
+      foreground: "#fafafa",
+      surface: "#18181b",
+      surfaceStrong: "#111113",
+      surfaceMuted: "#27272a",
+      border: "#3f3f46",
+      borderStrong: "#71717a",
+      rowDivider: "#27272a",
+      rowHover: "#18181b",
+      rowActive: "#27272a",
+      muted: "#a1a1aa",
+      mutedStrong: "#e4e4e7",
+      accent: "#fafafa",
+      accentForeground: "#18181b",
+      card: "#18181b",
+      cardForeground: "#fafafa",
+      primary: "#fafafa",
+      primaryForeground: "#18181b",
+      secondary: "#27272a",
+      secondaryForeground: "#e4e4e7",
+      popover: "#18181b",
+      popoverForeground: "#fafafa",
+      input: "#3f3f46",
+      ring: "#71717a",
+      focusRing: "rgba(250, 250, 250, 0.12)",
+      backdropStart: "#18181b",
+      backdropEnd: "#09090b",
+      backdropSpotlight: "rgba(161, 161, 170, 0.12)",
+      shadowColor: "rgba(0, 0, 0, 0.42)",
+    },
+  },
   {
     id: "linen-ledger",
     name: "Linen Ledger",
@@ -397,7 +465,7 @@ export const workspaceThemeFlags: WorkspaceThemeFlag[] = [
 ];
 
 export const defaultWorkspaceThemeSelection: WorkspaceThemeSelection = {
-  themeId: "linen-ledger",
+  themeId: "relay-original",
   mode: "day",
 };
 
@@ -421,7 +489,7 @@ export function normalizeWorkspaceThemeSelection(value: unknown): WorkspaceTheme
 }
 
 /**
- * Finds the full theme definition for one feature-flagged visual direction.
+ * Finds the full theme definition for one supported workspace theme option.
  */
 export function readWorkspaceThemeFlag(themeId: WorkspaceThemeId): WorkspaceThemeFlag {
   return workspaceThemeFlags.find((themeFlag) => themeFlag.id === themeId) ?? workspaceThemeFlags[0];
@@ -496,7 +564,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Confirms a candidate string maps to one of the supported preview flags.
+ * Confirms a candidate string maps to one of the supported theme options.
  */
 function isWorkspaceThemeId(value: unknown): value is WorkspaceThemeId {
   return (

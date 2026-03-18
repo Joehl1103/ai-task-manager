@@ -20,7 +20,7 @@ The current goal is to keep the product as small as possible before layering on 
 - `src/app/page.tsx`: app entry point
 - `src/features/workspace/workspace-top-menu.tsx`: slim desktop view switcher
 - `src/features/workspace/workspace-theme.ts`: theme registry and selection helpers for the preview lab
-- `src/features/workspace/workspace-theme-selector.tsx`: day/night theme-flag controls
+- `src/features/workspace/workspace-theme-selector.tsx`: day/night theme-option controls
 - `src/features/workspace/task-management-view.tsx`: task workflow UI
 - `src/features/workspace/agent-configuration-view.tsx`: provider configuration UI
 - `src/features/workspace/formatted-agent-response.tsx`: safe formatter for basic markdown and HTML agent responses
@@ -39,7 +39,7 @@ Current focus:
 
 - Keep the app very small
 - Keep the top-level shell thin and desktop-oriented
-- Let the user compare five paired day/night visual directions from inside the shell
+- Let the user compare six paired day/night visual directions from Configuration, including the original starter theme
 - Preserve add, edit, delete, task-level agent calls, and deletion of saved agent contributions
 - Keep the main overview compact and move agent history into task drill-down
 - Keep configuration separate from the task workflow

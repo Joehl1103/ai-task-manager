@@ -67,7 +67,6 @@ import {
   workspaceThemeSelectionStorageKey,
   type WorkspaceThemeSelection,
 } from "@/features/workspace/workspace-theme";
-import { WorkspaceThemeSelector } from "@/features/workspace/workspace-theme-selector";
 
 /**
  * Hosts the app shell, view switching, and task/configuration state wiring.
@@ -212,7 +211,7 @@ export function WorkspaceApp() {
   }, [taskGroupingMode, hasLoadedGroupingMode]);
 
   /**
-   * Hydrates the selected theme flag and mode after mount so previews persist across refreshes.
+   * Hydrates the selected theme option and mode after mount so previews persist across refreshes.
    */
   useEffect(() => {
     const savedSelection = window.localStorage.getItem(workspaceThemeSelectionStorageKey);
@@ -232,7 +231,7 @@ export function WorkspaceApp() {
   }, []);
 
   /**
-   * Persists the active theme flag after the initial browser hydration is complete.
+   * Persists the active theme option after the initial browser hydration is complete.
    */
   useEffect(() => {
     if (!hasLoadedThemeSelection) {
@@ -267,7 +266,7 @@ export function WorkspaceApp() {
   }
 
   /**
-   * Switches the active theme preview so the user can compare flagged directions in real time.
+   * Switches the active theme option so the user can compare directions in real time.
    */
   function handleSelectTheme(nextSelection: WorkspaceThemeSelection) {
     setThemeSelection(nextSelection);
@@ -718,24 +717,15 @@ export function WorkspaceApp() {
       data-theme-pair={themeSelection.themeId}
       style={buildWorkspaceThemeStyle(themeSelection)}
     >
-      <div className="mx-auto max-w-[88rem]">
-        <div className="max-w-4xl">
-          <WorkspaceTopMenu
-            activeMenu={activeMenu}
-            isExpanded={isTopMenuExpanded}
-            onSelectMenu={handleSelectMenu}
-            onToggleMenu={handleToggleTopMenu}
-          />
-        </div>
+      <div className="mx-auto max-w-4xl">
+        <WorkspaceTopMenu
+          activeMenu={activeMenu}
+          isExpanded={isTopMenuExpanded}
+          onSelectMenu={handleSelectMenu}
+          onToggleMenu={handleToggleTopMenu}
+        />
 
-        <div className="mt-4">
-          <WorkspaceThemeSelector
-            onSelectTheme={handleSelectTheme}
-            selection={themeSelection}
-          />
-        </div>
-
-        <section className="mt-6 max-w-4xl">
+        <section className="mt-3">
           {activeMenu === "tasks" && (
             <TaskManagementView
               activeProjectFilterName={activeProjectFilterName}
@@ -911,6 +901,8 @@ export function WorkspaceApp() {
               isActiveProviderReady={isActiveProviderReady}
               onProviderApiKeyChange={handleProviderApiKeyChange}
               onProviderModelChange={handleProviderModelChange}
+              onThemeSelectionChange={handleSelectTheme}
+              themeSelection={themeSelection}
             />
           )}
         </section>

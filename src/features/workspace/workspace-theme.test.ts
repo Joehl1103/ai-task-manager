@@ -10,10 +10,14 @@ import {
 
 describe("workspace theme registry", () => {
   /**
-   * Guards the requested theme-showcase scope so we do not accidentally ship fewer variants later.
+   * Guards the requested theme scope so we do not accidentally ship fewer variants later.
    */
-  it("defines five shadcn-inspired theme flags", () => {
-    expect(workspaceThemeFlags).toHaveLength(5);
+  it("defines six paired day and night theme options", () => {
+    expect(workspaceThemeFlags).toHaveLength(6);
+    expect(defaultWorkspaceThemeSelection).toEqual({
+      themeId: "relay-original",
+      mode: "day",
+    });
   });
 
   /**

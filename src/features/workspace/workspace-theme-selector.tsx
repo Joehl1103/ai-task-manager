@@ -12,14 +12,16 @@ import {
 } from "./workspace-theme";
 
 interface WorkspaceThemeSelectorProps {
+  showHeader?: boolean;
   selection: WorkspaceThemeSelection;
   onSelectTheme: (selection: WorkspaceThemeSelection) => void;
 }
 
 /**
- * Renders five paired theme flags so each visual direction can be previewed in day and night mode.
+ * Renders day and night theme options so each workspace palette can be previewed from Configuration.
  */
 export function WorkspaceThemeSelector({
+  showHeader = true,
   selection,
   onSelectTheme,
 }: WorkspaceThemeSelectorProps) {
@@ -27,35 +29,40 @@ export function WorkspaceThemeSelector({
 
   return (
     <section
-      aria-label="Theme flags"
-      className="workspace-theme-panel rounded-[28px] border border-[color:var(--border)] px-4 py-4 sm:px-5 sm:py-5"
+      aria-label="Theme options"
+      className={cn(
+        "workspace-theme-panel rounded-[28px] border border-[color:var(--border)] px-4 py-4 sm:px-5 sm:py-5",
+        !showHeader && "border-none bg-transparent px-0 py-0 shadow-none backdrop-blur-none",
+      )}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-3xl">
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
-            Theme Flags
-          </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-[color:var(--foreground)]">
-            Compare five shadcn-inspired day and night pairings
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-            Each flag packages a complimentary light and dark palette so you can move through the
-            same visual direction before picking a final look.
-          </p>
-        </div>
+      {showHeader ? (
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
+              Theme Options
+            </p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-[color:var(--foreground)]">
+              Choose a workspace palette and its day or night pair
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
+              Relay Original restores the starter look, while the other options explore warmer,
+              greener, coastal, clay, and citrus-leaning shadcn-inspired directions.
+            </p>
+          </div>
 
-        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] px-4 py-3 shadow-[0_16px_40px_-28px_var(--shadow-color)]">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
-            Active Preview
-          </p>
-          <p className="mt-2 text-sm font-medium text-[color:var(--foreground)]">
-            {readWorkspaceThemeLabel(selection)}
-          </p>
-          <p className="mt-1 text-xs text-[color:var(--muted)]">{activeThemeFlag.summary}</p>
+          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] px-4 py-3 shadow-[0_16px_40px_-28px_var(--shadow-color)]">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
+              Current Theme
+            </p>
+            <p className="mt-2 text-sm font-medium text-[color:var(--foreground)]">
+              {readWorkspaceThemeLabel(selection)}
+            </p>
+            <p className="mt-1 text-xs text-[color:var(--muted)]">{activeThemeFlag.summary}</p>
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      <div className="mt-5 grid gap-3 xl:grid-cols-5 md:grid-cols-2">
+      <div className={cn("grid gap-3 xl:grid-cols-3 md:grid-cols-2", showHeader && "mt-5")}>
         {workspaceThemeFlags.map((themeFlag, index) => {
           const isActiveTheme = selection.themeId === themeFlag.id;
 
@@ -72,7 +79,7 @@ export function WorkspaceThemeSelector({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
-                    Flag {String(index + 1).padStart(2, "0")}
+                    Option {String(index + 1).padStart(2, "0")}
                   </p>
                   <h3 className="mt-2 text-sm font-semibold text-[color:var(--foreground)]">
                     {themeFlag.name}
@@ -128,7 +135,7 @@ interface ThemeModeButtonProps {
 }
 
 /**
- * Exposes one explicit day-or-night toggle for a single theme flag.
+ * Exposes one explicit day-or-night toggle for a single theme option.
  */
 function ThemeModeButton({
   themeId,
@@ -166,7 +173,7 @@ interface ThemePalettePreviewProps {
 }
 
 /**
- * Shows a compact visual swatch so unselected theme flags can still be compared at a glance.
+ * Shows a compact visual swatch so unselected theme options can still be compared at a glance.
  */
 function ThemePalettePreview({ label, palette }: ThemePalettePreviewProps) {
   return (
