@@ -7,6 +7,7 @@ import {
   buildDeleteTaskConfirmationMessage,
   buildDeleteThreadMessageConfirmationMessage,
 } from "@/features/workspace/delete-confirmation";
+import { GlobalSearchDialog } from "@/features/workspace/global-search-dialog";
 import {
   addInitiative,
   deleteInitiative,
@@ -67,6 +68,12 @@ import {
   workspaceThemeSelectionStorageKey,
   type WorkspaceThemeSelection,
 } from "@/features/workspace/workspace-theme";
+import {
+  buildGlobalSearchResults,
+  filterGlobalSearchResults,
+  resolveGlobalSearchSelection,
+  type GlobalSearchResult,
+} from "@/features/workspace/global-search";
 
 /**
  * Hosts the app shell, view switching, and task/configuration state wiring.
@@ -86,6 +93,9 @@ export function WorkspaceApp() {
   const [themeSelection, setThemeSelection] = useState<WorkspaceThemeSelection>(
     defaultWorkspaceThemeSelection,
   );
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState("");
+  const [activeGlobalSearchIndex, setActiveGlobalSearchIndex] = useState(0);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
   const [newTaskProject, setNewTaskProject] = useState("");
@@ -116,6 +126,10 @@ export function WorkspaceApp() {
         ownerId: selectedTask.id,
       })
     : createEmptyThreadDraft();
+  const globalSearchResults = filterGlobalSearchResults(
+    buildGlobalSearchResults(workspace),
+    globalSearchQuery,
+  );
 
   /**
    * Hydrates saved workspace data after mount so task edits survive a browser refresh.
@@ -245,6 +259,56 @@ export function WorkspaceApp() {
   }, [themeSelection, hasLoadedThemeSelection]);
 
   /**
+   * Opens the global search dialog from anywhere in the workspace with the platform-standard
+   * quick-search shortcut.
+   */
+  useEffect(() => {
+    function handleWindowKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+
+        if (isGlobalSearchOpen) {
+          return;
+        }
+
+        setGlobalSearchQuery("");
+        setActiveGlobalSearchIndex(0);
+        setIsGlobalSearchOpen(true);
+      }
+    }
+
+    window.addEventListener("keydown", handleWindowKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleWindowKeyDown);
+    };
+  }, [isGlobalSearchOpen]);
+
+  /**
+   * Resets the highlighted search row whenever the query changes so Enter always targets the
+   * first visible match by default.
+   */
+  useEffect(() => {
+    setActiveGlobalSearchIndex(0);
+  }, [globalSearchQuery, isGlobalSearchOpen]);
+
+  /**
+   * Clamps the highlighted search row if the result list shrinks after workspace or query updates.
+   */
+  useEffect(() => {
+    if (globalSearchResults.length === 0) {
+      setActiveGlobalSearchIndex(0);
+      return;
+    }
+
+    setActiveGlobalSearchIndex((currentIndex) =>
+      currentIndex >= globalSearchResults.length
+        ? globalSearchResults.length - 1
+        : currentIndex,
+    );
+  }, [globalSearchResults.length]);
+
+  /**
    * Opens or closes the slim top menu without changing the active workspace view.
    */
   function handleToggleTopMenu() {
@@ -292,6 +356,8 @@ export function WorkspaceApp() {
   }
 
   function handleSelectInitiative(initiativeId: string) {
+    clearTaskFocus();
+    setFilterProjectId(null);
     setFilterInitiativeId(initiativeId);
     setActiveMenu("projects");
   }
@@ -374,6 +440,14 @@ export function WorkspaceApp() {
     setNewTaskDetails("");
     setNewTaskProject("");
     setNewTaskTags("");
+  }
+
+  /**
+   * Clears task-detail-specific UI state without mutating the underlying task data.
+   */
+  function clearTaskFocus() {
+    handleCancelEdit();
+    setSelectedTaskId(null);
   }
 
   /**
@@ -710,6 +784,35 @@ export function WorkspaceApp() {
     }
   }
 
+  /**
+   * Closes and resets the global search dialog so each open starts from a clean query.
+   */
+  function handleCloseGlobalSearch() {
+    setIsGlobalSearchOpen(false);
+    setGlobalSearchQuery("");
+    setActiveGlobalSearchIndex(0);
+  }
+
+  /**
+   * Applies one selected search result to the app shell by reusing the existing menu and filter
+   * state wherever possible.
+   */
+  function handleSelectGlobalSearchResult(result: GlobalSearchResult) {
+    const selection = resolveGlobalSearchSelection(result, workspace);
+
+    setFilterProjectId(selection.filterProjectId);
+    setFilterInitiativeId(selection.filterInitiativeId);
+    setActiveMenu(selection.activeMenu);
+
+    if (selection.selectedTaskId) {
+      handleOpenTask(selection.selectedTaskId);
+    } else {
+      clearTaskFocus();
+    }
+
+    handleCloseGlobalSearch();
+  }
+
   return (
     <main
       className="workspace-theme-stage min-h-screen px-4 py-6 text-[color:var(--foreground)]"
@@ -717,6 +820,16 @@ export function WorkspaceApp() {
       data-theme-pair={themeSelection.themeId}
       style={buildWorkspaceThemeStyle(themeSelection)}
     >
+      <GlobalSearchDialog
+        activeIndex={activeGlobalSearchIndex}
+        isOpen={isGlobalSearchOpen}
+        onActiveIndexChange={setActiveGlobalSearchIndex}
+        onClose={handleCloseGlobalSearch}
+        onQueryChange={setGlobalSearchQuery}
+        onSelectResult={handleSelectGlobalSearchResult}
+        query={globalSearchQuery}
+        results={globalSearchResults}
+      />
       <div className="mx-auto max-w-4xl">
         <WorkspaceTopMenu
           activeMenu={activeMenu}

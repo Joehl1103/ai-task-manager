@@ -38,6 +38,7 @@ interface TaskManagementViewProps {
   activeProviderModel: string;
   isActiveProviderReady: boolean;
   taskGroupingMode: TaskGroupingMode;
+  onClearProjectFilter: () => void;
   onSetNewTaskTitle: (value: string) => void;
   onSetNewTaskDetails: (value: string) => void;
   onSetNewTaskProject: (value: string) => void;
@@ -54,7 +55,6 @@ interface TaskManagementViewProps {
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
   onSetEditTags: (value: string) => void;
-  onClearProjectFilter: () => void;
   onThreadDraftChange: (taskId: string, message: string) => void;
   onSendThreadMessage: (taskId: string) => void;
   onToggleGroupingMode: () => void;
@@ -83,6 +83,7 @@ export function TaskManagementView({
   activeProviderModel,
   isActiveProviderReady,
   taskGroupingMode,
+  onClearProjectFilter,
   onSetNewTaskTitle,
   onSetNewTaskDetails,
   onSetNewTaskProject,
@@ -99,7 +100,6 @@ export function TaskManagementView({
   onSetEditDetails,
   onSetEditProject,
   onSetEditTags,
-  onClearProjectFilter,
   onThreadDraftChange,
   onSendThreadMessage,
   onToggleGroupingMode,
