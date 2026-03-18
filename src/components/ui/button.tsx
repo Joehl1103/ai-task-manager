@@ -9,13 +9,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] hover:bg-[color:var(--muted-strong)]",
+          "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-[0_16px_32px_-24px_var(--shadow-color)] hover:opacity-90",
         outline:
-          "border border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:bg-[color:var(--surface-muted)]",
+          "border border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:border-[color:var(--border-strong)] hover:bg-[color:var(--surface-muted)]",
         ghost:
           "text-[color:var(--muted-strong)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
         subtle:
-          "border border-[color:var(--border)] bg-[color:var(--surface-muted)] text-[color:var(--foreground)] hover:bg-[color:var(--surface)]",
+          "border border-[color:var(--border)] bg-[color:var(--surface-muted)] text-[color:var(--foreground)] hover:border-[color:var(--border-strong)] hover:bg-[color:var(--surface)]",
       },
       size: {
         default: "h-9 px-4 py-2",

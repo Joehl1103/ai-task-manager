@@ -9,6 +9,7 @@ This app lives at the repository root (`ai-task-manager/`).
 - One compact overview list holding all tasks
 - One drill-down view for a selected task
 - A thin desktop top menu that switches between Tasks and Configuration
+- A theme-flag preview lab with 5 paired day/night UI directions
 - Add a task
 - Edit a task inside the drill-down
 - Delete a task
@@ -55,6 +56,8 @@ The app is the primary project in this repository.
 - `src/app/page.tsx`: page entry
 - `src/app/api/agent-call/route.ts`: provider proxy route for live agent calls
 - `src/features/workspace/workspace-top-menu.tsx`: thin desktop menu for switching views
+- `src/features/workspace/workspace-theme.ts`: shadcn-inspired theme registry and persistence helpers
+- `src/features/workspace/workspace-theme-selector.tsx`: UI toggles for the 5 paired day/night variants
 - `src/features/workspace/task-management-view.tsx`: task-only workspace view
 - `src/features/workspace/agent-configuration-view.tsx`: provider setup view
 - `src/features/workspace/formatted-agent-response.tsx`: safe basic markdown and HTML renderer for agent history
