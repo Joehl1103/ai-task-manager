@@ -18,6 +18,7 @@ import {
   deleteAgentCall,
   deleteTask,
   recordAgentCall,
+  updateTaskDeadline,
   updateTask,
 } from "@/features/workspace/operations";
 import {
@@ -69,12 +70,14 @@ export function WorkspaceApp() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
   const [newTaskProject, setNewTaskProject] = useState("");
+  const [newTaskDeadline, setNewTaskDeadline] = useState("");
   const [newTaskTags, setNewTaskTags] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDetails, setEditDetails] = useState("");
   const [editProject, setEditProject] = useState("");
+  const [editDeadline, setEditDeadline] = useState("");
   const [editTags, setEditTags] = useState("");
   const [openAgentTaskId, setOpenAgentTaskId] = useState<string | null>(null);
   const [agentDrafts, setAgentDrafts] = useState<Record<string, AgentDraft>>({});
@@ -249,7 +252,13 @@ export function WorkspaceApp() {
     setWorkspace((current) => deleteProject(current, id));
   }
 
-  function handleAddTaskFromProject(data: { title: string; details: string; projectId: string; tags: string[] }) {
+  function handleAddTaskFromProject(data: {
+    title: string;
+    details: string;
+    projectId: string;
+    deadline: string;
+    tags: string[];
+  }) {
     setWorkspace((current) => addTask(current, data));
   }
 
@@ -284,12 +293,14 @@ export function WorkspaceApp() {
         title: newTaskTitle,
         details: newTaskDetails,
         projectId: newTaskProject,
+        deadline: newTaskDeadline,
         tags: parseTagsFromString(newTaskTags),
       }),
     );
     setNewTaskTitle("");
     setNewTaskDetails("");
     setNewTaskProject("");
+    setNewTaskDeadline("");
     setNewTaskTags("");
   }
 
@@ -332,6 +343,7 @@ export function WorkspaceApp() {
     setEditTitle(task.title);
     setEditDetails(task.details);
     setEditProject(task.projectId);
+    setEditDeadline(task.deadline);
     setEditTags(task.tags.join(", "));
   }
 
@@ -349,6 +361,7 @@ export function WorkspaceApp() {
         title: editTitle,
         details: editDetails,
         projectId: editProject,
+        deadline: editDeadline,
         tags: parseTagsFromString(editTags),
       }),
     );
@@ -356,6 +369,7 @@ export function WorkspaceApp() {
     setEditTitle("");
     setEditDetails("");
     setEditProject("");
+    setEditDeadline("");
     setEditTags("");
   }
 
@@ -367,6 +381,7 @@ export function WorkspaceApp() {
     setEditTitle("");
     setEditDetails("");
     setEditProject("");
+    setEditDeadline("");
     setEditTags("");
   }
 
@@ -408,6 +423,13 @@ export function WorkspaceApp() {
     if (pendingTaskId === taskId) {
       setPendingTaskId(null);
     }
+  }
+
+  /**
+   * Updates a task deadline directly from grouped-view inline controls.
+   */
+  function handleUpdateTaskDeadline(taskId: string, deadline: string) {
+    setWorkspace((currentWorkspace) => updateTaskDeadline(currentWorkspace, taskId, deadline));
   }
 
   /**
@@ -650,10 +672,12 @@ export function WorkspaceApp() {
               activeProviderModel={activeProviderSettings.model}
               editDetails={editDetails}
               editingTaskId={editingTaskId}
+              editDeadline={editDeadline}
               editProject={editProject}
               editTags={editTags}
               editTitle={editTitle}
               isActiveProviderReady={isActiveProviderReady}
+              newTaskDeadline={newTaskDeadline}
               newTaskDetails={newTaskDetails}
               newTaskProject={newTaskProject}
               newTaskTags={newTaskTags}
@@ -668,10 +692,12 @@ export function WorkspaceApp() {
               onOpenTask={handleOpenTask}
               onReturnToOverview={handleReturnToOverview}
               onSaveEdit={handleSaveEdit}
+              onSetEditDeadline={setEditDeadline}
               onSetEditDetails={setEditDetails}
               onSetEditProject={setEditProject}
               onSetEditTags={setEditTags}
               onSetEditTitle={setEditTitle}
+              onSetNewTaskDeadline={setNewTaskDeadline}
               onSetNewTaskDetails={setNewTaskDetails}
               onSetNewTaskProject={setNewTaskProject}
               onSetNewTaskTags={setNewTaskTags}
@@ -679,6 +705,7 @@ export function WorkspaceApp() {
               onStartEdit={handleStartEdit}
               onToggleAgentPanel={handleToggleAgentPanel}
               onToggleGroupingMode={handleToggleGroupingMode}
+              onUpdateTaskDeadline={handleUpdateTaskDeadline}
               openAgentTaskId={openAgentTaskId}
               pendingTaskId={pendingTaskId}
               projects={workspace.projects}

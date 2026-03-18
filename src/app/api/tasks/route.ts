@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   try {
     const db = getDb();
     const body = await request.json();
-    const { title, details, projectId, tags } = body;
+    const { title, details, projectId, deadline, tags } = body;
 
     if (!title?.trim()) {
       return NextResponse.json(
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         title: title.trim(),
         details: details?.trim() || "",
         projectId: projectId || null,
+        deadline: deadline?.trim() || "",
         tags: normalizedTags,
       })
       .returning();
@@ -80,7 +81,7 @@ export async function PUT(request: Request) {
   try {
     const db = getDb();
     const body = await request.json();
-    const { id, title, details, projectId, tags } = body;
+    const { id, title, details, projectId, deadline, tags } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -106,6 +107,7 @@ export async function PUT(request: Request) {
         title: title.trim(),
         details: details?.trim() || "",
         projectId: projectId || null,
+        deadline: deadline?.trim() || "",
         tags: normalizedTags,
         updatedAt: new Date(),
       })

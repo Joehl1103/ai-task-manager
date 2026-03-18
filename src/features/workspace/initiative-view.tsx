@@ -104,7 +104,13 @@ export function InitiativeView({
   function formatDeadline(deadline: string) {
     if (!deadline) return null;
     try {
-      return new Date(deadline).toLocaleDateString("en-US", {
+      const date = new Date(`${deadline}T00:00:00`);
+
+      if (Number.isNaN(date.getTime())) {
+        return deadline;
+      }
+
+      return date.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",

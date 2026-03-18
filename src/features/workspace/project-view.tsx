@@ -19,7 +19,13 @@ interface ProjectViewProps {
   onDeleteProject: (id: string) => void;
   onSelectProject: (projectId: string) => void;
   onClearFilter: () => void;
-  onAddTask: (data: { title: string; details: string; projectId: string; tags: string[] }) => void;
+  onAddTask: (data: {
+    title: string;
+    details: string;
+    projectId: string;
+    deadline: string;
+    tags: string[];
+  }) => void;
 }
 
 export function ProjectView({
@@ -45,6 +51,7 @@ export function ProjectView({
   const [addTaskForId, setAddTaskForId] = useState<string | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
+  const [newTaskDeadline, setNewTaskDeadline] = useState("");
   const [newTaskTags, setNewTaskTags] = useState("");
 
   const filteredProjects = filterInitiativeId
@@ -108,10 +115,12 @@ export function ProjectView({
       title: newTaskTitle,
       details: newTaskDetails,
       projectId,
+      deadline: newTaskDeadline,
       tags: parsedTags,
     });
     setNewTaskTitle("");
     setNewTaskDetails("");
+    setNewTaskDeadline("");
     setNewTaskTags("");
     setAddTaskForId(null);
   }
@@ -124,7 +133,13 @@ export function ProjectView({
   function formatDeadline(deadline: string) {
     if (!deadline) return null;
     try {
-      return new Date(deadline).toLocaleDateString("en-US", {
+      const date = new Date(`${deadline}T00:00:00`);
+
+      if (Number.isNaN(date.getTime())) {
+        return deadline;
+      }
+
+      return date.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -309,9 +324,15 @@ export function ProjectView({
                 {getChildTasks(project.id).length > 0 && (
                   <div className="mt-3 space-y-1">
                     {getChildTasks(project.id).map((task) => (
-                      <p key={task.id} className="text-xs text-[color:var(--muted)]">
-                        • {task.title}
-                      </p>
+                      <div key={task.id} className="text-xs text-[color:var(--muted)]">
+                        <p>• {task.title}</p>
+                        <p className="ml-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          {task.deadline ? <span>Due: {formatDeadline(task.deadline)}</span> : null}
+                          {task.tags.length > 0 ? (
+                            <span>{task.tags.map((tag) => `#${tag}`).join(" ")}</span>
+                          ) : null}
+                        </p>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -344,6 +365,12 @@ export function ProjectView({
                         value={newTaskDetails}
                       />
                       <Input
+                        onChange={(e) => setNewTaskDeadline(e.target.value)}
+                        placeholder="Deadline (optional)"
+                        type="date"
+                        value={newTaskDeadline}
+                      />
+                      <Input
                         onChange={(e) => setNewTaskTags(e.target.value)}
                         placeholder="Tags (comma-separated, optional)"
                         value={newTaskTags}
@@ -354,6 +381,7 @@ export function ProjectView({
                             setAddTaskForId(null);
                             setNewTaskTitle("");
                             setNewTaskDetails("");
+                            setNewTaskDeadline("");
                             setNewTaskTags("");
                           }}
                           variant="ghost"

@@ -47,6 +47,7 @@ export interface Task {
   title: string;
   details: string;
   projectId: string;
+  deadline: string;
   tags: string[];
   agentCalls: AgentCall[];
 }
@@ -61,6 +62,7 @@ export interface AddTaskInput {
   title: string;
   details: string;
   projectId?: string;
+  deadline?: string;
   tags?: string[];
 }
 
@@ -69,6 +71,7 @@ export interface UpdateTaskInput {
   title: string;
   details: string;
   projectId?: string;
+  deadline?: string;
   tags?: string[];
 }
 

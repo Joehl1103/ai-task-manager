@@ -31,6 +31,13 @@ function normalizeTags(tags: string[] | undefined): string[] {
 }
 
 /**
+ * Normalizes a task deadline string for lightweight local storage and date input controls.
+ */
+function normalizeDeadline(deadline: string | undefined): string {
+  return deadline?.trim() ?? "";
+}
+
+/**
  * Adds a new task to the front of the task list so fresh tasks are immediately visible.
  */
 export function addTask(
@@ -42,6 +49,7 @@ export function addTask(
     title: input.title.trim(),
     details: input.details.trim(),
     projectId: input.projectId?.trim() ?? "",
+    deadline: normalizeDeadline(input.deadline),
     tags: normalizeTags(input.tags),
     agentCalls: [],
   };
@@ -68,9 +76,27 @@ export function updateTask(
             title: input.title.trim(),
             details: input.details.trim(),
             projectId: input.projectId?.trim() ?? task.projectId,
+            deadline:
+              input.deadline !== undefined ? normalizeDeadline(input.deadline) : task.deadline,
             tags: input.tags !== undefined ? normalizeTags(input.tags) : task.tags,
           }
         : task,
+    ),
+  };
+}
+
+/**
+ * Updates only the deadline for a task from compact grouped-view controls.
+ */
+export function updateTaskDeadline(
+  workspace: WorkspaceSnapshot,
+  taskId: string,
+  deadline: string,
+): WorkspaceSnapshot {
+  return {
+    ...workspace,
+    tasks: workspace.tasks.map((task) =>
+      task.id === taskId ? { ...task, deadline: normalizeDeadline(deadline) } : task,
     ),
   };
 }

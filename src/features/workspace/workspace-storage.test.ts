@@ -72,6 +72,7 @@ describe("workspace storage", () => {
       title: "Follow up with daycare",
       details: "",
       projectId: "project-1",
+      deadline: "",
     });
     expect(workspace.tasks[0]?.agentCalls[0]).toMatchObject({
       id: "call-custom",
@@ -114,6 +115,32 @@ describe("workspace storage", () => {
       title: "Task without project",
       details: "Some details",
       projectId: "",
+      deadline: "",
+    });
+  });
+
+  /**
+   * Normalizes tasks without a deadline field to an empty string.
+   */
+  it("normalizes tasks without a deadline field", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      initiatives: [],
+      projects: [],
+      tasks: [
+        {
+          id: "task-old",
+          title: "Task without deadline",
+          details: "Some details",
+          projectId: "",
+          tags: [],
+          agentCalls: [],
+        },
+      ],
+    });
+
+    expect(workspace.tasks[0]).toMatchObject({
+      id: "task-old",
+      deadline: "",
     });
   });
 

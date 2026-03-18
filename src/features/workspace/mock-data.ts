@@ -29,6 +29,7 @@ export const workspaceSeed: WorkspaceSnapshot = {
       title: "Define the smallest possible task manager",
       details: "Keep only create, edit, delete, and call-agent actions.",
       projectId: "project-1",
+      deadline: "2026-04-05",
       tags: ["planning", "design"],
       agentCalls: [],
     },
@@ -37,6 +38,7 @@ export const workspaceSeed: WorkspaceSnapshot = {
       title: "List the next three product decisions",
       details: "Use this as an example of a normal editable task.",
       projectId: "project-1",
+      deadline: "2026-04-10",
       tags: ["high-priority", "design"],
       agentCalls: [
         {
@@ -61,6 +63,7 @@ export const workspaceSeed: WorkspaceSnapshot = {
       title: "Review quarterly goals",
       details: "Compare current progress against initial targets.",
       projectId: "",
+      deadline: "",
       tags: ["review"],
       agentCalls: [],
     },

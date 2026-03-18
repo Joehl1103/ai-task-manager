@@ -26,11 +26,13 @@ interface TaskManagementViewProps {
   newTaskTitle: string;
   newTaskDetails: string;
   newTaskProject: string;
+  newTaskDeadline: string;
   newTaskTags: string;
   editingTaskId: string | null;
   editTitle: string;
   editDetails: string;
   editProject: string;
+  editDeadline: string;
   editTags: string;
   openAgentTaskId: string | null;
   pendingTaskId: string | null;
@@ -41,6 +43,7 @@ interface TaskManagementViewProps {
   onSetNewTaskTitle: (value: string) => void;
   onSetNewTaskDetails: (value: string) => void;
   onSetNewTaskProject: (value: string) => void;
+  onSetNewTaskDeadline: (value: string) => void;
   onSetNewTaskTags: (value: string) => void;
   onAddTask: () => void;
   onOpenTask: (taskId: string) => void;
@@ -54,11 +57,13 @@ interface TaskManagementViewProps {
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
+  onSetEditDeadline: (value: string) => void;
   onSetEditTags: (value: string) => void;
   onCloseAgentPanel: () => void;
   onAgentBriefChange: (taskId: string, brief: string) => void;
   onCallAgent: (taskId: string) => void;
   onToggleGroupingMode: () => void;
+  onUpdateTaskDeadline: (taskId: string, deadline: string) => void;
 }
 
 /**
@@ -72,11 +77,13 @@ export function TaskManagementView({
   newTaskTitle,
   newTaskDetails,
   newTaskProject,
+  newTaskDeadline,
   newTaskTags,
   editingTaskId,
   editTitle,
   editDetails,
   editProject,
+  editDeadline,
   editTags,
   openAgentTaskId,
   pendingTaskId,
@@ -87,6 +94,7 @@ export function TaskManagementView({
   onSetNewTaskTitle,
   onSetNewTaskDetails,
   onSetNewTaskProject,
+  onSetNewTaskDeadline,
   onSetNewTaskTags,
   onAddTask,
   onOpenTask,
@@ -100,11 +108,13 @@ export function TaskManagementView({
   onSetEditTitle,
   onSetEditDetails,
   onSetEditProject,
+  onSetEditDeadline,
   onSetEditTags,
   onCloseAgentPanel,
   onAgentBriefChange,
   onCallAgent,
   onToggleGroupingMode,
+  onUpdateTaskDeadline,
 }: TaskManagementViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
 
@@ -126,6 +136,7 @@ export function TaskManagementView({
     onSetNewTaskTitle("");
     onSetNewTaskDetails("");
     onSetNewTaskProject("");
+    onSetNewTaskDeadline("");
     onSetNewTaskTags("");
   }
 
@@ -172,6 +183,12 @@ export function TaskManagementView({
               ))}
             </select>
             <Input
+              onChange={(event) => onSetNewTaskDeadline(event.target.value)}
+              placeholder="Deadline (optional)"
+              type="date"
+              value={newTaskDeadline}
+            />
+            <Input
               onChange={(event) => onSetNewTaskTags(event.target.value)}
               placeholder="Tags (optional, comma-separated)"
               value={newTaskTags}
@@ -206,6 +223,7 @@ export function TaskManagementView({
             agentDraft={selectedAgentDraft}
             editDetails={editDetails}
             editingTaskId={editingTaskId}
+            editDeadline={editDeadline}
             editProject={editProject}
             editTags={editTags}
             editTitle={editTitle}
@@ -217,6 +235,7 @@ export function TaskManagementView({
             onDeleteTask={onDeleteTask}
             onReturnToOverview={onReturnToOverview}
             onSaveEdit={onSaveEdit}
+            onSetEditDeadline={onSetEditDeadline}
             onSetEditDetails={onSetEditDetails}
             onSetEditProject={onSetEditProject}
             onSetEditTags={onSetEditTags}
@@ -233,6 +252,7 @@ export function TaskManagementView({
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
             onToggleGroupingMode={onToggleGroupingMode}
+            onUpdateTaskDeadline={onUpdateTaskDeadline}
             projects={projects}
             taskGroupingMode={taskGroupingMode}
             tasks={tasks}
@@ -250,6 +270,7 @@ interface GroupedTaskOverviewProps {
   onDeleteTask: (taskId: string) => void;
   taskGroupingMode: TaskGroupingMode;
   onToggleGroupingMode: () => void;
+  onUpdateTaskDeadline: (taskId: string, deadline: string) => void;
 }
 
 /**
@@ -262,6 +283,7 @@ function GroupedTaskOverview({
   onDeleteTask,
   taskGroupingMode,
   onToggleGroupingMode,
+  onUpdateTaskDeadline,
 }: GroupedTaskOverviewProps) {
   const groups =
     taskGroupingMode === "tag" ? groupTasksByTag(tasks) : groupTasksByProject(tasks, projects);
@@ -311,6 +333,7 @@ function GroupedTaskOverview({
           key={group.project || "__no_project__"}
           onDeleteTask={onDeleteTask}
           onOpenTask={onOpenTask}
+          onUpdateTaskDeadline={onUpdateTaskDeadline}
         />
       ))}
     </div>
@@ -321,12 +344,18 @@ interface ProjectSectionProps {
   group: TaskGroup;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  onUpdateTaskDeadline: (taskId: string, deadline: string) => void;
 }
 
 /**
  * Renders a single project section with its tasks as line items.
  */
-function ProjectSection({ group, onOpenTask, onDeleteTask }: ProjectSectionProps) {
+function ProjectSection({
+  group,
+  onOpenTask,
+  onDeleteTask,
+  onUpdateTaskDeadline,
+}: ProjectSectionProps) {
   return (
     <section>
       <h3 className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
@@ -339,6 +368,7 @@ function ProjectSection({ group, onOpenTask, onDeleteTask }: ProjectSectionProps
             key={task.id}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
+            onUpdateTaskDeadline={onUpdateTaskDeadline}
             task={task}
           />
         ))}
@@ -351,34 +381,84 @@ interface TaskOverviewRowProps {
   task: Task;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  onUpdateTaskDeadline: (taskId: string, deadline: string) => void;
 }
 
 /**
  * Shows each task as a lightweight line item so scanning stays fast.
  */
-function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProps) {
+function TaskOverviewRow({
+  task,
+  onOpenTask,
+  onDeleteTask,
+  onUpdateTaskDeadline,
+}: TaskOverviewRowProps) {
+  const formattedDeadline = formatDeadline(task.deadline);
+  const [isEditingDeadline, setIsEditingDeadline] = useState(false);
+  const [deadlineDraft, setDeadlineDraft] = useState(task.deadline);
+
+  function handleSaveDeadline() {
+    const normalizedDeadline = deadlineDraft.trim();
+
+    if (normalizedDeadline !== task.deadline) {
+      onUpdateTaskDeadline(task.id, normalizedDeadline);
+    }
+
+    setIsEditingDeadline(false);
+  }
+
   return (
     <li className="task-overview-line-item border-b border-[color:var(--row-divider)] py-2">
       <div className="flex min-h-8 items-center gap-2">
-        <button
-          className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left hover:text-[color:var(--muted-strong)]"
-          onClick={() => onOpenTask(task.id)}
-          type="button"
-        >
-          <span className="shrink truncate text-sm">{task.title}</span>
-          {task.tags.length > 0 ? (
-            <span className="flex min-w-0 items-center gap-1 overflow-hidden">
-              {task.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-[11px] font-medium leading-none text-white"
-                >
-                  {tag}
-                </span>
-              ))}
-            </span>
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+          <button
+            className="min-w-0 shrink truncate text-left text-sm hover:text-[color:var(--muted-strong)]"
+            onClick={() => onOpenTask(task.id)}
+            type="button"
+          >
+            {task.title}
+          </button>
+          {isEditingDeadline ? (
+            <Input
+              aria-label={`Edit deadline for ${task.title}`}
+              className="h-6 w-36 px-2 py-0 text-[11px]"
+              onBlur={handleSaveDeadline}
+              onChange={(event) => setDeadlineDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  handleSaveDeadline();
+                }
+
+                if (event.key === "Escape") {
+                  setDeadlineDraft(task.deadline);
+                  setIsEditingDeadline(false);
+                }
+              }}
+              type="date"
+              value={deadlineDraft}
+            />
+          ) : formattedDeadline ? (
+            <button
+              aria-label={`Change deadline for ${task.title}`}
+              className="shrink-0 rounded-full bg-[color:var(--surface-muted)] px-2 py-px text-[11px] leading-none text-[color:var(--muted-strong)] transition-colors hover:bg-[color:var(--border)]"
+              onClick={() => {
+                setDeadlineDraft(task.deadline);
+                setIsEditingDeadline(true);
+              }}
+              type="button"
+            >
+              Due {formattedDeadline}
+            </button>
           ) : null}
-        </button>
+          {task.tags.map((tag) => (
+            <span
+              key={tag}
+              className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-[11px] font-medium leading-none text-white"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
 
         <Button
           aria-label="Open task"
@@ -412,6 +492,7 @@ interface TaskDrillDownProps {
   editTitle: string;
   editDetails: string;
   editProject: string;
+  editDeadline: string;
   editTags: string;
   openAgentTaskId: string | null;
   pendingTaskId: string | null;
@@ -428,6 +509,7 @@ interface TaskDrillDownProps {
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
+  onSetEditDeadline: (value: string) => void;
   onSetEditTags: (value: string) => void;
   onCloseAgentPanel: () => void;
   onAgentBriefChange: (taskId: string, brief: string) => void;
@@ -444,6 +526,7 @@ function TaskDrillDown({
   editTitle,
   editDetails,
   editProject,
+  editDeadline,
   editTags,
   openAgentTaskId,
   pendingTaskId,
@@ -460,6 +543,7 @@ function TaskDrillDown({
   onSetEditTitle,
   onSetEditDetails,
   onSetEditProject,
+  onSetEditDeadline,
   onSetEditTags,
   onCloseAgentPanel,
   onAgentBriefChange,
@@ -471,6 +555,7 @@ function TaskDrillDown({
   const projectName = task.projectId
     ? projects.find((p) => p.id === task.projectId)?.name
     : null;
+  const formattedDeadline = formatDeadline(task.deadline);
 
   return (
     <article className="mt-2 space-y-4">
@@ -484,6 +569,9 @@ function TaskDrillDown({
           <h2 className="text-xl font-semibold">{task.title}</h2>
           {projectName ? (
             <p className="text-xs text-[color:var(--muted)]">{projectName}</p>
+          ) : null}
+          {formattedDeadline ? (
+            <p className="text-xs text-[color:var(--muted)]">Due: {formattedDeadline}</p>
           ) : null}
           {task.tags.length > 0 ? (
             <div className="mt-1 flex flex-wrap gap-1">
@@ -535,6 +623,13 @@ function TaskDrillDown({
               </option>
             ))}
           </select>
+          <Input
+            className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
+            onChange={(event) => onSetEditDeadline(event.target.value)}
+            placeholder="Deadline (optional)"
+            type="date"
+            value={editDeadline}
+          />
           <Input
             className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
             onChange={(event) => onSetEditTags(event.target.value)}
@@ -643,6 +738,31 @@ function AgentContributionRow({ agentCall, onDelete }: AgentContributionRowProps
       </div>
     </li>
   );
+}
+
+/**
+ * Formats a task deadline string for compact display in overview and drill-down views.
+ */
+function formatDeadline(deadline: string): string | null {
+  if (!deadline) {
+    return null;
+  }
+
+  try {
+    const date = new Date(`${deadline}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+      return deadline;
+    }
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return deadline;
+  }
 }
 
 /**

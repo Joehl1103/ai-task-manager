@@ -6,6 +6,7 @@ import {
   deleteAgentCall,
   deleteTask,
   recordAgentCall,
+  updateTaskDeadline,
   updateTask,
 } from "./operations";
 
@@ -58,6 +59,22 @@ describe("workspace operations", () => {
     expect(updatedWorkspace.tasks[0]).toMatchObject({
       title: "Review sprint goals",
       tags: ["planning", "review"],
+    });
+  });
+
+  /**
+   * Creates a task with a deadline.
+   */
+  it("adds a task with a deadline", () => {
+    const updatedWorkspace = addTask(workspaceSeed, {
+      title: "Ship release notes",
+      details: "Capture final highlights.",
+      deadline: "2026-05-10",
+    });
+
+    expect(updatedWorkspace.tasks[0]).toMatchObject({
+      title: "Ship release notes",
+      deadline: "2026-05-10",
     });
   });
 
@@ -160,6 +177,34 @@ describe("workspace operations", () => {
 
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
       tags: ["ui", "feature"],
+    });
+  });
+
+  /**
+   * Updates a task deadline while preserving other fields.
+   */
+  it("updates a task deadline", () => {
+    const updatedWorkspace = updateTask(workspaceSeed, {
+      taskId: "task-1",
+      title: "Define the smallest possible task manager",
+      details: "Keep only create, edit, delete, and call-agent actions.",
+      deadline: "2026-05-18",
+    });
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
+      deadline: "2026-05-18",
+    });
+  });
+
+  /**
+   * Updates task deadline directly for grouped-view inline edits.
+   */
+  it("updates only the deadline for a task", () => {
+    const updatedWorkspace = updateTaskDeadline(workspaceSeed, "task-2", "2026-05-22");
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")).toMatchObject({
+      title: "List the next three product decisions",
+      deadline: "2026-05-22",
     });
   });
 

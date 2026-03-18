@@ -16,11 +16,13 @@ function buildTaskManagementViewProps() {
     newTaskTitle: "",
     newTaskDetails: "",
     newTaskProject: "",
+    newTaskDeadline: "",
     newTaskTags: "",
     editingTaskId: null,
     editTitle: "",
     editDetails: "",
     editProject: "",
+    editDeadline: "",
     editTags: "",
     openAgentTaskId: null,
     pendingTaskId: null,
@@ -31,6 +33,7 @@ function buildTaskManagementViewProps() {
     onSetNewTaskTitle: vi.fn(),
     onSetNewTaskDetails: vi.fn(),
     onSetNewTaskProject: vi.fn(),
+    onSetNewTaskDeadline: vi.fn(),
     onSetNewTaskTags: vi.fn(),
     onAddTask: vi.fn(),
     onOpenTask: vi.fn(),
@@ -44,11 +47,13 @@ function buildTaskManagementViewProps() {
     onSetEditTitle: vi.fn(),
     onSetEditDetails: vi.fn(),
     onSetEditProject: vi.fn(),
+    onSetEditDeadline: vi.fn(),
     onSetEditTags: vi.fn(),
     onCloseAgentPanel: vi.fn(),
     onAgentBriefChange: vi.fn(),
     onCallAgent: vi.fn(),
     onToggleGroupingMode: vi.fn(),
+    onUpdateTaskDeadline: vi.fn(),
   };
 }
 
@@ -65,6 +70,15 @@ describe("task management view", () => {
   });
 
   /**
+   * Exposes an explicit grouped-view control for editing an existing deadline.
+   */
+  it("renders a change-deadline control in grouped rows", () => {
+    const markup = renderToStaticMarkup(<TaskManagementView {...buildTaskManagementViewProps()} />);
+
+    expect(markup).toContain("Change deadline for Define the smallest possible task manager");
+  });
+
+  /**
    * Keeps task row chips compact and adds hover color feedback for icon actions.
    */
   it("renders thin tag chips and icon buttons with hover color feedback", () => {
@@ -75,5 +89,24 @@ describe("task management view", () => {
     expect(markup).toContain('aria-label="Remove task"');
     expect(markup).toContain("text-[color:var(--muted)]");
     expect(markup).toContain("hover:text-[color:var(--foreground)]");
+  });
+
+  /**
+   * Shows a deadline label in task drill-down when a task has a deadline.
+   */
+  it("renders a task deadline in drill-down", () => {
+    const taskWithDeadline = {
+      ...workspaceSeed.tasks[0],
+      deadline: "2026-05-18",
+    };
+    const markup = renderToStaticMarkup(
+      <TaskManagementView
+        {...buildTaskManagementViewProps()}
+        selectedTask={taskWithDeadline}
+      />,
+    );
+
+    expect(markup).toContain("Due:");
+    expect(markup).toContain("2026");
   });
 });

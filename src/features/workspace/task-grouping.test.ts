@@ -20,6 +20,7 @@ function createTask(
     title,
     details: "",
     projectId,
+    deadline: "",
     tags,
     agentCalls: [],
   };

@@ -117,6 +117,7 @@ function migrateFromLegacyFormat(legacyTasks: unknown[]): WorkspaceSnapshot {
       title: readString(task.title) || "Untitled task",
       details: readString(task.details),
       projectId,
+      deadline: readString(task.deadline),
       tags: normalizeTags(task.tags),
       agentCalls: Array.isArray(task.agentCalls)
         ? task.agentCalls.flatMap((agentCall, agentCallIndex) => {
@@ -194,6 +195,7 @@ function normalizeTask(value: unknown, index: number): Task | null {
     title: readString(value.title) || "Untitled task",
     details: readString(value.details),
     projectId: readString(value.projectId),
+    deadline: readString(value.deadline),
     tags: normalizeTags(value.tags),
     agentCalls: Array.isArray(value.agentCalls)
       ? value.agentCalls.flatMap((agentCall, agentCallIndex) => {
