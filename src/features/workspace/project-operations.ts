@@ -4,6 +4,7 @@ import {
   type UpdateProjectInput,
   type WorkspaceSnapshot,
 } from "./types";
+import { createAgentThread } from "./thread-helpers";
 
 /**
  * Adds a new project to the workspace.
@@ -12,11 +13,13 @@ export function addProject(
   workspace: WorkspaceSnapshot,
   input: AddProjectInput,
 ): WorkspaceSnapshot {
+  const nextProjectId = buildNextProjectId(workspace.projects);
   const nextProject: Project = {
-    id: buildNextProjectId(workspace.projects),
+    id: nextProjectId,
     name: input.name.trim(),
     initiativeId: input.initiativeId.trim(),
     deadline: input.deadline.trim(),
+    agentThread: createAgentThread("project", nextProjectId),
   };
 
   return {

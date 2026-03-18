@@ -7,6 +7,7 @@ import {
   noProjectLabel,
   noTagsLabel,
 } from "./task-grouping";
+import { createAgentThread } from "./thread-helpers";
 import { type Project, type Task } from "./types";
 
 function createTask(
@@ -22,7 +23,7 @@ function createTask(
     projectId,
     deadline: "",
     tags,
-    agentCalls: [],
+    agentThread: createAgentThread("task", id),
   };
 }
 
@@ -32,6 +33,7 @@ function createProject(id: string, name: string): Project {
     name,
     initiativeId: "",
     deadline: "",
+    agentThread: createAgentThread("project", id),
   };
 }
 

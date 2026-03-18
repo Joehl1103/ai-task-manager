@@ -1,11 +1,11 @@
-import { type AgentCallStatus, type Task } from "./types";
+import { type Task, type ThreadMessageStatus } from "./types";
 
 const defaultDetailsPreviewLength = 96;
 
 export interface TaskOverviewSummary {
   detailsPreview: string;
-  agentCallCount: number;
-  latestAgentStatus: AgentCallStatus | null;
+  messageCount: number;
+  latestAgentStatus: ThreadMessageStatus | null;
   latestAgentTimestamp: string | null;
 }
 
@@ -13,13 +13,13 @@ export interface TaskOverviewSummary {
  * Builds the compact task summary used by the overview list.
  */
 export function buildTaskOverviewSummary(task: Task): TaskOverviewSummary {
-  const latestAgentCall = task.agentCalls[0];
+  const latestAgentMessage = task.agentThread.messages.find((message) => message.role === "agent");
 
   return {
     detailsPreview: buildTaskDetailsPreview(task.details),
-    agentCallCount: task.agentCalls.length,
-    latestAgentStatus: latestAgentCall?.status ?? null,
-    latestAgentTimestamp: latestAgentCall?.createdAt ?? null,
+    messageCount: task.agentThread.messages.length,
+    latestAgentStatus: latestAgentMessage?.status ?? null,
+    latestAgentTimestamp: latestAgentMessage?.createdAt ?? null,
   };
 }
 

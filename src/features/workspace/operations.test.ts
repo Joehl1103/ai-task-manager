@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { workspaceSeed } from "./mock-data";
 import {
   addTask,
-  deleteAgentCall,
+  appendAgentThreadMessage,
+  appendHumanThreadMessage,
   deleteTask,
-  recordAgentCall,
-  updateTaskDeadline,
+  deleteThreadMessage,
   updateTask,
 } from "./operations";
 
@@ -25,8 +25,8 @@ describe("workspace operations", () => {
       title: "Write Monday priorities",
       details: "Keep it short and practical.",
       projectId: "",
-      agentCalls: [],
     });
+    expect(updatedWorkspace.tasks[0]?.agentThread.messages).toEqual([]);
   });
 
   /**
@@ -59,22 +59,6 @@ describe("workspace operations", () => {
     expect(updatedWorkspace.tasks[0]).toMatchObject({
       title: "Review sprint goals",
       tags: ["planning", "review"],
-    });
-  });
-
-  /**
-   * Creates a task with a deadline.
-   */
-  it("adds a task with a deadline", () => {
-    const updatedWorkspace = addTask(workspaceSeed, {
-      title: "Ship release notes",
-      details: "Capture final highlights.",
-      deadline: "2026-05-10",
-    });
-
-    expect(updatedWorkspace.tasks[0]).toMatchObject({
-      title: "Ship release notes",
-      deadline: "2026-05-10",
     });
   });
 
@@ -181,35 +165,7 @@ describe("workspace operations", () => {
   });
 
   /**
-   * Updates a task deadline while preserving other fields.
-   */
-  it("updates a task deadline", () => {
-    const updatedWorkspace = updateTask(workspaceSeed, {
-      taskId: "task-1",
-      title: "Define the smallest possible task manager",
-      details: "Keep only create, edit, delete, and call-agent actions.",
-      deadline: "2026-05-18",
-    });
-
-    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
-      deadline: "2026-05-18",
-    });
-  });
-
-  /**
-   * Updates task deadline directly for grouped-view inline edits.
-   */
-  it("updates only the deadline for a task", () => {
-    const updatedWorkspace = updateTaskDeadline(workspaceSeed, "task-2", "2026-05-22");
-
-    expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")).toMatchObject({
-      title: "List the next three product decisions",
-      deadline: "2026-05-22",
-    });
-  });
-
-  /**
-   * Preserves the existing tags when not explicitly updated.
+   * Preserves the existing tags when not provided in update.
    */
   it("preserves existing tags when not provided in update", () => {
     const updatedWorkspace = updateTask(workspaceSeed, {
@@ -234,63 +190,101 @@ describe("workspace operations", () => {
   });
 
   /**
-   * Removes one saved agent contribution without disturbing the rest of the task data.
+   * Appends a new human message to a task thread.
    */
-  it("deletes one agent call from a task", () => {
-    const updatedWorkspace = deleteAgentCall(workspaceSeed, "task-2", "call-1");
+  it("adds a human message to a task thread", () => {
+    const updatedWorkspace = appendHumanThreadMessage(workspaceSeed, {
+      owner: {
+        ownerType: "task",
+        ownerId: "task-1",
+      },
+      content: "Suggest a sharper problem statement.",
+      now: "Later",
+    });
 
-    expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")).toMatchObject({
-      id: "task-2",
-      title: "List the next three product decisions",
-      details: "Use this as an example of a normal editable task.",
-      agentCalls: [],
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")?.agentThread.messages.at(-1)).toMatchObject({
+      role: "human",
+      content: "Suggest a sharper problem statement.",
+      createdAt: "Later",
     });
   });
 
   /**
-   * Keeps deletion scoped so one task's agent history never edits another task.
+   * Appends an agent response to a project thread.
    */
-  it("only deletes the requested agent call from the requested task", () => {
-    const workspaceWithExtraCall = recordAgentCall(workspaceSeed, {
-      taskId: "task-1",
+  it("adds an agent reply to a project thread", () => {
+    const updatedWorkspace = appendAgentThreadMessage(workspaceSeed, {
+      owner: {
+        ownerType: "project",
+        ownerId: "project-1",
+      },
       providerId: "openai",
       model: "gpt-5",
-      brief: "Suggest a sharper problem statement.",
-      now: "Later",
+      content: "Start with scope, user flow, and one clear success metric.",
+      now: "Now",
       status: "done",
-      result: "Focus on compact task review plus drill-down detail.",
     });
-    const updatedWorkspace = deleteAgentCall(workspaceWithExtraCall, "task-2", "call-1");
 
-    expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")?.agentCalls).toEqual([]);
-    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")?.agentCalls).toHaveLength(
-      1,
+    expect(updatedWorkspace.projects.find((project) => project.id === "project-1")?.agentThread.messages.at(-1)).toMatchObject({
+      role: "agent",
+      content: "Start with scope, user flow, and one clear success metric.",
+      providerId: "openai",
+      model: "gpt-5",
+      status: "done",
+      createdAt: "Now",
+    });
+  });
+
+  /**
+   * Keeps thread updates scoped so one initiative thread never edits another entity.
+   */
+  it("only edits the requested owner thread", () => {
+    const updatedWorkspace = appendHumanThreadMessage(workspaceSeed, {
+      owner: {
+        ownerType: "initiative",
+        ownerId: "initiative-1",
+      },
+      content: "Outline the next launch checkpoint.",
+      now: "Today",
+    });
+
+    expect(updatedWorkspace.initiatives[0]?.agentThread.messages).toHaveLength(
+      workspaceSeed.initiatives[0]!.agentThread.messages.length + 1,
+    );
+    expect(updatedWorkspace.tasks[1]?.agentThread.messages).toHaveLength(
+      workspaceSeed.tasks[1]!.agentThread.messages.length,
     );
   });
 
   /**
-   * Models a successful provider-backed call by attaching the response to the task.
+   * Removes one thread message from the requested task.
    */
-  it("calls an agent from within a task", () => {
-    const updatedWorkspace = recordAgentCall(workspaceSeed, {
-      taskId: "task-1",
-      providerId: "openai",
-      model: "gpt-5",
-      brief: "Return with three examples of simple task manager layouts.",
-      now: "Now",
-      status: "done",
-      result: "Use one list, plain editing, and task-level agent actions.",
-    });
+  it("deletes one message from a task thread", () => {
+    const updatedWorkspace = deleteThreadMessage(
+      workspaceSeed,
+      {
+        ownerType: "task",
+        ownerId: "task-2",
+      },
+      "message-1",
+    );
 
-    const updatedTask = updatedWorkspace.tasks.find((task) => task.id === "task-1");
-
-    expect(updatedTask?.agentCalls[0]).toMatchObject({
-      providerId: "openai",
-      model: "gpt-5",
-      brief: "Return with three examples of simple task manager layouts.",
-      status: "done",
-      createdAt: "Now",
-      result: "Use one list, plain editing, and task-level agent actions.",
-    });
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-2")?.agentThread.messages).toEqual([
+      {
+        id: "message-2",
+        role: "agent",
+        content: [
+          "## Starter direction",
+          "",
+          "- Use one clean list",
+          "- Keep metadata light",
+          "- Keep agent actions inside each task",
+        ].join("\n"),
+        createdAt: "Earlier today",
+        providerId: "openai",
+        model: "gpt-5",
+        status: "done",
+      },
+    ]);
   });
 });

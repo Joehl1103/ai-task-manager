@@ -3,41 +3,51 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
+import { AgentThreadPanel } from "@/features/workspace/agent-thread-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { readThreadComposerPlaceholder } from "@/features/workspace/thread-context";
 
-import { type Initiative, type Project, type Task } from "./types";
+import { type Initiative, type Project, type Task, type ThreadDraft } from "./types";
 
 interface ProjectViewProps {
+  activeProviderLabel: string;
+  activeProviderModel: string;
   projects: Project[];
   initiatives: Initiative[];
   tasks: Task[];
   filterInitiativeId: string | null;
+  pendingThreadId: string | null;
+  readThreadDraft: (projectId: string) => ThreadDraft;
   onAddProject: (data: { name: string; initiativeId: string; deadline: string }) => void;
   onUpdateProject: (data: { id: string; name: string; initiativeId: string; deadline: string }) => void;
   onDeleteProject: (id: string) => void;
   onSelectProject: (projectId: string) => void;
   onClearFilter: () => void;
-  onAddTask: (data: {
-    title: string;
-    details: string;
-    projectId: string;
-    deadline: string;
-    tags: string[];
-  }) => void;
+  onDeleteThreadMessage: (projectId: string, messageId: string) => void;
+  onThreadDraftChange: (projectId: string, message: string) => void;
+  onSendThreadMessage: (projectId: string) => void;
+  onAddTask: (data: { title: string; details: string; projectId: string; tags: string[] }) => void;
 }
 
 export function ProjectView({
+  activeProviderLabel,
+  activeProviderModel,
   projects,
   initiatives,
   tasks,
   filterInitiativeId,
+  pendingThreadId,
+  readThreadDraft,
   onAddProject,
   onUpdateProject,
   onDeleteProject,
   onSelectProject,
   onClearFilter,
+  onDeleteThreadMessage,
+  onThreadDraftChange,
+  onSendThreadMessage,
   onAddTask,
 }: ProjectViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
@@ -51,8 +61,8 @@ export function ProjectView({
   const [addTaskForId, setAddTaskForId] = useState<string | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
-  const [newTaskDeadline, setNewTaskDeadline] = useState("");
   const [newTaskTags, setNewTaskTags] = useState("");
+  const [openThreadForId, setOpenThreadForId] = useState<string | null>(null);
 
   const filteredProjects = filterInitiativeId
     ? projects.filter((p) => p.initiativeId === filterInitiativeId)
@@ -115,12 +125,10 @@ export function ProjectView({
       title: newTaskTitle,
       details: newTaskDetails,
       projectId,
-      deadline: newTaskDeadline,
       tags: parsedTags,
     });
     setNewTaskTitle("");
     setNewTaskDetails("");
-    setNewTaskDeadline("");
     setNewTaskTags("");
     setAddTaskForId(null);
   }
@@ -133,13 +141,7 @@ export function ProjectView({
   function formatDeadline(deadline: string) {
     if (!deadline) return null;
     try {
-      const date = new Date(`${deadline}T00:00:00`);
-
-      if (Number.isNaN(date.getTime())) {
-        return deadline;
-      }
-
-      return date.toLocaleDateString("en-US", {
+      return new Date(deadline).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -324,18 +326,47 @@ export function ProjectView({
                 {getChildTasks(project.id).length > 0 && (
                   <div className="mt-3 space-y-1">
                     {getChildTasks(project.id).map((task) => (
-                      <div key={task.id} className="text-xs text-[color:var(--muted)]">
-                        <p>• {task.title}</p>
-                        <p className="ml-3 flex flex-wrap items-center gap-x-2 gap-y-1">
-                          {task.deadline ? <span>Due: {formatDeadline(task.deadline)}</span> : null}
-                          {task.tags.length > 0 ? (
-                            <span>{task.tags.map((tag) => `#${tag}`).join(" ")}</span>
-                          ) : null}
-                        </p>
-                      </div>
+                      <p key={task.id} className="text-xs text-[color:var(--muted)]">
+                        • {task.title}
+                      </p>
                     ))}
                   </div>
                 )}
+
+                <div className="mt-3">
+                  <button
+                    className="flex items-center gap-1 text-xs text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
+                    onClick={() =>
+                      setOpenThreadForId((currentThreadId) =>
+                        currentThreadId === project.id ? null : project.id,
+                      )
+                    }
+                    type="button"
+                  >
+                    {openThreadForId === project.id
+                      ? "Hide thread"
+                      : `Show thread (${project.agentThread.messages.length})`}
+                  </button>
+
+                  {openThreadForId === project.id ? (
+                    <div className="mt-3">
+                      <AgentThreadPanel
+                        activeProviderLabel={activeProviderLabel}
+                        activeProviderModel={activeProviderModel}
+                        composerPlaceholder={readThreadComposerPlaceholder({
+                          ownerType: "project",
+                          ownerId: project.id,
+                        })}
+                        draft={readThreadDraft(project.id)}
+                        isPending={pendingThreadId === project.id}
+                        onDeleteMessage={(messageId) => onDeleteThreadMessage(project.id, messageId)}
+                        onDraftChange={(message) => onThreadDraftChange(project.id, message)}
+                        onSend={() => onSendThreadMessage(project.id)}
+                        thread={project.agentThread}
+                      />
+                    </div>
+                  ) : null}
+                </div>
 
                 <div className="mt-3">
                   <button
@@ -365,12 +396,6 @@ export function ProjectView({
                         value={newTaskDetails}
                       />
                       <Input
-                        onChange={(e) => setNewTaskDeadline(e.target.value)}
-                        placeholder="Deadline (optional)"
-                        type="date"
-                        value={newTaskDeadline}
-                      />
-                      <Input
                         onChange={(e) => setNewTaskTags(e.target.value)}
                         placeholder="Tags (comma-separated, optional)"
                         value={newTaskTags}
@@ -381,7 +406,6 @@ export function ProjectView({
                             setAddTaskForId(null);
                             setNewTaskTitle("");
                             setNewTaskDetails("");
-                            setNewTaskDeadline("");
                             setNewTaskTags("");
                           }}
                           variant="ghost"

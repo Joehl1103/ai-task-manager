@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 import { AgentConfigurationView } from "@/features/workspace/agent-configuration-view";
 import {
-  buildDeleteAgentContributionConfirmationMessage,
   buildDeleteTaskConfirmationMessage,
+  buildDeleteThreadMessageConfirmationMessage,
 } from "@/features/workspace/delete-confirmation";
 import {
   addInitiative,
@@ -15,10 +15,10 @@ import {
 import { InitiativeView } from "@/features/workspace/initiative-view";
 import {
   addTask,
-  deleteAgentCall,
+  appendAgentThreadMessage,
+  appendHumanThreadMessage,
   deleteTask,
-  recordAgentCall,
-  updateTaskDeadline,
+  deleteThreadMessage,
   updateTask,
 } from "@/features/workspace/operations";
 import {
@@ -26,6 +26,11 @@ import {
   deleteProject,
   updateProject,
 } from "@/features/workspace/project-operations";
+import {
+  buildProjectTaskSelection,
+  filterTasksByProject,
+  readProjectFilterName,
+} from "@/features/workspace/project-selection";
 import { ProjectView } from "@/features/workspace/project-view";
 import {
   agentConfigStorageKey,
@@ -34,14 +39,17 @@ import {
   normalizeAgentConfig,
 } from "@/features/workspace/provider-config";
 import { TaskManagementView } from "@/features/workspace/task-management-view";
+import { buildThreadContextSummary, readThreadOwnerName } from "@/features/workspace/thread-context";
+import { buildThreadOwnerKey } from "@/features/workspace/thread-helpers";
 import { readSelectedTask } from "@/features/workspace/task-overview";
 import { WorkspaceTopMenu } from "@/features/workspace/workspace-top-menu";
 import { createDefaultWorkspaceMenu } from "@/features/workspace/workspace-navigation";
 import { type WorkspaceMenu } from "@/features/workspace/workspace-navigation";
 import {
   type AgentConfigState,
-  type AgentDraft,
   type ProviderId,
+  type ThreadDraft,
+  type ThreadOwnerRef,
 } from "@/features/workspace/types";
 import {
   createDefaultWorkspaceSnapshot,
@@ -70,19 +78,17 @@ export function WorkspaceApp() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
   const [newTaskProject, setNewTaskProject] = useState("");
-  const [newTaskDeadline, setNewTaskDeadline] = useState("");
   const [newTaskTags, setNewTaskTags] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDetails, setEditDetails] = useState("");
   const [editProject, setEditProject] = useState("");
-  const [editDeadline, setEditDeadline] = useState("");
   const [editTags, setEditTags] = useState("");
-  const [openAgentTaskId, setOpenAgentTaskId] = useState<string | null>(null);
-  const [agentDrafts, setAgentDrafts] = useState<Record<string, AgentDraft>>({});
-  const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+  const [threadDrafts, setThreadDrafts] = useState<Record<string, ThreadDraft>>({});
+  const [pendingThreadOwnerKey, setPendingThreadOwnerKey] = useState<string | null>(null);
   const [filterInitiativeId, setFilterInitiativeId] = useState<string | null>(null);
+  const [filterProjectId, setFilterProjectId] = useState<string | null>(null);
 
   const activeProvider: ProviderId = "openai";
   const activeProviderSettings = agentConfig.providers.openai;
@@ -90,10 +96,15 @@ export function WorkspaceApp() {
   const isActiveProviderReady = Boolean(
     activeProviderSettings.apiKey.trim() && activeProviderSettings.model.trim(),
   );
-  const selectedTask = readSelectedTask(workspace.tasks, selectedTaskId);
-  const selectedAgentDraft = selectedTask
-    ? readAgentDraft(agentDrafts, selectedTask.id)
-    : createEmptyAgentDraft();
+  const visibleTasks = filterTasksByProject(workspace.tasks, filterProjectId);
+  const activeProjectFilterName = readProjectFilterName(workspace.projects, filterProjectId);
+  const selectedTask = readSelectedTask(visibleTasks, selectedTaskId);
+  const selectedThreadDraft = selectedTask
+    ? readThreadDraft(threadDrafts, {
+        ownerType: "task",
+        ownerId: selectedTask.id,
+      })
+    : createEmptyThreadDraft();
 
   /**
    * Hydrates saved workspace data after mount so task edits survive a browser refresh.
@@ -250,20 +261,31 @@ export function WorkspaceApp() {
 
   function handleDeleteProject(id: string) {
     setWorkspace((current) => deleteProject(current, id));
+
+    if (filterProjectId === id) {
+      setFilterProjectId(null);
+    }
   }
 
-  function handleAddTaskFromProject(data: {
-    title: string;
-    details: string;
-    projectId: string;
-    deadline: string;
-    tags: string[];
-  }) {
+  function handleAddTaskFromProject(data: { title: string; details: string; projectId: string; tags: string[] }) {
     setWorkspace((current) => addTask(current, data));
   }
 
-  function handleSelectProject(_projectId: string) {
-    // Future: navigate to project detail or filter tasks
+  function handleSelectProject(projectId: string) {
+    const selection = buildProjectTaskSelection(workspace.tasks, projectId);
+
+    if (editingTaskId && editingTaskId !== selection.selectedTaskId) {
+      handleCancelEdit();
+    }
+
+    setActiveMenu(selection.activeMenu);
+    setFilterProjectId(selection.filterProjectId);
+    setSelectedTaskId(selection.selectedTaskId);
+    setNewTaskProject(projectId);
+  }
+
+  function handleClearProjectFilter() {
+    setFilterProjectId(null);
   }
 
   function handleClearInitiativeFilter() {
@@ -293,14 +315,12 @@ export function WorkspaceApp() {
         title: newTaskTitle,
         details: newTaskDetails,
         projectId: newTaskProject,
-        deadline: newTaskDeadline,
         tags: parseTagsFromString(newTaskTags),
       }),
     );
     setNewTaskTitle("");
     setNewTaskDetails("");
     setNewTaskProject("");
-    setNewTaskDeadline("");
     setNewTaskTags("");
   }
 
@@ -312,10 +332,6 @@ export function WorkspaceApp() {
       handleCancelEdit();
     }
 
-    if (openAgentTaskId && openAgentTaskId !== taskId) {
-      setOpenAgentTaskId(null);
-    }
-
     setSelectedTaskId(taskId);
   }
 
@@ -324,7 +340,6 @@ export function WorkspaceApp() {
    */
   function handleReturnToOverview() {
     handleCancelEdit();
-    setOpenAgentTaskId(null);
     setSelectedTaskId(null);
   }
 
@@ -343,7 +358,6 @@ export function WorkspaceApp() {
     setEditTitle(task.title);
     setEditDetails(task.details);
     setEditProject(task.projectId);
-    setEditDeadline(task.deadline);
     setEditTags(task.tags.join(", "));
   }
 
@@ -361,7 +375,6 @@ export function WorkspaceApp() {
         title: editTitle,
         details: editDetails,
         projectId: editProject,
-        deadline: editDeadline,
         tags: parseTagsFromString(editTags),
       }),
     );
@@ -369,7 +382,6 @@ export function WorkspaceApp() {
     setEditTitle("");
     setEditDetails("");
     setEditProject("");
-    setEditDeadline("");
     setEditTags("");
   }
 
@@ -381,7 +393,6 @@ export function WorkspaceApp() {
     setEditTitle("");
     setEditDetails("");
     setEditProject("");
-    setEditDeadline("");
     setEditTags("");
   }
 
@@ -399,7 +410,7 @@ export function WorkspaceApp() {
       !window.confirm(
         buildDeleteTaskConfirmationMessage({
           taskTitle: task.title,
-          agentCallCount: task.agentCalls.length,
+          messageCount: task.agentThread.messages.length,
         }),
       )
     ) {
@@ -412,75 +423,43 @@ export function WorkspaceApp() {
       handleCancelEdit();
     }
 
-    if (openAgentTaskId === taskId) {
-      setOpenAgentTaskId(null);
-    }
-
     if (selectedTaskId === taskId) {
       setSelectedTaskId(null);
     }
 
-    if (pendingTaskId === taskId) {
-      setPendingTaskId(null);
+    if (
+      pendingThreadOwnerKey ===
+      buildThreadOwnerKey({
+        ownerType: "task",
+        ownerId: taskId,
+      })
+    ) {
+      setPendingThreadOwnerKey(null);
     }
   }
 
   /**
-   * Updates a task deadline directly from grouped-view inline controls.
+   * Deletes one saved thread message while keeping the owning entity intact.
    */
-  function handleUpdateTaskDeadline(taskId: string, deadline: string) {
-    setWorkspace((currentWorkspace) => updateTaskDeadline(currentWorkspace, taskId, deadline));
-  }
+  function handleDeleteThreadMessage(owner: ThreadOwnerRef, messageId: string) {
+    const thread = readThreadForOwner(workspace, owner);
 
-  /**
-   * Deletes one saved agent contribution from a task while keeping the rest of the task intact.
-   */
-  function handleDeleteAgentContribution(taskId: string, agentCallId: string) {
-    const task = workspace.tasks.find((candidate) => candidate.id === taskId);
-    const agentCall = task?.agentCalls.find((candidate) => candidate.id === agentCallId);
-
-    if (!task || !agentCall) {
+    if (!thread || !thread.messages.some((message) => message.id === messageId)) {
       return;
     }
 
     if (
       !window.confirm(
-        buildDeleteAgentContributionConfirmationMessage({
-          taskTitle: task.title,
+        buildDeleteThreadMessageConfirmationMessage({
+          ownerType: owner.ownerType,
+          ownerName: readThreadOwnerName(workspace, owner),
         }),
       )
     ) {
       return;
     }
 
-    setWorkspace((currentWorkspace) =>
-      deleteAgentCall(currentWorkspace, taskId, agentCallId),
-    );
-  }
-
-  /**
-   * Opens or closes the inline composer used to send one built-in agent request from a task.
-   */
-  function handleToggleAgentPanel(taskId: string) {
-    setSelectedTaskId(taskId);
-    setOpenAgentTaskId((currentTaskId) => (currentTaskId === taskId ? null : taskId));
-    setAgentDrafts((currentDrafts) => ({
-      ...currentDrafts,
-      [taskId]: readAgentDraft(currentDrafts, taskId),
-    }));
-  }
-
-  /**
-   * Stores the latest brief text for a task's inline agent request and clears stale errors.
-   */
-  function handleAgentBriefChange(taskId: string, brief: string) {
-    setAgentDrafts((currentDrafts) => ({
-      ...currentDrafts,
-      [taskId]: {
-        brief,
-        error: null,
-      },
-    }));
+    setWorkspace((currentWorkspace) => deleteThreadMessage(currentWorkspace, owner, messageId));
   }
 
   /**
@@ -516,32 +495,50 @@ export function WorkspaceApp() {
   }
 
   /**
-   * Makes a live provider request for the task and stores the outcome in task history.
+   * Stores the latest thread draft text for any supported owner and clears stale errors.
    */
-  async function handleCallAgent(taskId: string) {
-    const task = workspace.tasks.find((candidate) => candidate.id === taskId);
-    const draft = readAgentDraft(agentDrafts, taskId);
-    const trimmedBrief = draft.brief.trim();
+  function handleThreadDraftChange(owner: ThreadOwnerRef, message: string) {
+    const ownerKey = buildThreadOwnerKey(owner);
 
-    if (!task) {
+    setThreadDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [ownerKey]: {
+        message,
+        error: null,
+      },
+    }));
+  }
+
+  /**
+   * Makes a live provider request for the current owner and stores the outcome in its thread.
+   */
+  async function handleSendThreadMessage(owner: ThreadOwnerRef) {
+    const ownerKey = buildThreadOwnerKey(owner);
+    const thread = readThreadForOwner(workspace, owner);
+    const entityName = readThreadOwnerName(workspace, owner);
+    const entityContext = buildThreadContextSummary(workspace, owner);
+    const draft = readThreadDraft(threadDrafts, owner);
+    const trimmedMessage = draft.message.trim();
+
+    if (!thread) {
       return;
     }
 
-    if (!trimmedBrief) {
-      setAgentDrafts((currentDrafts) => ({
+    if (!trimmedMessage) {
+      setThreadDrafts((currentDrafts) => ({
         ...currentDrafts,
-        [taskId]: {
+        [ownerKey]: {
           ...draft,
-          error: "Describe what the agent should do for this task.",
+          error: `Add a message for this ${owner.ownerType} thread.`,
         },
       }));
       return;
     }
 
     if (!activeProviderSettings.apiKey.trim()) {
-      setAgentDrafts((currentDrafts) => ({
+      setThreadDrafts((currentDrafts) => ({
         ...currentDrafts,
-        [taskId]: {
+        [ownerKey]: {
           ...draft,
           error: `Add a ${activeProviderLabel} API key in Configuration before making a live call.`,
         },
@@ -550,9 +547,9 @@ export function WorkspaceApp() {
     }
 
     if (!activeProviderSettings.model.trim()) {
-      setAgentDrafts((currentDrafts) => ({
+      setThreadDrafts((currentDrafts) => ({
         ...currentDrafts,
-        [taskId]: {
+        [ownerKey]: {
           ...draft,
           error: `Add a ${activeProviderLabel} model in Configuration before making a live call.`,
         },
@@ -560,14 +557,29 @@ export function WorkspaceApp() {
       return;
     }
 
-    setPendingTaskId(taskId);
-    setAgentDrafts((currentDrafts) => ({
+    const createdAt = formatCallTimestamp(new Date());
+    const nextHumanMessage = {
+      id: `message-${thread.messages.length + 1}`,
+      role: "human" as const,
+      content: trimmedMessage,
+      createdAt,
+    };
+
+    setPendingThreadOwnerKey(ownerKey);
+    setThreadDrafts((currentDrafts) => ({
       ...currentDrafts,
-      [taskId]: {
-        ...draft,
+      [ownerKey]: {
+        ...createEmptyThreadDraft(),
         error: null,
       },
     }));
+    setWorkspace((currentWorkspace) =>
+      appendHumanThreadMessage(currentWorkspace, {
+        owner,
+        content: trimmedMessage,
+        now: createdAt,
+      }),
+    );
 
     try {
       const response = await fetch("/api/agent-call", {
@@ -579,32 +591,31 @@ export function WorkspaceApp() {
           providerId: activeProvider,
           apiKey: activeProviderSettings.apiKey,
           model: activeProviderSettings.model,
-          taskTitle: task.title,
-          taskDetails: task.details,
-          brief: trimmedBrief,
+          ownerType: owner.ownerType,
+          entityName,
+          entityContext,
+          messages: [...thread.messages, nextHumanMessage],
         }),
       });
       const payload = await readJsonSafely(response);
-      const createdAt = formatCallTimestamp(new Date());
 
       if (!response.ok) {
         const errorMessage = readApiErrorMessage(payload);
 
         setWorkspace((currentWorkspace) =>
-          recordAgentCall(currentWorkspace, {
-            taskId,
+          appendAgentThreadMessage(currentWorkspace, {
+            owner,
             providerId: activeProvider,
             model: activeProviderSettings.model.trim(),
-            brief: trimmedBrief,
             now: createdAt,
             status: "error",
-            error: errorMessage,
+            content: errorMessage,
           }),
         );
-        setAgentDrafts((currentDrafts) => ({
+        setThreadDrafts((currentDrafts) => ({
           ...currentDrafts,
-          [taskId]: {
-            ...readAgentDraft(currentDrafts, taskId),
+          [ownerKey]: {
+            ...readThreadDraft(currentDrafts, owner),
             error: errorMessage,
           },
         }));
@@ -612,46 +623,38 @@ export function WorkspaceApp() {
       }
 
       setWorkspace((currentWorkspace) =>
-        recordAgentCall(currentWorkspace, {
-          taskId,
+        appendAgentThreadMessage(currentWorkspace, {
+          owner,
           providerId: activeProvider,
           model: readApiModel(payload, activeProviderSettings.model),
-          brief: trimmedBrief,
           now: createdAt,
           status: "done",
-          result: readApiResult(payload),
+          content: readApiResult(payload),
         }),
       );
-      setAgentDrafts((currentDrafts) => ({
-        ...currentDrafts,
-        [taskId]: createEmptyAgentDraft(),
-      }));
-      setOpenAgentTaskId(null);
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "The live agent call failed unexpectedly.";
-      const createdAt = formatCallTimestamp(new Date());
+        error instanceof Error ? error.message : "The live thread reply failed unexpectedly.";
 
       setWorkspace((currentWorkspace) =>
-        recordAgentCall(currentWorkspace, {
-          taskId,
+        appendAgentThreadMessage(currentWorkspace, {
+          owner,
           providerId: activeProvider,
           model: activeProviderSettings.model.trim(),
-          brief: trimmedBrief,
           now: createdAt,
           status: "error",
-          error: errorMessage,
+          content: errorMessage,
         }),
       );
-      setAgentDrafts((currentDrafts) => ({
+      setThreadDrafts((currentDrafts) => ({
         ...currentDrafts,
-        [taskId]: {
-          ...readAgentDraft(currentDrafts, taskId),
+        [ownerKey]: {
+          ...readThreadDraft(currentDrafts, owner),
           error: errorMessage,
         },
       }));
     } finally {
-      setPendingTaskId(null);
+      setPendingThreadOwnerKey(null);
     }
   }
 
@@ -668,75 +671,168 @@ export function WorkspaceApp() {
         <section className="mt-3">
           {activeMenu === "tasks" && (
             <TaskManagementView
+              activeProjectFilterName={activeProjectFilterName}
               activeProviderLabel={activeProviderLabel}
               activeProviderModel={activeProviderSettings.model}
               editDetails={editDetails}
               editingTaskId={editingTaskId}
-              editDeadline={editDeadline}
               editProject={editProject}
               editTags={editTags}
               editTitle={editTitle}
               isActiveProviderReady={isActiveProviderReady}
-              newTaskDeadline={newTaskDeadline}
               newTaskDetails={newTaskDetails}
               newTaskProject={newTaskProject}
               newTaskTags={newTaskTags}
               newTaskTitle={newTaskTitle}
               onAddTask={handleAddTask}
-              onAgentBriefChange={handleAgentBriefChange}
-              onCallAgent={handleCallAgent}
               onCancelEdit={handleCancelEdit}
-              onCloseAgentPanel={() => setOpenAgentTaskId(null)}
-              onDeleteAgentContribution={handleDeleteAgentContribution}
+              onDeleteThreadMessage={(taskId, messageId) =>
+                handleDeleteThreadMessage(
+                  {
+                    ownerType: "task",
+                    ownerId: taskId,
+                  },
+                  messageId,
+                )
+              }
               onDeleteTask={handleDeleteTask}
+              onClearProjectFilter={handleClearProjectFilter}
               onOpenTask={handleOpenTask}
               onReturnToOverview={handleReturnToOverview}
               onSaveEdit={handleSaveEdit}
-              onSetEditDeadline={setEditDeadline}
               onSetEditDetails={setEditDetails}
               onSetEditProject={setEditProject}
               onSetEditTags={setEditTags}
               onSetEditTitle={setEditTitle}
-              onSetNewTaskDeadline={setNewTaskDeadline}
               onSetNewTaskDetails={setNewTaskDetails}
               onSetNewTaskProject={setNewTaskProject}
               onSetNewTaskTags={setNewTaskTags}
               onSetNewTaskTitle={setNewTaskTitle}
               onStartEdit={handleStartEdit}
-              onToggleAgentPanel={handleToggleAgentPanel}
+              onSendThreadMessage={(taskId) =>
+                handleSendThreadMessage({
+                  ownerType: "task",
+                  ownerId: taskId,
+                })
+              }
+              onThreadDraftChange={(taskId, message) =>
+                handleThreadDraftChange(
+                  {
+                    ownerType: "task",
+                    ownerId: taskId,
+                  },
+                  message,
+                )
+              }
               onToggleGroupingMode={handleToggleGroupingMode}
-              onUpdateTaskDeadline={handleUpdateTaskDeadline}
-              openAgentTaskId={openAgentTaskId}
-              pendingTaskId={pendingTaskId}
+              pendingTaskId={
+                pendingThreadOwnerKey?.startsWith("task:")
+                  ? pendingThreadOwnerKey.slice("task:".length)
+                  : null
+              }
               projects={workspace.projects}
-              selectedAgentDraft={selectedAgentDraft}
+              selectedThreadDraft={selectedThreadDraft}
               selectedTask={selectedTask}
               taskGroupingMode={taskGroupingMode}
-              tasks={workspace.tasks}
+              tasks={visibleTasks}
             />
           )}
           {activeMenu === "initiatives" && (
             <InitiativeView
+              activeProviderLabel={activeProviderLabel}
+              activeProviderModel={activeProviderSettings.model}
               initiatives={workspace.initiatives}
               onAddInitiative={handleAddInitiative}
               onAddProject={handleAddProject}
               onDeleteInitiative={handleDeleteInitiative}
+              onDeleteThreadMessage={(initiativeId, messageId) =>
+                handleDeleteThreadMessage(
+                  {
+                    ownerType: "initiative",
+                    ownerId: initiativeId,
+                  },
+                  messageId,
+                )
+              }
               onSelectInitiative={handleSelectInitiative}
+              onSendThreadMessage={(initiativeId) =>
+                handleSendThreadMessage({
+                  ownerType: "initiative",
+                  ownerId: initiativeId,
+                })
+              }
+              onThreadDraftChange={(initiativeId, message) =>
+                handleThreadDraftChange(
+                  {
+                    ownerType: "initiative",
+                    ownerId: initiativeId,
+                  },
+                  message,
+                )
+              }
               onUpdateInitiative={handleUpdateInitiative}
+              pendingThreadId={
+                pendingThreadOwnerKey?.startsWith("initiative:")
+                  ? pendingThreadOwnerKey.slice("initiative:".length)
+                  : null
+              }
               projects={workspace.projects}
+              readThreadDraft={(initiativeId) =>
+                readThreadDraft(threadDrafts, {
+                  ownerType: "initiative",
+                  ownerId: initiativeId,
+                })
+              }
             />
           )}
           {activeMenu === "projects" && (
             <ProjectView
+              activeProviderLabel={activeProviderLabel}
+              activeProviderModel={activeProviderSettings.model}
               filterInitiativeId={filterInitiativeId}
               initiatives={workspace.initiatives}
               onAddProject={handleAddProject}
               onAddTask={handleAddTaskFromProject}
               onClearFilter={handleClearInitiativeFilter}
               onDeleteProject={handleDeleteProject}
+              onDeleteThreadMessage={(projectId, messageId) =>
+                handleDeleteThreadMessage(
+                  {
+                    ownerType: "project",
+                    ownerId: projectId,
+                  },
+                  messageId,
+                )
+              }
               onSelectProject={handleSelectProject}
+              onSendThreadMessage={(projectId) =>
+                handleSendThreadMessage({
+                  ownerType: "project",
+                  ownerId: projectId,
+                })
+              }
+              onThreadDraftChange={(projectId, message) =>
+                handleThreadDraftChange(
+                  {
+                    ownerType: "project",
+                    ownerId: projectId,
+                  },
+                  message,
+                )
+              }
               onUpdateProject={handleUpdateProject}
+              pendingThreadId={
+                pendingThreadOwnerKey?.startsWith("project:")
+                  ? pendingThreadOwnerKey.slice("project:".length)
+                  : null
+              }
               projects={workspace.projects}
+              readThreadDraft={(projectId) =>
+                readThreadDraft(threadDrafts, {
+                  ownerType: "project",
+                  ownerId: projectId,
+                })
+              }
               tasks={workspace.tasks}
             />
           )}
@@ -757,27 +853,45 @@ export function WorkspaceApp() {
 }
 
 /**
- * Supplies the default task composer state when a task has not opened the agent yet.
+ * Supplies the default thread composer state when an owner has not drafted a message yet.
  */
-function createEmptyAgentDraft(): AgentDraft {
+function createEmptyThreadDraft(): ThreadDraft {
   return {
-    brief: "",
+    message: "",
     error: null,
   };
 }
 
 /**
- * Returns a stable task draft shape so the task UI does not branch on undefined state.
+ * Returns a stable thread draft shape so the UI does not branch on undefined state.
  */
-function readAgentDraft(
-  agentDrafts: Record<string, AgentDraft>,
-  taskId: string,
-): AgentDraft {
-  return agentDrafts[taskId] ?? createEmptyAgentDraft();
+function readThreadDraft(
+  threadDrafts: Record<string, ThreadDraft>,
+  owner: ThreadOwnerRef,
+): ThreadDraft {
+  return threadDrafts[buildThreadOwnerKey(owner)] ?? createEmptyThreadDraft();
 }
 
 /**
- * Formats timestamps for task-level agent activity in a short human-readable style.
+ * Reads the thread for one supported owner so generic send and delete flows stay simple.
+ */
+function readThreadForOwner(workspace: ReturnType<typeof createDefaultWorkspaceSnapshot>, owner: ThreadOwnerRef) {
+  if (owner.ownerType === "task") {
+    return workspace.tasks.find((task) => task.id === owner.ownerId)?.agentThread ?? null;
+  }
+
+  if (owner.ownerType === "project") {
+    return workspace.projects.find((project) => project.id === owner.ownerId)?.agentThread ?? null;
+  }
+
+  return (
+    workspace.initiatives.find((initiative) => initiative.id === owner.ownerId)?.agentThread ??
+    null
+  );
+}
+
+/**
+ * Formats timestamps for thread activity in a short human-readable style.
  */
 function formatCallTimestamp(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -816,7 +930,7 @@ function readApiErrorMessage(payload: unknown) {
     return payload.error.trim();
   }
 
-  return "The live agent call failed.";
+  return "The live thread reply failed.";
 }
 
 /**

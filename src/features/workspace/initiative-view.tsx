@@ -3,30 +3,46 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
+import { AgentThreadPanel } from "@/features/workspace/agent-thread-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { readThreadComposerPlaceholder } from "@/features/workspace/thread-context";
 
-import { type Initiative, type Project } from "./types";
+import { type Initiative, type Project, type ThreadDraft } from "./types";
 
 interface InitiativeViewProps {
+  activeProviderLabel: string;
+  activeProviderModel: string;
   initiatives: Initiative[];
   projects: Project[];
+  pendingThreadId: string | null;
+  readThreadDraft: (initiativeId: string) => ThreadDraft;
   onAddInitiative: (data: { name: string; description: string; deadline: string }) => void;
   onUpdateInitiative: (data: { id: string; name: string; description: string; deadline: string }) => void;
   onDeleteInitiative: (id: string) => void;
   onSelectInitiative: (initiativeId: string) => void;
   onAddProject: (data: { name: string; initiativeId: string; deadline: string }) => void;
+  onDeleteThreadMessage: (initiativeId: string, messageId: string) => void;
+  onThreadDraftChange: (initiativeId: string, message: string) => void;
+  onSendThreadMessage: (initiativeId: string) => void;
 }
 
 export function InitiativeView({
+  activeProviderLabel,
+  activeProviderModel,
   initiatives,
   projects,
+  pendingThreadId,
+  readThreadDraft,
   onAddInitiative,
   onUpdateInitiative,
   onDeleteInitiative,
   onSelectInitiative,
   onAddProject,
+  onDeleteThreadMessage,
+  onThreadDraftChange,
+  onSendThreadMessage,
 }: InitiativeViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [newName, setNewName] = useState("");
@@ -39,6 +55,7 @@ export function InitiativeView({
   const [addProjectForId, setAddProjectForId] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDeadline, setNewProjectDeadline] = useState("");
+  const [openThreadForId, setOpenThreadForId] = useState<string | null>(null);
 
   function handleAdd() {
     if (!newName.trim()) return;
@@ -273,6 +290,41 @@ export function InitiativeView({
                     ))}
                   </div>
                 )}
+
+                <div className="mt-3">
+                  <button
+                    className="flex items-center gap-1 text-xs text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
+                    onClick={() =>
+                      setOpenThreadForId((currentThreadId) =>
+                        currentThreadId === initiative.id ? null : initiative.id,
+                      )
+                    }
+                    type="button"
+                  >
+                    {openThreadForId === initiative.id
+                      ? "Hide thread"
+                      : `Show thread (${initiative.agentThread.messages.length})`}
+                  </button>
+
+                  {openThreadForId === initiative.id ? (
+                    <div className="mt-3">
+                      <AgentThreadPanel
+                        activeProviderLabel={activeProviderLabel}
+                        activeProviderModel={activeProviderModel}
+                        composerPlaceholder={readThreadComposerPlaceholder({
+                          ownerType: "initiative",
+                          ownerId: initiative.id,
+                        })}
+                        draft={readThreadDraft(initiative.id)}
+                        isPending={pendingThreadId === initiative.id}
+                        onDeleteMessage={(messageId) => onDeleteThreadMessage(initiative.id, messageId)}
+                        onDraftChange={(message) => onThreadDraftChange(initiative.id, message)}
+                        onSend={() => onSendThreadMessage(initiative.id)}
+                        thread={initiative.agentThread}
+                      />
+                    </div>
+                  ) : null}
+                </div>
 
                 <div className="mt-3">
                   <button

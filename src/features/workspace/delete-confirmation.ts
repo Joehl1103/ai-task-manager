@@ -1,10 +1,13 @@
+import { type ThreadOwnerType } from "./types";
+
 interface DeleteTaskConfirmationInput {
   taskTitle: string;
-  agentCallCount: number;
+  messageCount: number;
 }
 
-interface DeleteAgentContributionConfirmationInput {
-  taskTitle: string;
+interface DeleteThreadMessageConfirmationInput {
+  ownerType: ThreadOwnerType;
+  ownerName: string;
 }
 
 /**
@@ -12,31 +15,32 @@ interface DeleteAgentContributionConfirmationInput {
  */
 export function buildDeleteTaskConfirmationMessage({
   taskTitle,
-  agentCallCount,
+  messageCount,
 }: DeleteTaskConfirmationInput) {
   const trimmedTaskTitle = taskTitle.trim() || "Untitled task";
-  const contributionMessage =
-    agentCallCount === 0
+  const messageSummary =
+    messageCount === 0
       ? "This will permanently remove the task."
-      : `This will permanently remove the task and its ${readContributionCountLabel(agentCallCount)}.`;
+      : `This will permanently remove the task and its ${readMessageCountLabel(messageCount)}.`;
 
-  return `Delete "${trimmedTaskTitle}"?\n\n${contributionMessage}`;
+  return `Delete "${trimmedTaskTitle}"?\n\n${messageSummary}`;
 }
 
 /**
- * Builds an agent-contribution confirmation message that keeps the task itself safe.
+ * Builds a thread-message confirmation message that keeps the owning entity safe.
  */
-export function buildDeleteAgentContributionConfirmationMessage({
-  taskTitle,
-}: DeleteAgentContributionConfirmationInput) {
-  const trimmedTaskTitle = taskTitle.trim() || "Untitled task";
+export function buildDeleteThreadMessageConfirmationMessage({
+  ownerType,
+  ownerName,
+}: DeleteThreadMessageConfirmationInput) {
+  const trimmedOwnerName = ownerName.trim() || `Untitled ${ownerType}`;
 
-  return `Delete this agent contribution?\n\nThe task "${trimmedTaskTitle}" will stay in place.`;
+  return `Delete this thread message?\n\nThe ${ownerType} "${trimmedOwnerName}" will stay in place.`;
 }
 
 /**
- * Keeps the contribution count wording readable in confirmation copy.
+ * Keeps the thread-message count wording readable in confirmation copy.
  */
-function readContributionCountLabel(agentCallCount: number) {
-  return agentCallCount === 1 ? "saved agent contribution" : `${agentCallCount} saved agent contributions`;
+function readMessageCountLabel(messageCount: number) {
+  return messageCount === 1 ? "1 thread message" : `${messageCount} thread messages`;
 }

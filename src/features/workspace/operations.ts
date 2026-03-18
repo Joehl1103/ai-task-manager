@@ -1,8 +1,12 @@
+import { createAgentThread } from "./thread-helpers";
 import {
+  type AddAgentThreadMessageInput,
+  type AddHumanThreadMessageInput,
+  type AgentThread,
+  type AgentThreadMessage,
   type AddTaskInput,
-  type AgentCall,
-  type CallAgentInput,
   type Task,
+  type ThreadOwnerRef,
   type UpdateTaskInput,
   type WorkspaceSnapshot,
 } from "./types";
@@ -19,11 +23,11 @@ function normalizeTags(tags: string[] | undefined): string[] {
   const normalized: string[] = [];
 
   for (const tag of tags) {
-    const trimmed = tag.trim();
+    const trimmedTag = tag.trim();
 
-    if (trimmed && !seen.has(trimmed.toLowerCase())) {
-      seen.add(trimmed.toLowerCase());
-      normalized.push(trimmed);
+    if (trimmedTag && !seen.has(trimmedTag.toLowerCase())) {
+      seen.add(trimmedTag.toLowerCase());
+      normalized.push(trimmedTag);
     }
   }
 
@@ -44,14 +48,15 @@ export function addTask(
   workspace: WorkspaceSnapshot,
   input: AddTaskInput,
 ): WorkspaceSnapshot {
+  const nextTaskId = buildNextTaskId(workspace.tasks);
   const nextTask: Task = {
-    id: buildNextTaskId(workspace.tasks),
+    id: nextTaskId,
     title: input.title.trim(),
     details: input.details.trim(),
     projectId: input.projectId?.trim() ?? "",
     deadline: normalizeDeadline(input.deadline),
     tags: normalizeTags(input.tags),
-    agentCalls: [],
+    agentThread: createAgentThread("task", nextTaskId),
   };
 
   return {
@@ -115,39 +120,49 @@ export function deleteTask(
 }
 
 /**
- * Removes one saved agent call from a task while leaving the rest of the task intact.
+ * Deletes one saved thread message from the requested owner without touching other entities.
  */
-export function deleteAgentCall(
+export function deleteThreadMessage(
   workspace: WorkspaceSnapshot,
-  taskId: string,
-  agentCallId: string,
+  owner: ThreadOwnerRef,
+  messageId: string,
 ): WorkspaceSnapshot {
-  return {
-    ...workspace,
-    tasks: workspace.tasks.map((task) =>
-      task.id === taskId
-        ? {
-            ...task,
-            agentCalls: task.agentCalls.filter((agentCall) => agentCall.id !== agentCallId),
-          }
-        : task,
-    ),
-  };
+  return updateOwnerThread(workspace, owner, (thread) => ({
+    ...thread,
+    messages: thread.messages.filter((message) => message.id !== messageId),
+  }));
 }
 
 /**
- * Records the outcome of an agent call directly on the task that triggered it.
+ * Appends a human-authored message to an entity thread.
  */
-export function recordAgentCall(
+export function appendHumanThreadMessage(
   workspace: WorkspaceSnapshot,
-  input: CallAgentInput,
+  input: AddHumanThreadMessageInput,
 ): WorkspaceSnapshot {
-  return {
-    ...workspace,
-    tasks: workspace.tasks.map((task) =>
-      task.id === input.taskId ? buildTaskWithAgentCall(task, input) : task,
-    ),
-  };
+  return updateOwnerThread(workspace, input.owner, (thread) => ({
+    ...thread,
+    messages: [
+      ...thread.messages,
+      buildHumanThreadMessage(thread, input.content, input.now),
+    ],
+  }));
+}
+
+/**
+ * Appends an agent-authored reply or error message to an entity thread.
+ */
+export function appendAgentThreadMessage(
+  workspace: WorkspaceSnapshot,
+  input: AddAgentThreadMessageInput,
+): WorkspaceSnapshot {
+  return updateOwnerThread(workspace, input.owner, (thread) => ({
+    ...thread,
+    messages: [
+      ...thread.messages,
+      buildAgentThreadMessage(thread, input),
+    ],
+  }));
 }
 
 /**
@@ -166,29 +181,95 @@ function buildNextTaskId(tasks: Task[]) {
 }
 
 /**
- * Creates a task-scoped agent call id so each task keeps its own short local history.
+ * Updates the thread that belongs to a task, project, or initiative owner.
  */
-function buildNextAgentCallId(task: Task) {
-  return `call-${task.agentCalls.length + 1}`;
+function updateOwnerThread(
+  workspace: WorkspaceSnapshot,
+  owner: ThreadOwnerRef,
+  updateThread: (thread: AgentThread) => AgentThread,
+): WorkspaceSnapshot {
+  if (owner.ownerType === "task") {
+    return {
+      ...workspace,
+      tasks: workspace.tasks.map((task) =>
+        task.id === owner.ownerId
+          ? {
+              ...task,
+              agentThread: updateThread(task.agentThread),
+            }
+          : task,
+      ),
+    };
+  }
+
+  if (owner.ownerType === "project") {
+    return {
+      ...workspace,
+      projects: workspace.projects.map((project) =>
+        project.id === owner.ownerId
+          ? {
+              ...project,
+              agentThread: updateThread(project.agentThread),
+            }
+          : project,
+      ),
+    };
+  }
+
+  return {
+    ...workspace,
+    initiatives: workspace.initiatives.map((initiative) =>
+      initiative.id === owner.ownerId
+        ? {
+            ...initiative,
+            agentThread: updateThread(initiative.agentThread),
+          }
+        : initiative,
+    ),
+  };
 }
 
 /**
- * Builds the next version of a task after an agent call is attached to it.
+ * Creates one human thread message with a stable local id.
  */
-function buildTaskWithAgentCall(task: Task, input: CallAgentInput): Task {
-  const nextAgentCall: AgentCall = {
-    id: buildNextAgentCallId(task),
-    providerId: input.providerId,
-    model: input.model,
-    brief: input.brief.trim(),
-    status: input.status,
-    createdAt: input.now,
-    result: input.result,
-    error: input.error,
-  };
-
+function buildHumanThreadMessage(thread: AgentThread, content: string, now: string): AgentThreadMessage {
   return {
-    ...task,
-    agentCalls: [nextAgentCall, ...task.agentCalls],
+    id: buildNextThreadMessageId(thread),
+    role: "human",
+    content: content.trim(),
+    createdAt: now,
   };
+}
+
+/**
+ * Creates one agent thread message with provider metadata and status.
+ */
+function buildAgentThreadMessage(
+  thread: AgentThread,
+  input: AddAgentThreadMessageInput,
+): AgentThreadMessage {
+  return {
+    id: buildNextThreadMessageId(thread),
+    role: "agent",
+    content: input.content.trim(),
+    createdAt: input.now,
+    providerId: input.providerId,
+    model: input.model.trim(),
+    status: input.status,
+  };
+}
+
+/**
+ * Finds the next numeric message id without reusing ids after deletions.
+ */
+function buildNextThreadMessageId(thread: AgentThread) {
+  const nextNumber = thread.messages.reduce((highestNumber, message) => {
+    const currentNumber = Number(message.id.replace("message-", ""));
+
+    return Number.isNaN(currentNumber)
+      ? highestNumber
+      : Math.max(highestNumber, currentNumber);
+  }, 0);
+
+  return `message-${nextNumber + 1}`;
 }

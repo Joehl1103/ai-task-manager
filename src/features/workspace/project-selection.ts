@@ -1,0 +1,50 @@
+import { type Project, type Task } from "./types";
+import { type WorkspaceMenu } from "./workspace-navigation";
+
+export interface ProjectTaskSelection {
+  activeMenu: WorkspaceMenu;
+  filterProjectId: string;
+  selectedTaskId: string | null;
+}
+
+/**
+ * Builds the next workspace state when a project is selected from the project list.
+ * The first matching task becomes the drill-down target so the jump feels immediate.
+ */
+export function buildProjectTaskSelection(
+  tasks: Task[],
+  projectId: string,
+): ProjectTaskSelection {
+  const nextSelectedTask = tasks.find((task) => task.projectId === projectId) ?? null;
+
+  return {
+    activeMenu: "tasks",
+    filterProjectId: projectId,
+    selectedTaskId: nextSelectedTask?.id ?? null,
+  };
+}
+
+/**
+ * Restricts the visible task list to one project when a filter is active.
+ */
+export function filterTasksByProject(tasks: Task[], filterProjectId: string | null): Task[] {
+  if (!filterProjectId) {
+    return tasks;
+  }
+
+  return tasks.filter((task) => task.projectId === filterProjectId);
+}
+
+/**
+ * Resolves the current project filter label for display in the task header.
+ */
+export function readProjectFilterName(
+  projects: Project[],
+  filterProjectId: string | null,
+): string | null {
+  if (!filterProjectId) {
+    return null;
+  }
+
+  return projects.find((project) => project.id === filterProjectId)?.name ?? filterProjectId;
+}

@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 
 import { isProviderId } from "@/features/workspace/provider-config";
 import { callProviderAgent } from "@/features/workspace/provider-api";
+import { type AgentThreadMessage, type ThreadOwnerType } from "@/features/workspace/types";
 
 /**
- * Accepts a task-scoped agent request and forwards it to the selected provider.
+ * Accepts an entity-scoped thread request and forwards it to the selected provider.
  */
 export async function POST(request: Request) {
   const payload = await readRequestPayload(request);
@@ -27,13 +28,16 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!payload.taskTitle.trim()) {
-    return NextResponse.json({ error: "Each agent call needs a task title." }, { status: 400 });
+  if (!payload.entityName.trim()) {
+    return NextResponse.json(
+      { error: "Each thread request needs an entity name." },
+      { status: 400 },
+    );
   }
 
-  if (!payload.brief.trim()) {
+  if (payload.messages.length === 0) {
     return NextResponse.json(
-      { error: "Describe what the agent should do for this task." },
+      { error: "Add a message before calling the agent." },
       { status: 400 },
     );
   }
@@ -43,9 +47,10 @@ export async function POST(request: Request) {
       providerId: payload.providerId,
       apiKey: payload.apiKey,
       model: payload.model,
-      taskTitle: payload.taskTitle,
-      taskDetails: payload.taskDetails,
-      brief: payload.brief,
+      ownerType: payload.ownerType,
+      entityName: payload.entityName,
+      entityContext: payload.entityContext,
+      messages: payload.messages,
     });
 
     return NextResponse.json(result);
@@ -71,9 +76,10 @@ async function readRequestPayload(request: Request) {
       providerId: candidate.providerId,
       apiKey: readString(candidate.apiKey),
       model: readString(candidate.model),
-      taskTitle: readString(candidate.taskTitle),
-      taskDetails: readString(candidate.taskDetails),
-      brief: readString(candidate.brief),
+      ownerType: readOwnerType(candidate.ownerType),
+      entityName: readString(candidate.entityName),
+      entityContext: readString(candidate.entityContext),
+      messages: readMessages(candidate.messages),
     };
   } catch {
     return null;
@@ -85,4 +91,55 @@ async function readRequestPayload(request: Request) {
  */
 function readString(value: unknown) {
   return typeof value === "string" ? value : "";
+}
+
+/**
+ * Guards owner types to the three entity scopes the app currently supports.
+ */
+function readOwnerType(value: unknown): ThreadOwnerType {
+  return value === "project" || value === "initiative" ? value : "task";
+}
+
+/**
+ * Reads a list of thread messages from the request body with light validation.
+ */
+function readMessages(value: unknown): AgentThreadMessage[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((message, index) => {
+    if (!message || typeof message !== "object") {
+      return [];
+    }
+
+    const candidate = message as Record<string, unknown>;
+    const role = candidate.role === "agent" ? "agent" : "human";
+    const content = readString(candidate.content);
+
+    if (!content.trim()) {
+      return [];
+    }
+
+    const normalizedMessage: AgentThreadMessage = {
+      id: readString(candidate.id) || `message-${index + 1}`,
+      role,
+      content,
+      createdAt: readString(candidate.createdAt),
+    };
+
+    if (role === "agent" && isProviderId(candidate.providerId)) {
+      normalizedMessage.providerId = candidate.providerId;
+    }
+
+    if (typeof candidate.model === "string" && candidate.model.trim()) {
+      normalizedMessage.model = candidate.model.trim();
+    }
+
+    if (candidate.status === "done" || candidate.status === "error") {
+      normalizedMessage.status = candidate.status;
+    }
+
+    return [normalizedMessage];
+  });
 }

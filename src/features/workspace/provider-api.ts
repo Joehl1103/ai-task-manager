@@ -1,14 +1,24 @@
-import { type ProviderId } from "./types";
+import { type AgentThreadMessage, type ProviderId, type ThreadOwnerType } from "./types";
 
 const agentSystemInstruction =
-  "You are Relay's built-in task agent. Help the user make progress on the task in plain language, stay practical, and keep the answer concise.";
+  [
+    "You are Relay's built-in workspace agent.",
+    "Continue the current thread in plain language, stay practical, and keep the answer concise.",
+    "Format replies in GitHub-flavored Markdown.",
+    "Prefer short paragraphs by default.",
+    "Only use bullet or numbered lists when the content is genuinely list-shaped or the user asks for a list.",
+    "For recommendations or option sets, keep each item on a single markdown bullet in the form `- **Name**: explanation`.",
+  ].join(" ");
 
 const defaultMaxTokens = 700;
+const openAIInitialMaxOutputTokens = 1200;
+const openAIRetryMaxOutputTokens = 2400;
 
 export interface BuildAgentPromptInput {
-  taskTitle: string;
-  taskDetails: string;
-  brief: string;
+  ownerType: ThreadOwnerType;
+  entityName: string;
+  entityContext: string;
+  messages: AgentThreadMessage[];
 }
 
 export interface CallProviderAgentInput extends BuildAgentPromptInput {
@@ -46,15 +56,20 @@ export async function callProviderAgent(
  * Builds one prompt shape so provider switching does not change the task context.
  */
 export function buildAgentPrompt(input: BuildAgentPromptInput) {
-  const normalizedTitle = input.taskTitle.trim();
-  const normalizedDetails = input.taskDetails.trim();
-  const normalizedBrief = input.brief.trim();
+  const normalizedEntityName = input.entityName.trim();
+  const normalizedEntityContext = input.entityContext.trim();
+  const transcript = buildThreadTranscript(input.messages);
 
   return [
-    `Task title: ${normalizedTitle || "Untitled task"}`,
-    `Task details: ${normalizedDetails || "No extra details were provided."}`,
-    `Agent request: ${normalizedBrief}`,
-    "Return the most useful next-step help for this task.",
+    `Entity type: ${input.ownerType}`,
+    `Entity name: ${normalizedEntityName || `Untitled ${input.ownerType}`}`,
+    "Entity context:",
+    normalizedEntityContext || "No extra context was provided.",
+    "",
+    "Thread transcript:",
+    transcript || "No prior messages.",
+    "",
+    "Write the next agent reply in this thread. Continue naturally from the latest human message.",
   ].join("\n");
 }
 
@@ -146,25 +161,37 @@ async function callOpenAIAgent(
   input: NormalizedProviderCallInput,
   prompt: string,
 ): Promise<CallProviderAgentResult> {
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${input.apiKey}`,
-    },
-    body: JSON.stringify(buildOpenAIRequestBody(input.model, prompt)),
-  });
+  const firstAttempt = await requestOpenAIResponse(input, prompt, openAIInitialMaxOutputTokens);
 
-  const payload = await readProviderPayload(response);
-
-  if (!response.ok) {
+  if (!firstAttempt.response.ok) {
     throw new Error(
-      readProviderErrorMessage(payload) ?? `OpenAI returned an error (${response.status}).`,
+      readProviderErrorMessage(firstAttempt.payload) ??
+        `OpenAI returned an error (${firstAttempt.response.status}).`,
     );
   }
 
+  if (!shouldRetryOpenAIResponse(firstAttempt.payload)) {
+    return {
+      result: extractProviderText("openai", firstAttempt.payload),
+      model: input.model,
+    };
+  }
+
+  const retryAttempt = await requestOpenAIResponse(input, prompt, openAIRetryMaxOutputTokens);
+
+  if (!retryAttempt.response.ok) {
+    throw new Error(
+      readProviderErrorMessage(retryAttempt.payload) ??
+        `OpenAI returned an error (${retryAttempt.response.status}).`,
+    );
+  }
+
+  if (shouldRetryOpenAIResponse(retryAttempt.payload)) {
+    throw new Error(buildOpenAIRetryLimitMessage(retryAttempt.payload));
+  }
+
   return {
-    result: extractProviderText("openai", payload),
+    result: extractProviderText("openai", retryAttempt.payload),
     model: input.model,
   };
 }
@@ -245,7 +272,15 @@ async function readProviderPayload(response: Response) {
 function normalizeProviderCallInput(input: CallProviderAgentInput) {
   const normalizedApiKey = input.apiKey.trim();
   const normalizedModel = input.model.trim();
-  const normalizedBrief = input.brief.trim();
+  const normalizedEntityName = input.entityName.trim();
+  const normalizedEntityContext = input.entityContext.trim();
+  const normalizedMessages = input.messages
+    .map((message) => ({
+      ...message,
+      content: message.content.trim(),
+      createdAt: message.createdAt.trim(),
+    }))
+    .filter((message) => message.content);
 
   if (!normalizedApiKey) {
     throw new Error("Add an API key for the selected provider before calling the agent.");
@@ -255,18 +290,43 @@ function normalizeProviderCallInput(input: CallProviderAgentInput) {
     throw new Error("Add a model for the selected provider before calling the agent.");
   }
 
-  if (!normalizedBrief) {
-    throw new Error("Describe what the agent should do for this task.");
+  if (!normalizedEntityName) {
+    throw new Error("Each thread request needs an entity name.");
+  }
+
+  if (normalizedMessages.length === 0) {
+    throw new Error("Add a message before calling the agent.");
+  }
+
+  if (normalizedMessages[normalizedMessages.length - 1]?.role !== "human") {
+    throw new Error("The latest thread entry must be a human message.");
   }
 
   return {
     ...input,
     apiKey: normalizedApiKey,
     model: normalizedModel,
-    brief: normalizedBrief,
-    taskTitle: input.taskTitle.trim(),
-    taskDetails: input.taskDetails.trim(),
+    entityName: normalizedEntityName,
+    entityContext: normalizedEntityContext,
+    messages: normalizedMessages,
   };
+}
+
+/**
+ * Flattens one entity thread into a readable prompt transcript.
+ */
+function buildThreadTranscript(messages: AgentThreadMessage[]) {
+  return messages
+    .map((message) => {
+      const speakerLabel = message.role === "human" ? "Human" : "Agent";
+      const statusLabel =
+        message.role === "agent" && message.status ? ` [${message.status}]` : "";
+      const timestampLabel = message.createdAt.trim() ? ` (${message.createdAt.trim()})` : "";
+
+      return `${speakerLabel}${statusLabel}${timestampLabel}: ${message.content.trim()}`;
+    })
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 /**
@@ -294,21 +354,7 @@ function extractAnthropicText(payload: unknown) {
  * Extracts plain text from OpenAI's response output content array.
  */
 function extractOpenAIText(payload: unknown) {
-  const outputText =
-    isRecord(payload) && typeof payload.output_text === "string" ? payload.output_text.trim() : "";
-
-  if (outputText) {
-    return outputText;
-  }
-
-  const outputEntries = isRecord(payload) && Array.isArray(payload.output) ? payload.output : [];
-  const text = outputEntries
-    .flatMap((entry) =>
-      isRecord(entry) && Array.isArray(entry.content) ? entry.content : [],
-    )
-    .flatMap((contentItem) => readOpenAIContentText(contentItem))
-    .filter(Boolean)
-    .join("\n\n");
+  const text = readOpenAITextSegments(payload).join("\n\n");
 
   if (!text) {
     throw new Error(buildOpenAIEmptyResponseMessage(payload));
@@ -320,12 +366,16 @@ function extractOpenAIText(payload: unknown) {
 /**
  * Builds the request body used for OpenAI's Responses API.
  */
-function buildOpenAIRequestBody(model: string, prompt: string) {
+function buildOpenAIRequestBody(
+  model: string,
+  prompt: string,
+  maxOutputTokens = openAIInitialMaxOutputTokens,
+) {
   return {
     model,
     instructions: agentSystemInstruction,
     input: prompt,
-    max_output_tokens: defaultMaxTokens,
+    max_output_tokens: maxOutputTokens,
     text: {
       format: {
         type: "text",
@@ -405,6 +455,27 @@ function buildOpenAIEmptyResponseMessage(payload: unknown) {
 }
 
 /**
+ * Reads every visible text segment OpenAI returned, including the convenience `output_text` field.
+ */
+function readOpenAITextSegments(payload: unknown) {
+  const outputText =
+    isRecord(payload) && typeof payload.output_text === "string" ? payload.output_text.trim() : "";
+
+  if (outputText) {
+    return [outputText];
+  }
+
+  const outputEntries = isRecord(payload) && Array.isArray(payload.output) ? payload.output : [];
+
+  return outputEntries
+    .flatMap((entry) =>
+      isRecord(entry) && Array.isArray(entry.content) ? entry.content : [],
+    )
+    .flatMap((contentItem) => readOpenAIContentText(contentItem))
+    .filter(Boolean);
+}
+
+/**
  * Captures the returned OpenAI content types to make empty-response debugging easier.
  */
 function readOpenAIContentTypes(payload: Record<string, unknown>) {
@@ -460,6 +531,67 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  */
 function shouldUseLowReasoningEffort(model: string) {
   return model.trim().startsWith("gpt-5");
+}
+
+/**
+ * Performs one OpenAI Responses API request so retry behavior can stay focused and testable.
+ */
+async function requestOpenAIResponse(
+  input: NormalizedProviderCallInput,
+  prompt: string,
+  maxOutputTokens: number,
+) {
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${input.apiKey}`,
+    },
+    body: JSON.stringify(buildOpenAIRequestBody(input.model, prompt, maxOutputTokens)),
+  });
+
+  return {
+    response,
+    payload: await readProviderPayload(response),
+  };
+}
+
+/**
+ * Retries only when OpenAI explicitly stopped at the output-token limit before returning text.
+ */
+function shouldRetryOpenAIResponse(payload: unknown) {
+  return (
+    isRecord(payload) &&
+    payload.status === "incomplete" &&
+    readOpenAIIncompleteReason(payload) === "max_output_tokens" &&
+    readOpenAITextSegments(payload).length === 0
+  );
+}
+
+/**
+ * Gives a clearer final message after a larger-budget retry still produced no visible text.
+ */
+function buildOpenAIRetryLimitMessage(payload: unknown) {
+  const baseMessage =
+    "OpenAI hit the reply token limit twice before producing visible text. Try shortening the thread or switching to a lighter model.";
+  const incompleteReason = isRecord(payload) ? readOpenAIIncompleteReason(payload) : "";
+
+  if (!incompleteReason) {
+    return baseMessage;
+  }
+
+  return `${baseMessage} Incomplete reason: ${incompleteReason}.`;
+}
+
+/**
+ * Reads the incomplete reason from an OpenAI response payload when present.
+ */
+function readOpenAIIncompleteReason(payload: Record<string, unknown>) {
+  if (isRecord(payload.incomplete_details) && typeof payload.incomplete_details.reason === "string") {
+    return payload.incomplete_details.reason.trim();
+  }
+
+  return "";
 }
 
 type NormalizedProviderCallInput = ReturnType<typeof normalizeProviderCallInput>;

@@ -4,6 +4,7 @@ import {
   type UpdateInitiativeInput,
   type WorkspaceSnapshot,
 } from "./types";
+import { createAgentThread } from "./thread-helpers";
 
 /**
  * Adds a new initiative to the workspace.
@@ -12,11 +13,13 @@ export function addInitiative(
   workspace: WorkspaceSnapshot,
   input: AddInitiativeInput,
 ): WorkspaceSnapshot {
+  const nextInitiativeId = buildNextInitiativeId(workspace.initiatives);
   const nextInitiative: Initiative = {
-    id: buildNextInitiativeId(workspace.initiatives),
+    id: nextInitiativeId,
     name: input.name.trim(),
     description: input.description.trim(),
     deadline: input.deadline.trim(),
+    agentThread: createAgentThread("initiative", nextInitiativeId),
   };
 
   return {

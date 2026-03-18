@@ -32,8 +32,8 @@ export function AgentConfigurationView({
         <h1 className="mt-2 text-3xl font-semibold">Configuration</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
           Keep provider setup away from task editing. Values saved here stay in this
-          browser and power live task-level agent calls when you return to the tasks
-          view.
+          browser and power live task, project, and initiative threads when you
+          return to the workspace views.
         </p>
       </header>
 
@@ -43,7 +43,7 @@ export function AgentConfigurationView({
             <p className="text-sm font-medium">Agent settings</p>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
               OpenAI compatibility is wired first here. Add an OpenAI API key and
-              adjust the model used for live task calls.
+              adjust the model used for live thread replies.
             </p>
           </div>
           <Badge variant={isActiveProviderReady ? "success" : "warning"}>
@@ -76,16 +76,16 @@ export function AgentConfigurationView({
 
         <p className="mt-3 text-xs leading-5 text-[color:var(--muted)]">
           Your {activeProviderLabel} key stays in this browser&apos;s local storage and is
-          only sent to the app when you trigger a live task agent call.
+          only sent to the app when you trigger a live thread reply.
         </p>
       </section>
 
       <section className="mt-4 rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-muted)] p-4">
-        <p className="text-sm font-medium">How this connects to tasks</p>
+        <p className="text-sm font-medium">How this connects to the workspace</p>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-          After updating these values, switch back to Tasks from the top menu. Task
-          creation, editing, and drill-down stay there, while live agent calls reuse the
-          configuration saved here.
+          After updating these values, switch back to Tasks, Projects, or
+          Initiatives from the top menu. Editing stays in those views, while live
+          thread replies reuse the configuration saved here.
         </p>
       </section>
     </>

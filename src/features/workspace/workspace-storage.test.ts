@@ -32,9 +32,100 @@ describe("workspace storage", () => {
   });
 
   /**
-   * Normalizes stored tasks and agent history so the UI can render partial saved data.
+   * Normalizes stored tasks and thread history so the UI can render partial saved data.
    */
-  it("normalizes saved tasks and agent calls", () => {
+  it("normalizes saved tasks and threads", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      initiatives: [
+        {
+          id: "initiative-1",
+          name: "Launch",
+          description: "Ship carefully",
+          deadline: "",
+          agentThread: {
+            id: "custom-thread",
+            messages: [
+              {
+                id: "message-custom",
+                role: "human",
+                content: "Summarize this initiative.",
+                createdAt: "Today",
+              },
+            ],
+          },
+        },
+      ],
+      projects: [
+        {
+          id: "project-1",
+          name: "Personal",
+          initiativeId: "",
+          deadline: "",
+        },
+      ],
+      tasks: [
+        {
+          id: "task-custom",
+          title: "Follow up with daycare",
+          details: 123,
+          projectId: "project-1",
+          agentThread: {
+            messages: [
+              {
+                id: "message-1",
+                role: "agent",
+                content: "Lead with empathy, ask for facts, and agree on a next check-in.",
+                createdAt: "Today",
+                providerId: "openai",
+                model: "gpt-5",
+                status: "done",
+              },
+              {
+                id: "message-2",
+                role: "weird",
+                content: 5,
+                createdAt: null,
+                providerId: "unknown",
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(workspace.initiatives[0]?.agentThread.messages[0]).toMatchObject({
+      id: "message-custom",
+      role: "human",
+      content: "Summarize this initiative.",
+      createdAt: "Today",
+    });
+    expect(workspace.tasks[0]).toMatchObject({
+      id: "task-custom",
+      title: "Follow up with daycare",
+      details: "",
+      projectId: "project-1",
+    });
+    expect(workspace.tasks[0]?.agentThread.messages[0]).toMatchObject({
+      id: "message-1",
+      role: "agent",
+      content: "Lead with empathy, ask for facts, and agree on a next check-in.",
+      createdAt: "Today",
+      providerId: "openai",
+      model: "gpt-5",
+      status: "done",
+    });
+    expect(workspace.tasks[0]?.agentThread.messages[1]).toMatchObject({
+      id: "message-2",
+      role: "human",
+      content: "",
+      createdAt: "Unknown time",
+    });
+  });
+
+  /**
+   * Migrates legacy task agent calls into conversational thread messages.
+   */
+  it("migrates legacy task agent calls into a task thread", () => {
     const workspace = normalizeWorkspaceSnapshot({
       initiatives: [],
       projects: [{ id: "project-1", name: "Personal", initiativeId: "", deadline: "" }],
@@ -42,7 +133,7 @@ describe("workspace storage", () => {
         {
           id: "task-custom",
           title: "Follow up with daycare",
-          details: 123,
+          details: "",
           projectId: "project-1",
           agentCalls: [
             {
@@ -54,43 +145,28 @@ describe("workspace storage", () => {
               createdAt: "Today",
               result: "Lead with empathy, ask for facts, and agree on a next check-in.",
             },
-            {
-              id: "call-bad",
-              providerId: "unknown",
-              model: "",
-              brief: 5,
-              status: "weird",
-              createdAt: null,
-            },
           ],
         },
       ],
     });
 
-    expect(workspace.tasks[0]).toMatchObject({
-      id: "task-custom",
-      title: "Follow up with daycare",
-      details: "",
-      projectId: "project-1",
-      deadline: "",
-    });
-    expect(workspace.tasks[0]?.agentCalls[0]).toMatchObject({
-      id: "call-custom",
-      providerId: "openai",
-      model: "gpt-5",
-      brief: "Draft three calm talking points.",
-      status: "done",
-      createdAt: "Today",
-      result: "Lead with empathy, ask for facts, and agree on a next check-in.",
-    });
-    expect(workspace.tasks[0]?.agentCalls[1]).toMatchObject({
-      id: "call-bad",
-      providerId: "openai",
-      model: "Unknown model",
-      brief: "",
-      status: "error",
-      createdAt: "Unknown time",
-    });
+    expect(workspace.tasks[0]?.agentThread.messages).toEqual([
+      {
+        id: "message-1",
+        role: "human",
+        content: "Draft three calm talking points.",
+        createdAt: "Today",
+      },
+      {
+        id: "message-2",
+        role: "agent",
+        content: "Lead with empathy, ask for facts, and agree on a next check-in.",
+        createdAt: "Today",
+        providerId: "openai",
+        model: "gpt-5",
+        status: "done",
+      },
+    ]);
   });
 
   /**
@@ -105,7 +181,6 @@ describe("workspace storage", () => {
           id: "task-old",
           title: "Task without project",
           details: "Some details",
-          agentCalls: [],
         },
       ],
     });
@@ -115,32 +190,6 @@ describe("workspace storage", () => {
       title: "Task without project",
       details: "Some details",
       projectId: "",
-      deadline: "",
-    });
-  });
-
-  /**
-   * Normalizes tasks without a deadline field to an empty string.
-   */
-  it("normalizes tasks without a deadline field", () => {
-    const workspace = normalizeWorkspaceSnapshot({
-      initiatives: [],
-      projects: [],
-      tasks: [
-        {
-          id: "task-old",
-          title: "Task without deadline",
-          details: "Some details",
-          projectId: "",
-          tags: [],
-          agentCalls: [],
-        },
-      ],
-    });
-
-    expect(workspace.tasks[0]).toMatchObject({
-      id: "task-old",
-      deadline: "",
     });
   });
 
@@ -157,7 +206,6 @@ describe("workspace storage", () => {
           title: "Task without tags",
           details: "Some details",
           projectId: "",
-          agentCalls: [],
         },
       ],
     });
@@ -183,7 +231,6 @@ describe("workspace storage", () => {
           details: "Some details",
           project: "Project",
           tags: ["work", "priority", 123, null, "", "   "],
-          agentCalls: [],
         },
       ],
     });

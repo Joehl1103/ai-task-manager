@@ -33,7 +33,7 @@ describe("task overview helpers", () => {
   it("builds the agent summary from the latest task activity", () => {
     expect(buildTaskOverviewSummary(workspaceSeed.tasks[1]!)).toEqual({
       detailsPreview: "Use this as an example of a normal editable task.",
-      agentCallCount: 1,
+      messageCount: 2,
       latestAgentStatus: "done",
       latestAgentTimestamp: "Earlier today",
     });

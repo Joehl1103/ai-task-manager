@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { workspaceSeed } from "./mock-data";
 import { InitiativeView } from "./initiative-view";
+import { createAgentThread } from "./thread-helpers";
 import { type Initiative, type Project } from "./types";
 
 function buildInitiativeViewProps(overrides?: {
@@ -10,13 +11,23 @@ function buildInitiativeViewProps(overrides?: {
   projects?: Project[];
 }) {
   return {
+    activeProviderLabel: "OpenAI",
+    activeProviderModel: "gpt-5",
     initiatives: overrides?.initiatives ?? workspaceSeed.initiatives,
+    pendingThreadId: null,
     projects: overrides?.projects ?? workspaceSeed.projects,
+    readThreadDraft: vi.fn(() => ({
+      message: "",
+      error: null,
+    })),
     onAddInitiative: vi.fn(),
     onUpdateInitiative: vi.fn(),
     onDeleteInitiative: vi.fn(),
     onSelectInitiative: vi.fn(),
     onAddProject: vi.fn(),
+    onDeleteThreadMessage: vi.fn(),
+    onThreadDraftChange: vi.fn(),
+    onSendThreadMessage: vi.fn(),
   } as const;
 }
 
@@ -47,6 +58,7 @@ describe("initiative view", () => {
               name: "Launch support docs",
               initiativeId: "initiative-1",
               deadline: "",
+              agentThread: createAgentThread("project", "project-3"),
             },
           ],
         })}

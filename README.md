@@ -39,6 +39,8 @@ npm test
 npm run build
 ```
 
+`npm run dev` now enables polling-based file watching automatically so edits inside worktrees and tmp-based directories are picked up without changing the dev-server command.
+
 ## Git Version Control
 
 The app is the primary project in this repository.

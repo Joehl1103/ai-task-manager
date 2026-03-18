@@ -2,39 +2,37 @@
 
 import { useState } from "react";
 
-import { ArrowLeft, ArrowUpRight, Bot, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { AgentThreadPanel } from "@/features/workspace/agent-thread-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { FormattedAgentResponse } from "@/features/workspace/formatted-agent-response";
-import { getProviderLabel } from "@/features/workspace/provider-config";
+import { readThreadComposerPlaceholder } from "@/features/workspace/thread-context";
 import {
   groupTasksByProject,
   groupTasksByTag,
   type TaskGroup,
 } from "@/features/workspace/task-grouping";
-import { type AgentDraft, type Project, type Task } from "@/features/workspace/types";
+import { type Project, type Task, type ThreadDraft } from "@/features/workspace/types";
 import { type TaskGroupingMode } from "@/features/workspace/workspace-storage";
 
 interface TaskManagementViewProps {
   tasks: Task[];
   projects: Project[];
   selectedTask: Task | null;
-  selectedAgentDraft: AgentDraft;
+  selectedThreadDraft: ThreadDraft;
+  activeProjectFilterName: string | null;
   newTaskTitle: string;
   newTaskDetails: string;
   newTaskProject: string;
-  newTaskDeadline: string;
   newTaskTags: string;
   editingTaskId: string | null;
   editTitle: string;
   editDetails: string;
   editProject: string;
-  editDeadline: string;
   editTags: string;
-  openAgentTaskId: string | null;
   pendingTaskId: string | null;
   activeProviderLabel: string;
   activeProviderModel: string;
@@ -43,7 +41,6 @@ interface TaskManagementViewProps {
   onSetNewTaskTitle: (value: string) => void;
   onSetNewTaskDetails: (value: string) => void;
   onSetNewTaskProject: (value: string) => void;
-  onSetNewTaskDeadline: (value: string) => void;
   onSetNewTaskTags: (value: string) => void;
   onAddTask: () => void;
   onOpenTask: (taskId: string) => void;
@@ -52,18 +49,15 @@ interface TaskManagementViewProps {
   onStartEdit: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
-  onDeleteAgentContribution: (taskId: string, agentCallId: string) => void;
-  onToggleAgentPanel: (taskId: string) => void;
+  onDeleteThreadMessage: (taskId: string, messageId: string) => void;
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
-  onSetEditDeadline: (value: string) => void;
   onSetEditTags: (value: string) => void;
-  onCloseAgentPanel: () => void;
-  onAgentBriefChange: (taskId: string, brief: string) => void;
-  onCallAgent: (taskId: string) => void;
+  onClearProjectFilter: () => void;
+  onThreadDraftChange: (taskId: string, message: string) => void;
+  onSendThreadMessage: (taskId: string) => void;
   onToggleGroupingMode: () => void;
-  onUpdateTaskDeadline: (taskId: string, deadline: string) => void;
 }
 
 /**
@@ -73,19 +67,17 @@ export function TaskManagementView({
   tasks,
   projects,
   selectedTask,
-  selectedAgentDraft,
+  selectedThreadDraft,
+  activeProjectFilterName,
   newTaskTitle,
   newTaskDetails,
   newTaskProject,
-  newTaskDeadline,
   newTaskTags,
   editingTaskId,
   editTitle,
   editDetails,
   editProject,
-  editDeadline,
   editTags,
-  openAgentTaskId,
   pendingTaskId,
   activeProviderLabel,
   activeProviderModel,
@@ -94,7 +86,6 @@ export function TaskManagementView({
   onSetNewTaskTitle,
   onSetNewTaskDetails,
   onSetNewTaskProject,
-  onSetNewTaskDeadline,
   onSetNewTaskTags,
   onAddTask,
   onOpenTask,
@@ -103,20 +94,20 @@ export function TaskManagementView({
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
-  onDeleteAgentContribution,
-  onToggleAgentPanel,
+  onDeleteThreadMessage,
   onSetEditTitle,
   onSetEditDetails,
   onSetEditProject,
-  onSetEditDeadline,
   onSetEditTags,
-  onCloseAgentPanel,
-  onAgentBriefChange,
-  onCallAgent,
+  onClearProjectFilter,
+  onThreadDraftChange,
+  onSendThreadMessage,
   onToggleGroupingMode,
-  onUpdateTaskDeadline,
 }: TaskManagementViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
+  const emptyStateMessage = activeProjectFilterName
+    ? `No tasks in ${activeProjectFilterName} yet.`
+    : "No tasks yet.";
 
   function handleExpandComposer() {
     setIsComposerExpanded(true);
@@ -136,7 +127,6 @@ export function TaskManagementView({
     onSetNewTaskTitle("");
     onSetNewTaskDetails("");
     onSetNewTaskProject("");
-    onSetNewTaskDeadline("");
     onSetNewTaskTags("");
   }
 
@@ -144,11 +134,23 @@ export function TaskManagementView({
     <>
       <header>
         <h1 className="text-2xl font-semibold">Tasks</h1>
+        {activeProjectFilterName ? (
+          <p className="mt-1 text-sm text-[color:var(--muted)]">
+            Filtered by: {activeProjectFilterName}
+            <button
+              className="ml-2 text-[color:var(--foreground)] underline transition-all duration-150 cursor-pointer active:opacity-70"
+              onClick={onClearProjectFilter}
+              type="button"
+            >
+              Clear
+            </button>
+          </p>
+        ) : null}
       </header>
 
       {!isActiveProviderReady ? (
         <p className="mt-2 text-sm text-amber-700">
-          Live agent calls stay unavailable until configuration is added.
+          Live agent threads stay unavailable until configuration is added.
         </p>
       ) : null}
 
@@ -183,12 +185,6 @@ export function TaskManagementView({
               ))}
             </select>
             <Input
-              onChange={(event) => onSetNewTaskDeadline(event.target.value)}
-              placeholder="Deadline (optional)"
-              type="date"
-              value={newTaskDeadline}
-            />
-            <Input
               onChange={(event) => onSetNewTaskTags(event.target.value)}
               placeholder="Tags (optional, comma-separated)"
               value={newTaskTags}
@@ -220,39 +216,34 @@ export function TaskManagementView({
           <TaskDrillDown
             activeProviderLabel={activeProviderLabel}
             activeProviderModel={activeProviderModel}
-            agentDraft={selectedAgentDraft}
+            threadDraft={selectedThreadDraft}
             editDetails={editDetails}
             editingTaskId={editingTaskId}
-            editDeadline={editDeadline}
             editProject={editProject}
             editTags={editTags}
             editTitle={editTitle}
-            onAgentBriefChange={onAgentBriefChange}
-            onCallAgent={onCallAgent}
             onCancelEdit={onCancelEdit}
-            onCloseAgentPanel={onCloseAgentPanel}
-            onDeleteAgentContribution={onDeleteAgentContribution}
+            onDeleteThreadMessage={onDeleteThreadMessage}
             onDeleteTask={onDeleteTask}
             onReturnToOverview={onReturnToOverview}
             onSaveEdit={onSaveEdit}
-            onSetEditDeadline={onSetEditDeadline}
             onSetEditDetails={onSetEditDetails}
             onSetEditProject={onSetEditProject}
             onSetEditTags={onSetEditTags}
             onSetEditTitle={onSetEditTitle}
             onStartEdit={onStartEdit}
-            onToggleAgentPanel={onToggleAgentPanel}
-            openAgentTaskId={openAgentTaskId}
+            onSendThreadMessage={onSendThreadMessage}
+            onThreadDraftChange={onThreadDraftChange}
             pendingTaskId={pendingTaskId}
             projects={projects}
             task={selectedTask}
           />
         ) : (
           <GroupedTaskOverview
+            emptyStateMessage={emptyStateMessage}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
             onToggleGroupingMode={onToggleGroupingMode}
-            onUpdateTaskDeadline={onUpdateTaskDeadline}
             projects={projects}
             taskGroupingMode={taskGroupingMode}
             tasks={tasks}
@@ -266,11 +257,11 @@ export function TaskManagementView({
 interface GroupedTaskOverviewProps {
   tasks: Task[];
   projects: Project[];
+  emptyStateMessage: string;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   taskGroupingMode: TaskGroupingMode;
   onToggleGroupingMode: () => void;
-  onUpdateTaskDeadline: (taskId: string, deadline: string) => void;
 }
 
 /**
@@ -279,17 +270,21 @@ interface GroupedTaskOverviewProps {
 function GroupedTaskOverview({
   tasks,
   projects,
+  emptyStateMessage,
   onOpenTask,
   onDeleteTask,
   taskGroupingMode,
   onToggleGroupingMode,
-  onUpdateTaskDeadline,
 }: GroupedTaskOverviewProps) {
   const groups =
     taskGroupingMode === "tag" ? groupTasksByTag(tasks) : groupTasksByProject(tasks, projects);
 
   if (groups.length === 0) {
-    return <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">No tasks yet.</p>;
+    return (
+      <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">
+        {emptyStateMessage}
+      </p>
+    );
   }
 
   return (
@@ -333,7 +328,6 @@ function GroupedTaskOverview({
           key={group.project || "__no_project__"}
           onDeleteTask={onDeleteTask}
           onOpenTask={onOpenTask}
-          onUpdateTaskDeadline={onUpdateTaskDeadline}
         />
       ))}
     </div>
@@ -344,18 +338,12 @@ interface ProjectSectionProps {
   group: TaskGroup;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onUpdateTaskDeadline: (taskId: string, deadline: string) => void;
 }
 
 /**
  * Renders a single project section with its tasks as line items.
  */
-function ProjectSection({
-  group,
-  onOpenTask,
-  onDeleteTask,
-  onUpdateTaskDeadline,
-}: ProjectSectionProps) {
+function ProjectSection({ group, onOpenTask, onDeleteTask }: ProjectSectionProps) {
   return (
     <section>
       <h3 className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
@@ -368,7 +356,6 @@ function ProjectSection({
             key={task.id}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
-            onUpdateTaskDeadline={onUpdateTaskDeadline}
             task={task}
           />
         ))}
@@ -381,84 +368,34 @@ interface TaskOverviewRowProps {
   task: Task;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onUpdateTaskDeadline: (taskId: string, deadline: string) => void;
 }
 
 /**
  * Shows each task as a lightweight line item so scanning stays fast.
  */
-function TaskOverviewRow({
-  task,
-  onOpenTask,
-  onDeleteTask,
-  onUpdateTaskDeadline,
-}: TaskOverviewRowProps) {
-  const formattedDeadline = formatDeadline(task.deadline);
-  const [isEditingDeadline, setIsEditingDeadline] = useState(false);
-  const [deadlineDraft, setDeadlineDraft] = useState(task.deadline);
-
-  function handleSaveDeadline() {
-    const normalizedDeadline = deadlineDraft.trim();
-
-    if (normalizedDeadline !== task.deadline) {
-      onUpdateTaskDeadline(task.id, normalizedDeadline);
-    }
-
-    setIsEditingDeadline(false);
-  }
-
+function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProps) {
   return (
     <li className="task-overview-line-item border-b border-[color:var(--row-divider)] py-2">
       <div className="flex min-h-8 items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          <button
-            className="min-w-0 shrink truncate text-left text-sm hover:text-[color:var(--muted-strong)]"
-            onClick={() => onOpenTask(task.id)}
-            type="button"
-          >
-            {task.title}
-          </button>
-          {isEditingDeadline ? (
-            <Input
-              aria-label={`Edit deadline for ${task.title}`}
-              className="h-6 w-36 px-2 py-0 text-[11px]"
-              onBlur={handleSaveDeadline}
-              onChange={(event) => setDeadlineDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  handleSaveDeadline();
-                }
-
-                if (event.key === "Escape") {
-                  setDeadlineDraft(task.deadline);
-                  setIsEditingDeadline(false);
-                }
-              }}
-              type="date"
-              value={deadlineDraft}
-            />
-          ) : formattedDeadline ? (
-            <button
-              aria-label={`Change deadline for ${task.title}`}
-              className="shrink-0 rounded-full bg-[color:var(--surface-muted)] px-2 py-px text-[11px] leading-none text-[color:var(--muted-strong)] transition-colors hover:bg-[color:var(--border)]"
-              onClick={() => {
-                setDeadlineDraft(task.deadline);
-                setIsEditingDeadline(true);
-              }}
-              type="button"
-            >
-              Due {formattedDeadline}
-            </button>
-          ) : null}
-          {task.tags.map((tag) => (
-            <span
-              key={tag}
-              className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-[11px] font-medium leading-none text-white"
-            >
-              {tag}
+        <button
+          className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left hover:text-[color:var(--muted-strong)]"
+          onClick={() => onOpenTask(task.id)}
+          type="button"
+        >
+          <span className="shrink truncate text-sm">{task.title}</span>
+          {task.tags.length > 0 ? (
+            <span className="flex min-w-0 items-center gap-1 overflow-hidden">
+              {task.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-[11px] font-medium leading-none text-white"
+                >
+                  {tag}
+                </span>
+              ))}
             </span>
-          ))}
-        </div>
+          ) : null}
+        </button>
 
         <Button
           aria-label="Open task"
@@ -492,28 +429,23 @@ interface TaskDrillDownProps {
   editTitle: string;
   editDetails: string;
   editProject: string;
-  editDeadline: string;
   editTags: string;
-  openAgentTaskId: string | null;
   pendingTaskId: string | null;
   activeProviderLabel: string;
   activeProviderModel: string;
-  agentDraft: AgentDraft;
+  threadDraft: ThreadDraft;
   onReturnToOverview: () => void;
   onStartEdit: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
-  onDeleteAgentContribution: (taskId: string, agentCallId: string) => void;
+  onDeleteThreadMessage: (taskId: string, messageId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onToggleAgentPanel: (taskId: string) => void;
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
-  onSetEditDeadline: (value: string) => void;
   onSetEditTags: (value: string) => void;
-  onCloseAgentPanel: () => void;
-  onAgentBriefChange: (taskId: string, brief: string) => void;
-  onCallAgent: (taskId: string) => void;
+  onThreadDraftChange: (taskId: string, message: string) => void;
+  onSendThreadMessage: (taskId: string) => void;
 }
 
 /**
@@ -526,36 +458,29 @@ function TaskDrillDown({
   editTitle,
   editDetails,
   editProject,
-  editDeadline,
   editTags,
-  openAgentTaskId,
   pendingTaskId,
   activeProviderLabel,
   activeProviderModel,
-  agentDraft,
+  threadDraft,
   onReturnToOverview,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
-  onDeleteAgentContribution,
+  onDeleteThreadMessage,
   onDeleteTask,
-  onToggleAgentPanel,
   onSetEditTitle,
   onSetEditDetails,
   onSetEditProject,
-  onSetEditDeadline,
   onSetEditTags,
-  onCloseAgentPanel,
-  onAgentBriefChange,
-  onCallAgent,
+  onThreadDraftChange,
+  onSendThreadMessage,
 }: TaskDrillDownProps) {
   const isEditing = editingTaskId === task.id;
-  const isAgentPanelOpen = openAgentTaskId === task.id;
   const isCallingTask = pendingTaskId === task.id;
   const projectName = task.projectId
     ? projects.find((p) => p.id === task.projectId)?.name
     : null;
-  const formattedDeadline = formatDeadline(task.deadline);
 
   return (
     <article className="mt-2 space-y-4">
@@ -569,9 +494,6 @@ function TaskDrillDown({
           <h2 className="text-xl font-semibold">{task.title}</h2>
           {projectName ? (
             <p className="text-xs text-[color:var(--muted)]">{projectName}</p>
-          ) : null}
-          {formattedDeadline ? (
-            <p className="text-xs text-[color:var(--muted)]">Due: {formattedDeadline}</p>
           ) : null}
           {task.tags.length > 0 ? (
             <div className="mt-1 flex flex-wrap gap-1">
@@ -587,14 +509,6 @@ function TaskDrillDown({
           <Button disabled={isEditing} onClick={() => onStartEdit(task.id)} size="sm" variant="ghost">
             <Pencil className="size-4" />
             {isEditing ? "Editing" : "Edit"}
-          </Button>
-          <Button
-            onClick={() => onToggleAgentPanel(task.id)}
-            size="sm"
-            variant={isAgentPanelOpen ? "default" : "ghost"}
-          >
-            <Bot className="size-4" />
-            {isAgentPanelOpen ? "Hide agent" : "Call agent"}
           </Button>
           <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
             <Trash2 className="size-4" />
@@ -625,13 +539,6 @@ function TaskDrillDown({
           </select>
           <Input
             className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
-            onChange={(event) => onSetEditDeadline(event.target.value)}
-            placeholder="Deadline (optional)"
-            type="date"
-            value={editDeadline}
-          />
-          <Input
-            className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
             onChange={(event) => onSetEditTags(event.target.value)}
             placeholder="Tags (optional, comma-separated)"
             value={editTags}
@@ -655,123 +562,20 @@ function TaskDrillDown({
         <p className="text-sm text-[color:var(--muted)]">{task.details || "No details yet."}</p>
       )}
 
-      <section className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.14em] text-[color:var(--muted)]">
-          {readAgentActivityLabel(task.agentCalls.length)}
-        </p>
-        {task.agentCalls.length > 0 ? (
-          <ul className="divide-y divide-[color:var(--row-divider)] border-y border-[color:var(--row-divider)]">
-            {task.agentCalls.map((agentCall) => (
-              <AgentContributionRow
-                agentCall={agentCall}
-                key={agentCall.id}
-                onDelete={() => onDeleteAgentContribution(task.id, agentCall.id)}
-              />
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-[color:var(--muted)]">No agent calls yet.</p>
-        )}
-      </section>
-
-      {isAgentPanelOpen ? (
-        <section className="space-y-3 border-t border-[color:var(--row-divider)] pt-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-[color:var(--muted)]">
-              Using {activeProviderLabel} · {activeProviderModel}
-            </p>
-            <button
-              className="text-[color:var(--muted)] transition hover:text-[color:var(--foreground)]"
-              onClick={onCloseAgentPanel}
-              type="button"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-
-          <Textarea
-            onChange={(event) => onAgentBriefChange(task.id, event.target.value)}
-            placeholder="What should the agent do for this task?"
-            value={agentDraft.brief}
-          />
-
-          {agentDraft.error ? <p className="text-sm text-rose-700">{agentDraft.error}</p> : null}
-
-          <div className="flex justify-end">
-            <Button disabled={isCallingTask} onClick={() => onCallAgent(task.id)} size="sm">
-              <Bot className="size-4" />
-              {isCallingTask ? "Calling..." : "Send to agent"}
-            </Button>
-          </div>
-        </section>
-      ) : null}
+      <AgentThreadPanel
+        activeProviderLabel={activeProviderLabel}
+        activeProviderModel={activeProviderModel}
+        composerPlaceholder={readThreadComposerPlaceholder({
+          ownerType: "task",
+          ownerId: task.id,
+        })}
+        draft={threadDraft}
+        isPending={isCallingTask}
+        onDeleteMessage={(messageId) => onDeleteThreadMessage(task.id, messageId)}
+        onDraftChange={(message) => onThreadDraftChange(task.id, message)}
+        onSend={() => onSendThreadMessage(task.id)}
+        thread={task.agentThread}
+      />
     </article>
   );
-}
-
-interface AgentContributionRowProps {
-  agentCall: Task["agentCalls"][number];
-  onDelete: () => void;
-}
-
-/**
- * Keeps one saved agent contribution readable without card chrome.
- */
-function AgentContributionRow({ agentCall, onDelete }: AgentContributionRowProps) {
-  return (
-    <li className="py-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-sm">
-            {getProviderLabel(agentCall.providerId)} · {agentCall.status}
-          </p>
-          <p className="text-xs text-[color:var(--muted)]">{agentCall.createdAt}</p>
-          <p className="mt-1 text-sm text-[color:var(--muted)]">{agentCall.brief}</p>
-          {agentCall.result ? <FormattedAgentResponse className="mt-2" content={agentCall.result} /> : null}
-          {agentCall.error ? <p className="mt-1 text-sm text-rose-700">{agentCall.error}</p> : null}
-        </div>
-
-        <Button aria-label="Delete contribution" onClick={onDelete} size="sm" variant="ghost">
-          <Trash2 className="size-4" />
-          Delete
-        </Button>
-      </div>
-    </li>
-  );
-}
-
-/**
- * Formats a task deadline string for compact display in overview and drill-down views.
- */
-function formatDeadline(deadline: string): string | null {
-  if (!deadline) {
-    return null;
-  }
-
-  try {
-    const date = new Date(`${deadline}T00:00:00`);
-
-    if (Number.isNaN(date.getTime())) {
-      return deadline;
-    }
-
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return deadline;
-  }
-}
-
-/**
- * Reads a compact label for task-level agent activity.
- */
-function readAgentActivityLabel(agentCallCount: number) {
-  if (agentCallCount === 0) {
-    return "No agent calls";
-  }
-
-  return agentCallCount === 1 ? "1 agent call" : `${agentCallCount} agent calls`;
 }

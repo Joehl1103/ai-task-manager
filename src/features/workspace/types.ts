@@ -1,6 +1,10 @@
 export type ProviderId = "anthropic" | "openai" | "google";
 
-export type AgentCallStatus = "done" | "error";
+export type ThreadOwnerType = "task" | "project" | "initiative";
+
+export type ThreadMessageRole = "human" | "agent";
+
+export type ThreadMessageStatus = "done" | "error";
 
 export interface ProviderSettings {
   apiKey: string;
@@ -12,20 +16,31 @@ export interface AgentConfigState {
   providers: Record<ProviderId, ProviderSettings>;
 }
 
-export interface AgentDraft {
-  brief: string;
+export interface ThreadDraft {
+  message: string;
   error: string | null;
 }
 
-export interface AgentCall {
+export interface ThreadOwnerRef {
+  ownerType: ThreadOwnerType;
+  ownerId: string;
+}
+
+export interface AgentThreadMessage {
   id: string;
-  providerId: ProviderId;
-  model: string;
-  brief: string;
-  status: AgentCallStatus;
+  role: ThreadMessageRole;
+  content: string;
   createdAt: string;
-  result?: string;
-  error?: string;
+  providerId?: ProviderId;
+  model?: string;
+  status?: ThreadMessageStatus;
+}
+
+export interface AgentThread {
+  id: string;
+  ownerType: ThreadOwnerType;
+  ownerId: string;
+  messages: AgentThreadMessage[];
 }
 
 export interface Initiative {
@@ -33,6 +48,7 @@ export interface Initiative {
   name: string;
   description: string;
   deadline: string;
+  agentThread: AgentThread;
 }
 
 export interface Project {
@@ -40,6 +56,7 @@ export interface Project {
   name: string;
   initiativeId: string;
   deadline: string;
+  agentThread: AgentThread;
 }
 
 export interface Task {
@@ -49,7 +66,7 @@ export interface Task {
   projectId: string;
   deadline: string;
   tags: string[];
-  agentCalls: AgentCall[];
+  agentThread: AgentThread;
 }
 
 export interface WorkspaceSnapshot {
@@ -101,13 +118,17 @@ export interface UpdateProjectInput {
   deadline: string;
 }
 
-export interface CallAgentInput {
-  taskId: string;
+export interface AddHumanThreadMessageInput {
+  owner: ThreadOwnerRef;
+  content: string;
+  now: string;
+}
+
+export interface AddAgentThreadMessageInput {
+  owner: ThreadOwnerRef;
   providerId: ProviderId;
   model: string;
-  brief: string;
+  content: string;
   now: string;
-  status: AgentCallStatus;
-  result?: string;
-  error?: string;
+  status: ThreadMessageStatus;
 }
