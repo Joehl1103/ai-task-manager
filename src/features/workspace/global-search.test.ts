@@ -23,11 +23,12 @@ describe("global search", () => {
   it("builds searchable results for tasks, projects, and initiatives", () => {
     const results = buildSeedResults();
 
-    expect(results).toHaveLength(6);
+    expect(results).toHaveLength(7);
     expect(results.map((result) => readGlobalSearchEntityLabel(result.entityType))).toEqual([
       "Task",
       "Task",
       "Task",
+      "Project",
       "Project",
       "Project",
       "Initiative",
@@ -85,31 +86,31 @@ describe("global search", () => {
   });
 
   /**
-   * Ensures task selections clear or set filters so the chosen task can still be seen.
+   * Ensures task selections navigate to the inbox view with the selected task open.
    */
-  it("maps task selections back into the tasks view", () => {
+  it("maps task selections back into the inbox view", () => {
     const results = buildSeedResults();
     const taskResult = results.find((candidate) => candidate.id === "task-1");
 
     expect(taskResult).toBeDefined();
     expect(resolveGlobalSearchSelection(taskResult!, workspaceSeed)).toEqual({
-      activeMenu: "tasks",
-      filterProjectId: "project-1",
+      activeMenu: "inbox",
+      filterProjectId: null,
       filterInitiativeId: null,
       selectedTaskId: "task-1",
     });
   });
 
   /**
-   * Reuses the project-to-task workflow by selecting the first matching task when one exists.
+   * Routes project selections to the projects view with the first matching task selected.
    */
-  it("maps project selections into the filtered tasks view", () => {
+  it("maps project selections into the projects view", () => {
     const results = buildSeedResults();
     const projectResult = results.find((candidate) => candidate.id === "project-1");
 
     expect(projectResult).toBeDefined();
     expect(resolveGlobalSearchSelection(projectResult!, workspaceSeed)).toEqual({
-      activeMenu: "tasks",
+      activeMenu: "projects",
       filterProjectId: "project-1",
       filterInitiativeId: null,
       selectedTaskId: "task-1",
@@ -119,13 +120,13 @@ describe("global search", () => {
   /**
    * Leaves the task drill-down closed when a searched project has no linked tasks yet.
    */
-  it("keeps project selections on the overview when the project has no tasks", () => {
+  it("keeps project selections on the projects view when the project has no tasks", () => {
     const results = buildSeedResults();
     const projectResult = results.find((candidate) => candidate.id === "project-2");
 
     expect(projectResult).toBeDefined();
     expect(resolveGlobalSearchSelection(projectResult!, workspaceSeed)).toEqual({
-      activeMenu: "tasks",
+      activeMenu: "projects",
       filterProjectId: "project-2",
       filterInitiativeId: null,
       selectedTaskId: null,
@@ -133,15 +134,15 @@ describe("global search", () => {
   });
 
   /**
-   * Preserves the initiative filter flow already used by the initiatives list.
+   * Routes initiative selections to the initiatives view.
    */
-  it("maps initiative selections into the filtered projects view", () => {
+  it("maps initiative selections into the initiatives view", () => {
     const results = buildSeedResults();
     const initiativeResult = results.find((candidate) => candidate.id === "initiative-1");
 
     expect(initiativeResult).toBeDefined();
     expect(resolveGlobalSearchSelection(initiativeResult!, workspaceSeed)).toEqual({
-      activeMenu: "projects",
+      activeMenu: "initiatives",
       filterProjectId: null,
       filterInitiativeId: "initiative-1",
       selectedTaskId: null,

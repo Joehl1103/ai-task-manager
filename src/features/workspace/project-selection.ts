@@ -18,7 +18,7 @@ export function buildProjectTaskSelection(
   const nextSelectedTask = tasks.find((task) => task.projectId === projectId) ?? null;
 
   return {
-    activeMenu: "tasks",
+    activeMenu: "projects",
     filterProjectId: projectId,
     selectedTaskId: nextSelectedTask?.id ?? null,
   };

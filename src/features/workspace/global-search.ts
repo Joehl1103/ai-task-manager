@@ -150,14 +150,14 @@ export function resolveGlobalSearchSelection(
   switch (result.entityType) {
     case "task":
       return {
-        activeMenu: "tasks",
-        filterProjectId: result.projectId,
+        activeMenu: "inbox",
+        filterProjectId: null,
         filterInitiativeId: null,
         selectedTaskId: result.id,
       };
     case "project":
       return {
-        activeMenu: "tasks",
+        activeMenu: "projects",
         filterProjectId: result.id,
         filterInitiativeId: null,
         selectedTaskId:
@@ -165,7 +165,7 @@ export function resolveGlobalSearchSelection(
       };
     case "initiative":
       return {
-        activeMenu: "projects",
+        activeMenu: "initiatives",
         filterProjectId: null,
         filterInitiativeId: result.id,
         selectedTaskId: null,

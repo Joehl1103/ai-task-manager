@@ -1,12 +1,12 @@
-export type WorkspaceMenu = "tasks" | "projects" | "initiatives" | "configuration";
+export type WorkspaceMenu = "inbox" | "projects" | "initiatives" | "configuration";
 
-export const workspaceMenus: WorkspaceMenu[] = ["tasks", "projects", "initiatives", "configuration"];
+export const workspaceMenus: WorkspaceMenu[] = ["inbox", "projects", "initiatives", "configuration"];
 
 /**
- * Keeps task work as the default landing menu for the app shell.
+ * Keeps inbox as the default landing menu for the app shell.
  */
 export function createDefaultWorkspaceMenu(): WorkspaceMenu {
-  return "tasks";
+  return "inbox";
 }
 
 /**
@@ -14,8 +14,8 @@ export function createDefaultWorkspaceMenu(): WorkspaceMenu {
  */
 export function readWorkspaceMenuLabel(menu: WorkspaceMenu): string {
   switch (menu) {
-    case "tasks":
-      return "Tasks";
+    case "inbox":
+      return "Inbox";
     case "projects":
       return "Projects";
     case "initiatives":
@@ -30,8 +30,8 @@ export function readWorkspaceMenuLabel(menu: WorkspaceMenu): string {
  */
 export function readWorkspaceMenuHint(menu: WorkspaceMenu): string {
   switch (menu) {
-    case "tasks":
-      return "Task workspace";
+    case "inbox":
+      return "Inbox workspace";
     case "projects":
       return "Project management";
     case "initiatives":

@@ -9,26 +9,26 @@ import {
 
 describe("project selection", () => {
   /**
-   * Routes project clicks into the task view and opens the first matching task.
+   * Routes project clicks into the projects view and opens the first matching task.
    */
   it("builds a task-focused selection for a project with tasks", () => {
     const selection = buildProjectTaskSelection(workspaceSeed.tasks, "project-1");
 
     expect(selection).toEqual({
-      activeMenu: "tasks",
+      activeMenu: "projects",
       filterProjectId: "project-1",
       selectedTaskId: "task-1",
     });
   });
 
   /**
-   * Keeps the task view scoped to the project even when no task drill-down exists yet.
+   * Keeps the projects view scoped to the project even when no task drill-down exists yet.
    */
   it("leaves the task drill-down empty when the project has no tasks", () => {
     const selection = buildProjectTaskSelection(workspaceSeed.tasks, "project-2");
 
     expect(selection).toEqual({
-      activeMenu: "tasks",
+      activeMenu: "projects",
       filterProjectId: "project-2",
       selectedTaskId: null,
     });

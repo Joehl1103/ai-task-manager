@@ -42,6 +42,7 @@ import {
   normalizeAgentConfig,
   providerCatalog,
 } from "@/features/workspace/provider-config";
+import { InboxView } from "@/features/workspace/inbox-view";
 import { TaskManagementView } from "@/features/workspace/task-management-view";
 import { buildThreadContextSummary, readThreadOwnerName } from "@/features/workspace/thread-context";
 import { buildThreadOwnerKey } from "@/features/workspace/thread-helpers";
@@ -1084,9 +1085,8 @@ export function WorkspaceApp() {
         />
 
         <section className="mt-3">
-          {activeMenu === "tasks" && (
-            <TaskManagementView
-              activeProjectFilterName={activeProjectFilterName}
+          {activeMenu === "inbox" && (
+            <InboxView
               activeProviderLabel={activeProviderLabel}
               activeProviderModel={activeProviderSettings.model}
               editDetails={editDetails}
@@ -1096,7 +1096,6 @@ export function WorkspaceApp() {
               editTitle={editTitle}
               isActiveProviderReady={isActiveProviderReady}
               newTaskDetails={newTaskDetails}
-              newTaskProject={newTaskProject}
               newTaskTags={newTaskTags}
               newTaskTitle={newTaskTitle}
               onAddTask={handleAddTask}
@@ -1111,7 +1110,6 @@ export function WorkspaceApp() {
                 )
               }
               onDeleteTask={handleDeleteTask}
-              onClearProjectFilter={handleClearProjectFilter}
               onOpenTask={handleOpenTask}
               onReturnToOverview={handleReturnToOverview}
               onSaveEdit={handleSaveEdit}
@@ -1120,7 +1118,6 @@ export function WorkspaceApp() {
               onSetEditTags={setEditTags}
               onSetEditTitle={setEditTitle}
               onSetNewTaskDetails={setNewTaskDetails}
-              onSetNewTaskProject={setNewTaskProject}
               onSetNewTaskTags={setNewTaskTags}
               onSetNewTaskTitle={setNewTaskTitle}
               onStartEdit={handleStartEdit}
@@ -1139,7 +1136,6 @@ export function WorkspaceApp() {
                   message,
                 )
               }
-              onToggleGroupingMode={handleToggleGroupingMode}
               pendingTaskId={
                 pendingThreadOwnerKey?.startsWith("task:")
                   ? pendingThreadOwnerKey.slice("task:".length)
@@ -1148,8 +1144,7 @@ export function WorkspaceApp() {
               projects={workspace.projects}
               selectedThreadDraft={selectedThreadDraft}
               selectedTask={selectedTask}
-              taskGroupingMode={taskGroupingMode}
-              tasks={visibleTasks}
+              tasks={workspace.tasks}
             />
           )}
           {activeMenu === "initiatives" && (

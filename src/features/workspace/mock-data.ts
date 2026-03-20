@@ -32,6 +32,16 @@ export const workspaceSeed: WorkspaceSnapshot = {
   ],
   projects: [
     {
+      id: "project-no-project",
+      name: "No Project",
+      initiativeId: "",
+      deadline: "",
+      agentThread: {
+        ...createAgentThread("project", "project-no-project"),
+        messages: [],
+      },
+    },
+    {
       id: "project-1",
       name: "Relay MVP",
       initiativeId: "initiative-1",
