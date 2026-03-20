@@ -3,17 +3,15 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
-import { AgentThreadPanel } from "@/features/workspace/agent-thread-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   filterVisibleProjects,
   isPermanentProjectId,
-} from "@/features/workspace/inbox-project";
-import { readThreadComposerPlaceholder } from "@/features/workspace/thread-context";
-
-import { type Initiative, type Project, type Task, type ThreadDraft } from "./types";
+} from "@/features/workspace/projects";
+import { type Initiative, type Project, type Task, type ThreadDraft } from "@/features/workspace/core";
+import { AgentThreadPanel, readThreadComposerPlaceholder } from "@/features/workspace/threads";
 
 interface ProjectViewProps {
   activeProviderLabel: string;

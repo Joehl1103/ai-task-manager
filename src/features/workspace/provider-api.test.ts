@@ -5,7 +5,7 @@ import {
   callProviderAgent,
   extractProviderText,
   readProviderErrorMessage,
-} from "./provider-api";
+} from "@/features/workspace/providers";
 
 const originalFetch = globalThis.fetch;
 

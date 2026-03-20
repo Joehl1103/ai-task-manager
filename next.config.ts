@@ -1,8 +1,8 @@
 import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
-import { buildAllowedDevOrigins } from "./next-dev-origins";
-import { findNextWorkspaceRoot } from "./next-workspace-root";
+import { buildAllowedDevOrigins } from "./config/next/dev-origins";
+import { findNextWorkspaceRoot } from "./config/next/workspace-root";
 
 const appRoot = fileURLToPath(new URL(".", import.meta.url));
 const workspaceRoot = findNextWorkspaceRoot(appRoot);

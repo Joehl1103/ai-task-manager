@@ -5,7 +5,7 @@ import {
   buildProjectTaskSelection,
   filterTasksByProject,
   readProjectFilterName,
-} from "./project-selection";
+} from "@/features/workspace/projects";
 
 describe("project selection", () => {
   /**

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -84,18 +84,25 @@ describe("buildDevEnvironment", () => {
     });
   });
 
-  it("creates a generated tsconfig for each concurrent dev instance", () => {
+  it("writes a generated per-port tsconfig that extends the root config", () => {
     const projectRoot = mkdtempSync(join(tmpdir(), "relay-dev-instance-"));
+
     tempDirectories.push(projectRoot);
+    writeFileSync(
+      join(projectRoot, "tsconfig.json"),
+      `{
+  "compilerOptions": {
+    "strict": true
+  }
+}
+`,
+    );
 
     ensureDevTsconfig(projectRoot, 4021);
 
     expect(
-      readFileSync(
-        join(projectRoot, ".next", "instances", "port-4021", "tsconfig.json"),
-        "utf8",
-      ),
-    ).toContain('"extends": "../../../tsconfig.json"');
+      readFileSync(join(projectRoot, ".next", "instances", "port-4021", "tsconfig.json"), "utf8"),
+    ).toBe('{\n  "extends": "../../../tsconfig.json"\n}\n');
   });
 });
 

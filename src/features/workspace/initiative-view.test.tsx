@@ -1,10 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { type Initiative, type Project } from "@/features/workspace/core";
+import { createAgentThread } from "@/features/workspace/threads";
+
 import { workspaceSeed } from "./mock-data";
 import { InitiativeView } from "./initiative-view";
-import { createAgentThread } from "./thread-helpers";
-import { type Initiative, type Project } from "./types";
 
 function buildInitiativeViewProps(overrides?: {
   initiatives?: Initiative[];

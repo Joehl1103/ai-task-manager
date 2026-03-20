@@ -1,5 +1,5 @@
-import { createAgentThread } from "./thread-helpers";
-import { type Project, type Task } from "./types";
+import { type Project, type Task } from "@/features/workspace/core";
+import { createAgentThread } from "@/features/workspace/threads";
 
 export const inboxProjectId = "project-inbox";
 export const inboxProjectName = "Inbox";

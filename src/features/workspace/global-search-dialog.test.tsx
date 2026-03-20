@@ -1,8 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { buildGlobalSearchResults } from "./global-search";
-import { GlobalSearchDialog } from "./global-search-dialog";
+import { buildGlobalSearchResults, GlobalSearchDialog } from "@/features/workspace/search";
 import { workspaceSeed } from "./mock-data";
 
 describe("global search dialog", () => {

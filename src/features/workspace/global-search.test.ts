@@ -7,7 +7,7 @@ import {
   filterGlobalSearchResults,
   readGlobalSearchEntityLabel,
   resolveGlobalSearchSelection,
-} from "./global-search";
+} from "@/features/workspace/search";
 
 /**
  * Keeps the command search tests grounded in the same starter workspace data the app renders.

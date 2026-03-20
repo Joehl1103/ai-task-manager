@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { inboxProjectId } from "./inbox-project";
-import { workspaceSeed } from "./mock-data";
+import { inboxProjectId } from "@/features/workspace/projects";
 import {
   addTask,
   appendAgentThreadMessage,
@@ -9,7 +8,9 @@ import {
   deleteTask,
   deleteThreadMessage,
   updateTask,
-} from "./operations";
+} from "@/features/workspace/tasks";
+
+import { workspaceSeed } from "./mock-data";
 
 describe("workspace operations", () => {
   /**

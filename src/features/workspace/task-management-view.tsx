@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import { ArrowLeft, ArrowUpRight, Pencil, Plus, Trash2 } from "lucide-react";
 
-import { AgentThreadPanel } from "@/features/workspace/agent-thread-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,16 +13,16 @@ import {
   inboxProjectName,
   isHiddenInboxProjectId,
   readProjectPickerValue,
-} from "@/features/workspace/inbox-project";
+} from "@/features/workspace/projects";
 import { cn } from "@/lib/utils";
-import { readThreadComposerPlaceholder } from "@/features/workspace/thread-context";
 import {
   groupTasksByProject,
   groupTasksByTag,
   type TaskGroup,
-} from "@/features/workspace/task-grouping";
-import { type Project, type Task, type ThreadDraft } from "@/features/workspace/types";
-import { type TaskGroupingMode } from "@/features/workspace/workspace-storage";
+} from "@/features/workspace/tasks";
+import { type Project, type Task, type ThreadDraft } from "@/features/workspace/core";
+import { type TaskGroupingMode } from "@/features/workspace/storage";
+import { AgentThreadPanel, readThreadComposerPlaceholder } from "@/features/workspace/threads";
 
 interface TaskManagementViewProps {
   tasks: Task[];

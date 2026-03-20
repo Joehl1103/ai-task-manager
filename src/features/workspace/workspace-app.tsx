@@ -4,37 +4,32 @@ import { useEffect, useState } from "react";
 
 import { AgentConfigurationView } from "@/features/workspace/agent-configuration-view";
 import {
-  buildDeleteTaskConfirmationMessage,
-  buildDeleteThreadMessageConfirmationMessage,
-} from "@/features/workspace/delete-confirmation";
-import { GlobalSearchDialog } from "@/features/workspace/global-search-dialog";
-import {
-  filterVisibleProjects,
-  readProjectPickerValue,
-} from "@/features/workspace/inbox-project";
+  type AgentConfigState,
+  type ProviderId,
+  type ThreadDraft,
+  type ThreadOwnerRef,
+} from "@/features/workspace/core";
+import { InboxView } from "@/features/workspace/inbox-view";
 import {
   addInitiative,
   deleteInitiative,
   updateInitiative,
-} from "@/features/workspace/initiative-operations";
+} from "@/features/workspace/initiatives";
 import { InitiativeView } from "@/features/workspace/initiative-view";
 import {
-  addTask,
-  appendAgentThreadMessage,
-  appendHumanThreadMessage,
-  deleteTask,
-  deleteThreadMessage,
-  updateTask,
-} from "@/features/workspace/operations";
+  createDefaultWorkspaceMenu,
+  type WorkspaceMenu,
+  WorkspaceTopMenu,
+} from "@/features/workspace/navigation";
 import {
+  filterVisibleProjects,
+  readProjectPickerValue,
   addProject,
   deleteProject,
   updateProject,
-} from "@/features/workspace/project-operations";
-import {
   buildProjectTaskSelection,
   filterTasksByProject,
-} from "@/features/workspace/project-selection";
+} from "@/features/workspace/projects";
 import { ProjectView } from "@/features/workspace/project-view";
 import {
   agentConfigStorageKey,
@@ -44,20 +39,14 @@ import {
   getProviderLabel,
   normalizeAgentConfig,
   providerCatalog,
-} from "@/features/workspace/provider-config";
-import { InboxView } from "@/features/workspace/inbox-view";
-import { buildThreadContextSummary, readThreadOwnerName } from "@/features/workspace/thread-context";
-import { buildThreadOwnerKey } from "@/features/workspace/thread-helpers";
-import { readSelectedTask } from "@/features/workspace/task-overview";
-import { WorkspaceTopMenu } from "@/features/workspace/workspace-top-menu";
-import { createDefaultWorkspaceMenu } from "@/features/workspace/workspace-navigation";
-import { type WorkspaceMenu } from "@/features/workspace/workspace-navigation";
+} from "@/features/workspace/providers";
 import {
-  type AgentConfigState,
-  type ProviderId,
-  type ThreadDraft,
-  type ThreadOwnerRef,
-} from "@/features/workspace/types";
+  buildGlobalSearchResults,
+  filterGlobalSearchResults,
+  GlobalSearchDialog,
+  resolveGlobalSearchSelection,
+  type GlobalSearchResult,
+} from "@/features/workspace/search";
 import {
   createDefaultWorkspaceSnapshot,
   defaultTaskGroupingMode,
@@ -66,20 +55,30 @@ import {
   taskGroupingModeStorageKey,
   type TaskGroupingMode,
   workspaceStorageKey,
-} from "@/features/workspace/workspace-storage";
+} from "@/features/workspace/storage";
+import {
+  buildDeleteTaskConfirmationMessage,
+  buildDeleteThreadMessageConfirmationMessage,
+  addTask,
+  appendAgentThreadMessage,
+  appendHumanThreadMessage,
+  deleteTask,
+  deleteThreadMessage,
+  readSelectedTask,
+  updateTask,
+} from "@/features/workspace/tasks";
+import {
+  buildThreadContextSummary,
+  buildThreadOwnerKey,
+  readThreadOwnerName,
+} from "@/features/workspace/threads";
 import {
   buildWorkspaceThemeStyle,
   defaultWorkspaceThemeSelection,
   normalizeWorkspaceThemeSelection,
   workspaceThemeSelectionStorageKey,
   type WorkspaceThemeSelection,
-} from "@/features/workspace/workspace-theme";
-import {
-  buildGlobalSearchResults,
-  filterGlobalSearchResults,
-  resolveGlobalSearchSelection,
-  type GlobalSearchResult,
-} from "@/features/workspace/global-search";
+} from "@/features/workspace/theme";
 
 /**
  * Hosts the app shell, view switching, and task/configuration state wiring.

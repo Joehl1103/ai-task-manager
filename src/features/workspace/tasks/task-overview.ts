@@ -1,4 +1,4 @@
-import { type Task, type ThreadMessageStatus } from "./types";
+import { type Task, type ThreadMessageStatus } from "@/features/workspace/core";
 
 const defaultDetailsPreviewLength = 96;
 

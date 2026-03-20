@@ -7,7 +7,7 @@ import {
   parseConfiguredDevOrigins,
   readMachineDevOrigins,
   type NetworkInterfacesMap,
-} from "./next-dev-origins";
+} from "./dev-origins";
 
 /**
  * Builds a minimal network interface entry so each test only needs to specify the values

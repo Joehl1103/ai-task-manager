@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { findNextWorkspaceRoot } from "./next-workspace-root";
+import { findNextWorkspaceRoot } from "./workspace-root";
 
 const tempDirectories = [];
 

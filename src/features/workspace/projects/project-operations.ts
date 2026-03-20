@@ -7,8 +7,8 @@ import {
   type Project,
   type UpdateProjectInput,
   type WorkspaceSnapshot,
-} from "./types";
-import { createAgentThread } from "./thread-helpers";
+} from "@/features/workspace/core";
+import { createAgentThread } from "@/features/workspace/threads";
 
 /**
  * Adds a new project to the workspace.

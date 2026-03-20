@@ -1,5 +1,5 @@
-import { type Project, type Task } from "./types";
-import { type WorkspaceMenu } from "./workspace-navigation";
+import { type Project, type Task } from "@/features/workspace/core";
+import { type WorkspaceMenu } from "@/features/workspace/navigation";
 
 export interface ProjectTaskSelection {
   activeMenu: WorkspaceMenu;

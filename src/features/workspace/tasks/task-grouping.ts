@@ -2,8 +2,8 @@ import {
   inboxProjectId,
   inboxProjectName,
   normalizeTaskProjectId,
-} from "./inbox-project";
-import { type Project, type Task } from "./types";
+} from "@/features/workspace/projects";
+import { type Project, type Task } from "@/features/workspace/core";
 
 export const noProjectLabel = inboxProjectName;
 export const noTagsLabel = "No tags";

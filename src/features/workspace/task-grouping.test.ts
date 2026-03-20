@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { inboxProjectId } from "./inbox-project";
+import { type Project, type Task } from "@/features/workspace/core";
+import { inboxProjectId } from "@/features/workspace/projects";
 import {
   countGroupedTasks,
   groupTasksByProject,
   groupTasksByTag,
   noProjectLabel,
   noTagsLabel,
-} from "./task-grouping";
-import { createAgentThread } from "./thread-helpers";
-import { type Project, type Task } from "./types";
+} from "@/features/workspace/tasks";
+import { createAgentThread } from "@/features/workspace/threads";
 
 function createTask(
   id: string,

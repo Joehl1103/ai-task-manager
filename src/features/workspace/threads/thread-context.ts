@@ -1,5 +1,5 @@
-import { inboxProjectName, isTaskInInbox } from "./inbox-project";
-import { type ThreadOwnerRef, type WorkspaceSnapshot } from "./types";
+import { type ThreadOwnerRef, type WorkspaceSnapshot } from "@/features/workspace/core";
+import { inboxProjectName, isTaskInInbox } from "@/features/workspace/projects";
 
 const defaultChildSummaryLimit = 8;
 

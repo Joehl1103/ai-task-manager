@@ -4,7 +4,7 @@ import {
   createDefaultWorkspaceMenu,
   readWorkspaceMenuHint,
   readWorkspaceMenuLabel,
-} from "./workspace-navigation";
+} from "@/features/workspace/navigation";
 
 describe("workspace navigation", () => {
   /**

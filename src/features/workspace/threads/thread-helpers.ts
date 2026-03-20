@@ -1,4 +1,4 @@
-import { type AgentThread, type ThreadOwnerRef, type ThreadOwnerType } from "./types";
+import { type AgentThread, type ThreadOwnerRef, type ThreadOwnerType } from "@/features/workspace/core";
 
 /**
  * Builds a stable thread object for a task, project, or initiative.

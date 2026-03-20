@@ -6,10 +6,10 @@ import {
   noProjectProjectId,
   noProjectProjectName,
   normalizeTaskProjectId,
-} from "./inbox-project";
-import { workspaceSeed } from "./mock-data";
-import { isProviderId } from "./provider-config";
-import { createAgentThread } from "./thread-helpers";
+} from "@/features/workspace/projects";
+import { workspaceSeed } from "@/features/workspace/mock-data";
+import { isProviderId } from "@/features/workspace/providers";
+import { createAgentThread } from "@/features/workspace/threads";
 import {
   type AgentThread,
   type AgentThreadMessage,
@@ -20,7 +20,7 @@ import {
   type ThreadMessageStatus,
   type ThreadOwnerType,
   type WorkspaceSnapshot,
-} from "./types";
+} from "@/features/workspace/core";
 
 export const workspaceStorageKey = "relay-workspace";
 export const taskGroupingModeStorageKey = "relay-task-grouping-mode";

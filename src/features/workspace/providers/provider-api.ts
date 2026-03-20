@@ -1,4 +1,4 @@
-import { type AgentThreadMessage, type ProviderId, type ThreadOwnerType } from "./types";
+import { type AgentThreadMessage, type ProviderId, type ThreadOwnerType } from "@/features/workspace/core";
 
 const agentSystemInstruction =
   [

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDeleteTaskConfirmationMessage,
   buildDeleteThreadMessageConfirmationMessage,
-} from "./delete-confirmation";
+} from "@/features/workspace/tasks";
 
 describe("delete confirmation helpers", () => {
   /**

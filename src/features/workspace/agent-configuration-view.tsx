@@ -7,13 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { providerCatalog } from "@/features/workspace/provider-config";
+import {
+  type ProviderId,
+  type ProviderSettings,
+  type SavedApiKey,
+} from "@/features/workspace/core";
+import { providerCatalog } from "@/features/workspace/providers";
 import {
   readWorkspaceThemeLabel,
+  WorkspaceThemeSelector,
   type WorkspaceThemeSelection,
-} from "@/features/workspace/workspace-theme";
-import { WorkspaceThemeSelector } from "@/features/workspace/workspace-theme-selector";
-import { type ProviderId, type ProviderSettings, type SavedApiKey } from "@/features/workspace/types";
+} from "@/features/workspace/theme";
 
 interface AgentConfigurationViewProps {
   activeProvider: ProviderId;

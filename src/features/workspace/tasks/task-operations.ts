@@ -1,16 +1,16 @@
-import { normalizeTaskProjectId } from "./inbox-project";
-import { createAgentThread } from "./thread-helpers";
 import {
   type AddAgentThreadMessageInput,
   type AddHumanThreadMessageInput,
+  type AddTaskInput,
   type AgentThread,
   type AgentThreadMessage,
-  type AddTaskInput,
   type Task,
   type ThreadOwnerRef,
   type UpdateTaskInput,
   type WorkspaceSnapshot,
-} from "./types";
+} from "@/features/workspace/core";
+import { normalizeTaskProjectId } from "@/features/workspace/projects";
+import { createAgentThread } from "@/features/workspace/threads";
 
 /**
  * Normalizes tags by trimming, removing duplicates case-insensitively, and filtering empty strings.

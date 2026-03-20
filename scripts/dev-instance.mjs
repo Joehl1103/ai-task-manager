@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 
 export const DEFAULT_DEV_PORT = 3000;
 export const DEV_DIST_DIR_ENV = "RELAY_NEXT_DIST_DIR";
@@ -83,30 +83,30 @@ function buildDevDistDirectory(selectedPort) {
 }
 
 /**
- * Uses a generated per-instance tsconfig so Next can add its type includes without
- * rewriting the tracked root tsconfig.json for every chosen port.
+ * Stores each generated tsconfig beside its matching dev instance so the project
+ * root stays clean even when multiple dev ports have been used.
  */
 function buildDevTsconfigPath(selectedPort) {
   return `${buildDevDistDirectory(selectedPort)}/tsconfig.json`;
 }
 
 /**
- * Creates the generated tsconfig file that each concurrent dev instance points Next at.
+ * Creates a generated tsconfig that extends the tracked root config, which keeps
+ * relative paths rooted in the real project config while still giving each port its
+ * own mutable file for Next's dev-time adjustments.
  */
 export function ensureDevTsconfig(projectRoot, selectedPort) {
   const instanceDirectory = resolve(projectRoot, buildDevDistDirectory(selectedPort));
+  const rootTsconfigPath = resolve(projectRoot, "tsconfig.json");
   const tsconfigPath = resolve(projectRoot, buildDevTsconfigPath(selectedPort));
+  const relativeRootTsconfigPath = relative(instanceDirectory, rootTsconfigPath)
+    .split("\\")
+    .join("/");
 
   mkdirSync(instanceDirectory, { recursive: true });
   writeFileSync(
     tsconfigPath,
-    `${JSON.stringify(
-      {
-        extends: "../../../tsconfig.json",
-      },
-      null,
-      2,
-    )}\n`,
+    `${JSON.stringify({ extends: relativeRootTsconfigPath }, null, 2)}\n`,
   );
 }
 

@@ -2,9 +2,9 @@ import {
   createInboxProject,
   createNoProjectProject,
   inboxProjectId,
-} from "./inbox-project";
-import { createAgentThread } from "./thread-helpers";
-import { type WorkspaceSnapshot } from "./types";
+} from "@/features/workspace/projects";
+import { type WorkspaceSnapshot } from "@/features/workspace/core";
+import { createAgentThread } from "@/features/workspace/threads";
 
 export const workspaceSeed: WorkspaceSnapshot = {
   initiatives: [

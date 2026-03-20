@@ -3,7 +3,7 @@ import {
   type ProviderId,
   type ProviderSettings,
   type SavedApiKey,
-} from "./types";
+} from "@/features/workspace/core";
 
 export const agentConfigStorageKey = "relay-agent-config";
 

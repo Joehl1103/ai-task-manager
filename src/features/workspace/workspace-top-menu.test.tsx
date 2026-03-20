@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { WorkspaceTopMenu } from "./workspace-top-menu";
+import { WorkspaceTopMenu } from "@/features/workspace/navigation";
 
 describe("workspace top menu", () => {
   /**

@@ -2,9 +2,9 @@ import {
   filterVisibleProjects,
   inboxProjectName,
   isTaskInInbox,
-} from "./inbox-project";
-import { type WorkspaceMenu } from "./workspace-navigation";
-import { type WorkspaceSnapshot } from "./types";
+} from "@/features/workspace/projects";
+import { type WorkspaceMenu } from "@/features/workspace/navigation";
+import { type WorkspaceSnapshot } from "@/features/workspace/core";
 
 export type GlobalSearchEntityType = "task" | "project" | "initiative";
 

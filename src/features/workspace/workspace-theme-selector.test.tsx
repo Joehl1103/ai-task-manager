@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { WorkspaceThemeSelector } from "./workspace-theme-selector";
+import { WorkspaceThemeSelector } from "@/features/workspace/theme";
 
 describe("workspace theme selector", () => {
   /**

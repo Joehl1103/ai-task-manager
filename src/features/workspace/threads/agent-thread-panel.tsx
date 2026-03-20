@@ -4,10 +4,10 @@ import { Bot, Send, Trash2, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { FormattedAgentResponse } from "@/features/workspace/formatted-agent-response";
-import { getProviderLabel } from "@/features/workspace/provider-config";
+import { type AgentThread, type ThreadDraft } from "@/features/workspace/core";
+import { getProviderLabel } from "@/features/workspace/providers";
 
-import { type AgentThread, type ThreadDraft } from "./types";
+import { FormattedAgentResponse } from "./formatted-agent-response";
 
 interface AgentThreadPanelProps {
   thread: AgentThread;

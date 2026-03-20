@@ -5,7 +5,7 @@ import {
   buildTaskDetailsPreview,
   buildTaskOverviewSummary,
   readSelectedTask,
-} from "./task-overview";
+} from "@/features/workspace/tasks";
 
 describe("task overview helpers", () => {
   /**

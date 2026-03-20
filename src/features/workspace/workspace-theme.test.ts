@@ -6,7 +6,7 @@ import {
   normalizeWorkspaceThemeSelection,
   readWorkspaceThemeLabel,
   workspaceThemeFlags,
-} from "./workspace-theme";
+} from "@/features/workspace/theme";
 
 describe("workspace theme registry", () => {
   /**

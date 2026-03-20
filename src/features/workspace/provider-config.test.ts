@@ -4,7 +4,7 @@ import {
   createDefaultAgentConfig,
   normalizeAgentConfig,
   providerCatalog,
-} from "./provider-config";
+} from "@/features/workspace/providers";
 
 describe("provider config", () => {
   /**

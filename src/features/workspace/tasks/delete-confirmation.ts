@@ -1,4 +1,4 @@
-import { type ThreadOwnerType } from "./types";
+import { type ThreadOwnerType } from "@/features/workspace/core";
 
 interface DeleteTaskConfirmationInput {
   taskTitle: string;

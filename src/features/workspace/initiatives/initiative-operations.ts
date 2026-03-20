@@ -3,8 +3,8 @@ import {
   type Initiative,
   type UpdateInitiativeInput,
   type WorkspaceSnapshot,
-} from "./types";
-import { createAgentThread } from "./thread-helpers";
+} from "@/features/workspace/core";
+import { createAgentThread } from "@/features/workspace/threads";
 
 /**
  * Adds a new initiative to the workspace.

@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { inboxProjectId, noProjectProjectId } from "./inbox-project";
+import {
+  deleteProject,
+  inboxProjectId,
+  noProjectProjectId,
+} from "@/features/workspace/projects";
+
 import { workspaceSeed } from "./mock-data";
-import { deleteProject } from "./project-operations";
 
 describe("project operations", () => {
   /**

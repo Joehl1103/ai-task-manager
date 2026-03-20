@@ -3,13 +3,11 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
-import { AgentThreadPanel } from "@/features/workspace/agent-thread-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { readThreadComposerPlaceholder } from "@/features/workspace/thread-context";
-
-import { type Initiative, type Project, type ThreadDraft } from "./types";
+import { type Initiative, type Project, type ThreadDraft } from "@/features/workspace/core";
+import { AgentThreadPanel, readThreadComposerPlaceholder } from "@/features/workspace/threads";
 
 interface InitiativeViewProps {
   activeProviderLabel: string;

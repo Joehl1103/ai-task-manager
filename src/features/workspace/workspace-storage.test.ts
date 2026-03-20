@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { inboxProjectId, noProjectProjectId } from "./inbox-project";
-import { normalizeWorkspaceSnapshot, workspaceStorageKey } from "./workspace-storage";
+import { inboxProjectId, noProjectProjectId } from "@/features/workspace/projects";
+import { normalizeWorkspaceSnapshot, workspaceStorageKey } from "@/features/workspace/storage";
 
 describe("workspace storage", () => {
   /**

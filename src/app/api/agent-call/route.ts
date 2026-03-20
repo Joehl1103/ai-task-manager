@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { isProviderId } from "@/features/workspace/provider-config";
-import { callProviderAgent } from "@/features/workspace/provider-api";
-import { type AgentThreadMessage, type ThreadOwnerType } from "@/features/workspace/types";
+import { type AgentThreadMessage, type ThreadOwnerType } from "@/features/workspace/core";
+import { callProviderAgent, isProviderId } from "@/features/workspace/providers";
 
 /**
  * Accepts an entity-scoped thread request and forwards it to the selected provider.

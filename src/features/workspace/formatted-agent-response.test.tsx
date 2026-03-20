@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { FormattedAgentResponse } from "./formatted-agent-response";
+import { FormattedAgentResponse } from "@/features/workspace/threads";
 
 describe("formatted agent response", () => {
   /**

@@ -61,18 +61,24 @@ The app is the primary project in this repository.
 
 - `src/app/page.tsx`: page entry
 - `src/app/api/agent-call/route.ts`: provider proxy route for live agent calls
-- `src/features/workspace/workspace-top-menu.tsx`: thin desktop menu opened from the current-view label
-- `src/features/workspace/workspace-theme.ts`: shadcn-inspired theme registry and persistence helpers
-- `src/features/workspace/workspace-theme-selector.tsx`: UI toggles for the paired day/night theme options
-- `src/features/workspace/task-management-view.tsx`: task-only workspace view
-- `src/features/workspace/agent-configuration-view.tsx`: provider setup view
-- `src/features/workspace/formatted-agent-response.tsx`: safe basic markdown and HTML renderer for agent history
 - `src/features/workspace/workspace-app.tsx`: app shell and state wiring for top-level views
-- `src/features/workspace/operations.ts`: pure task and agent-call updates
+- `src/features/workspace/task-management-view.tsx`: task-only workspace view
+- `src/features/workspace/inbox-view.tsx`: inbox-focused task view
+- `src/features/workspace/project-view.tsx`: project list and drill-in view
+- `src/features/workspace/initiative-view.tsx`: initiative list and drill-in view
+- `src/features/workspace/agent-configuration-view.tsx`: provider setup view
 - `src/features/workspace/mock-data.ts`: starter tasks and sample agent history
-- `src/features/workspace/provider-api.ts`: shared provider request and response helpers
-- `src/features/workspace/task-overview.ts`: compact task-summary helpers for overview cards
-- `src/features/workspace/workspace-storage.ts`: workspace local storage helpers and normalization
+- `src/features/workspace/core/*`: shared workspace types
+- `src/features/workspace/tasks/*`: task operations, grouping, overview, and confirmation helpers
+- `src/features/workspace/projects/*`: inbox-system-project helpers, project operations, and selection helpers
+- `src/features/workspace/initiatives/*`: initiative operations
+- `src/features/workspace/providers/*`: provider config and API helpers
+- `src/features/workspace/threads/*`: thread UI plus owner/context helpers
+- `src/features/workspace/search/*`: global search helpers and dialog
+- `src/features/workspace/storage/*`: workspace local storage helpers and normalization
+- `src/features/workspace/theme/*`: theme registry and selector
+- `src/features/workspace/navigation/*`: top-menu UI and menu metadata
+- `config/next/*`: Next dev-server config helpers and tests
 - `src/components/ui/*`: reusable UI primitives
 
 ## Product Assumptions

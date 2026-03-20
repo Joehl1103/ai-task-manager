@@ -18,20 +18,35 @@ The current goal is to keep the product as small as possible before layering on 
 ## Architecture
 
 - `src/app/page.tsx`: app entry point
-- `src/features/workspace/workspace-top-menu.tsx`: slim desktop view switcher
-- `src/features/workspace/workspace-theme.ts`: theme registry and selection helpers for the preview lab
-- `src/features/workspace/workspace-theme-selector.tsx`: day/night theme-option controls
-- `src/features/workspace/task-management-view.tsx`: task workflow UI
-- `src/features/workspace/agent-configuration-view.tsx`: provider configuration UI
-- `src/features/workspace/formatted-agent-response.tsx`: safe formatter for basic markdown and HTML agent responses
 - `src/features/workspace/workspace-app.tsx`: app shell and state orchestration
+- `src/features/workspace/task-management-view.tsx`: task workflow UI
+- `src/features/workspace/inbox-view.tsx`: inbox-specific task workflow UI
+- `src/features/workspace/project-view.tsx`: project workflow UI
+- `src/features/workspace/initiative-view.tsx`: initiative workflow UI
+- `src/features/workspace/agent-configuration-view.tsx`: provider configuration UI
 - `src/features/workspace/mock-data.ts`: local seed data for tasks and sample agent history
-- `src/features/workspace/operations.ts`: pure task and agent-call helpers
-- `src/features/workspace/provider-api.ts`: provider request and response helpers
-- `src/features/workspace/task-overview.ts`: compact summary helpers for overview cards
-- `src/features/workspace/workspace-storage.ts`: workspace local storage helpers
+- `src/features/workspace/core/*`: shared workspace types
+- `src/features/workspace/tasks/*`: task operations, grouping, overview helpers, and delete messaging
+- `src/features/workspace/projects/*`: inbox helpers, project operations, and project selection helpers
+- `src/features/workspace/initiatives/*`: initiative operations
+- `src/features/workspace/providers/*`: provider request and configuration helpers
+- `src/features/workspace/threads/*`: thread rendering, ids, and context helpers
+- `src/features/workspace/search/*`: command search helpers and dialog
+- `src/features/workspace/storage/*`: workspace local storage helpers
+- `src/features/workspace/theme/*`: theme registry and selector
+- `src/features/workspace/navigation/*`: menu metadata and top-menu UI
+- `config/next/*`: Next dev-server config helpers
 - `src/app/api/agent-call/route.ts`: live provider-backed agent endpoint
 - `src/components/ui/*`: small shared UI primitives
+
+## Design Guidelines
+
+- Keep the UI minimalist and text-first. Extra chrome, borders, and decoration should earn their place.
+- Clickable controls should feel clickable: visible hover states, pointer cursors where appropriate, and immediate active feedback.
+- Important actions should be obvious; secondary and destructive actions can be quieter but still discoverable.
+- Interactive elements should have clear default, hover, active, disabled, and selected states when relevant.
+- Use color to communicate hierarchy and state, not just decoration.
+- Stay desktop-first for now, but keep keyboard access and visible focus states intact.
 
 ## Projects and Tasks
 

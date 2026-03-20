@@ -1,8 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { AgentThreadPanel } from "./agent-thread-panel";
-import { createAgentThread } from "./thread-helpers";
+import { AgentThreadPanel, createAgentThread } from "@/features/workspace/threads";
 
 describe("agent thread panel", () => {
   /**
