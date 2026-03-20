@@ -1,4 +1,9 @@
-import { type AgentConfigState, type ProviderId, type SavedApiKey } from "./types";
+import {
+  type AgentConfigState,
+  type ProviderId,
+  type ProviderSettings,
+  type SavedApiKey,
+} from "./types";
 
 export const agentConfigStorageKey = "relay-agent-config";
 
@@ -34,25 +39,22 @@ export function createDefaultAgentConfig(): AgentConfigState {
   return {
     activeProvider: "openai",
     providers: {
-      anthropic: {
-        apiKey: "",
-        model: providerCatalog.anthropic.defaultModel,
-        savedKeys: [],
-        activeKeyId: null,
-      },
-      openai: {
-        apiKey: "",
-        model: providerCatalog.openai.defaultModel,
-        savedKeys: [],
-        activeKeyId: null,
-      },
-      google: {
-        apiKey: "",
-        model: providerCatalog.google.defaultModel,
-        savedKeys: [],
-        activeKeyId: null,
-      },
+      anthropic: createDefaultProviderSettings("anthropic"),
+      openai: createDefaultProviderSettings("openai"),
+      google: createDefaultProviderSettings("google"),
     },
+  };
+}
+
+/**
+ * Builds the default state for one provider so new keys start from a predictable baseline.
+ */
+export function createDefaultProviderSettings(providerId: ProviderId): ProviderSettings {
+  return {
+    apiKey: "",
+    model: providerCatalog[providerId].defaultModel,
+    savedKeys: [],
+    activeKeyId: null,
   };
 }
 
@@ -107,29 +109,27 @@ export function isProviderId(value: unknown): value is ProviderId {
  * Applies defaults for a single provider entry when loading saved config.
  */
 function normalizeProviderEntry(value: unknown, providerId: ProviderId) {
-  const defaults = createDefaultAgentConfig().providers[providerId];
+  const defaults = createDefaultProviderSettings(providerId);
 
   if (!value || typeof value !== "object") {
     return defaults;
   }
 
   const candidate = value as Record<string, unknown>;
-  const savedKeys = normalizeSavedKeys(candidate.savedKeys);
-  const activeKeyId =
-    typeof candidate.activeKeyId === "string" && savedKeys.some((k) => k.id === candidate.activeKeyId)
-      ? candidate.activeKeyId
-      : null;
+  const savedKeys = normalizeSavedKeys(candidate.savedKeys, providerId);
+  const activeKeyId = readNormalizedActiveKeyId(candidate.activeKeyId, savedKeys);
 
   /* Resolve the effective API key: use the active saved key when set, fall back to the raw field. */
   const activeKey = activeKeyId ? savedKeys.find((k) => k.id === activeKeyId) : null;
   const rawApiKey = typeof candidate.apiKey === "string" ? candidate.apiKey : defaults.apiKey;
+  const rawModel =
+    typeof candidate.model === "string" && candidate.model.trim()
+      ? candidate.model
+      : defaults.model;
 
   return {
     apiKey: activeKey ? activeKey.apiKey : rawApiKey,
-    model:
-      typeof candidate.model === "string" && candidate.model.trim()
-        ? candidate.model
-        : defaults.model,
+    model: activeKey ? activeKey.model : rawModel,
     savedKeys,
     activeKeyId,
   };
@@ -138,7 +138,7 @@ function normalizeProviderEntry(value: unknown, providerId: ProviderId) {
 /**
  * Validates an array of saved API key entries from local storage.
  */
-function normalizeSavedKeys(value: unknown): SavedApiKey[] {
+function normalizeSavedKeys(value: unknown, providerId: ProviderId): SavedApiKey[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -161,6 +161,64 @@ function normalizeSavedKeys(value: unknown): SavedApiKey[] {
       return [];
     }
 
-    return [{ id: candidate.id, label: candidate.label, apiKey: candidate.apiKey }];
+    const model =
+      typeof candidate.model === "string" && candidate.model.trim()
+        ? candidate.model.trim()
+        : providerCatalog[providerId].defaultModel;
+
+    return [
+      {
+        id: candidate.id,
+        label: candidate.label,
+        apiKey: candidate.apiKey,
+        model,
+        availableModels: normalizeSavedKeyModels(candidate.availableModels, model),
+      },
+    ];
   });
+}
+
+/**
+ * Guarantees that saved keys always resolve to one active key when any keys exist.
+ */
+function readNormalizedActiveKeyId(
+  value: unknown,
+  savedKeys: SavedApiKey[],
+): string | null {
+  if (savedKeys.length === 0) {
+    return null;
+  }
+
+  if (typeof value === "string" && savedKeys.some((savedKey) => savedKey.id === value)) {
+    return value;
+  }
+
+  return savedKeys[0].id;
+}
+
+/**
+ * Keeps fetched model lists string-only and ensures the saved model still appears in the picker.
+ */
+function normalizeSavedKeyModels(value: unknown, selectedModel: string): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const normalizedModels = value.flatMap((entry) => {
+    if (typeof entry !== "string" || !entry.trim()) {
+      return [];
+    }
+
+    return [entry.trim()];
+  });
+
+  if (normalizedModels.length === 0) {
+    return [];
+  }
+
+  const uniqueModels = Array.from(new Set(normalizedModels));
+
+  return uniqueModels.includes(selectedModel)
+    ? uniqueModels
+    : [selectedModel, ...uniqueModels];
 }

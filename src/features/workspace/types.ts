@@ -10,6 +10,8 @@ export interface SavedApiKey {
   id: string;
   label: string;
   apiKey: string;
+  model: string;
+  availableModels: string[];
 }
 
 export interface ProviderSettings {

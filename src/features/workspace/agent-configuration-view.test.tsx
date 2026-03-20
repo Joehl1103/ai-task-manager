@@ -18,16 +18,17 @@ describe("agent configuration view", () => {
           savedKeys: [],
           activeKeyId: null,
         }}
-        availableModels={[]}
+        fetchingModelsKeyId={null}
         isActiveProviderReady={false}
         isFetchingModels={false}
+        modelErrorKeyId={null}
         modelFetchError={null}
         onDeleteSavedKey={vi.fn()}
         onFetchModels={vi.fn()}
-        onProviderApiKeyChange={vi.fn()}
-        onProviderModelChange={vi.fn()}
         onSaveApiKey={vi.fn()}
-        onSelectSavedKey={vi.fn()}
+        onSavedKeyModelChange={vi.fn()}
+        onSetActiveKey={vi.fn()}
+        onUpdateSavedKey={vi.fn()}
         onThemeSelectionChange={vi.fn()}
         themeSelection={{
           themeId: "relay-original",
@@ -46,5 +47,70 @@ describe("agent configuration view", () => {
     expect(markup).not.toContain("How this connects to the workspace");
     expect(markup.match(/aria-label="[^"]+ day theme"/g)).toHaveLength(6);
     expect(markup.match(/aria-label="[^"]+ night theme"/g)).toHaveLength(6);
+  });
+
+  /**
+   * Keeps the saved-key list explicit, with edit and add actions separated so the entry points are
+   * easy to understand at a glance.
+   */
+  it("renders saved keys with explicit edit controls and a separate add-key button", () => {
+    const markup = renderToStaticMarkup(
+      <AgentConfigurationView
+        activeProvider="openai"
+        activeProviderLabel="OpenAI"
+        activeProviderSettings={{
+          apiKey: "sk-work-12345678",
+          model: "gpt-5",
+          savedKeys: [
+            {
+              id: "work",
+              label: "Work",
+              apiKey: "sk-work-12345678",
+              model: "gpt-5",
+              availableModels: ["gpt-5", "gpt-5-mini"],
+            },
+            {
+              id: "personal",
+              label: "Personal",
+              apiKey: "sk-pers-87654321",
+              model: "gpt-5-mini",
+              availableModels: [],
+            },
+          ],
+          activeKeyId: "work",
+        }}
+        fetchingModelsKeyId={null}
+        isActiveProviderReady={true}
+        isFetchingModels={false}
+        modelErrorKeyId={null}
+        modelFetchError={null}
+        onDeleteSavedKey={vi.fn()}
+        onFetchModels={vi.fn()}
+        onSaveApiKey={vi.fn()}
+        onSavedKeyModelChange={vi.fn()}
+        onSetActiveKey={vi.fn()}
+        onUpdateSavedKey={vi.fn()}
+        onThemeSelectionChange={vi.fn()}
+        themeSelection={{
+          themeId: "relay-original",
+          mode: "day",
+        }}
+      />,
+    );
+
+    expect(markup).toContain("Active key");
+    expect(markup).toContain("Set key active");
+    expect(markup).toContain("Edit key");
+    expect(markup).toContain("Refresh models for Work");
+    expect(markup).toContain("Fetch models");
+    expect(markup).toContain("Add API key");
+    expect(markup).toContain("Only one saved OpenAI key can be active at a time.");
+    expect(markup).toContain("gpt-5-mini");
+    expect(markup).toContain("Saved OpenAI keys");
+    expect(markup).toContain("space-y-1.5");
+    expect(markup).toContain("md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_auto]");
+    expect(markup).toContain("md:w-56 md:flex-none");
+    expect(markup).not.toContain("Save this key");
+    expect(markup).not.toContain("lg:grid-cols-[minmax(0,1fr)_minmax(15rem,1.2fr)_auto]");
   });
 });

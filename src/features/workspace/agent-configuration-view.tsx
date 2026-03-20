@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { providerCatalog } from "@/features/workspace/provider-config";
@@ -18,16 +19,17 @@ interface AgentConfigurationViewProps {
   activeProvider: ProviderId;
   activeProviderLabel: string;
   activeProviderSettings: ProviderSettings;
-  availableModels: string[];
+  fetchingModelsKeyId: string | null;
   isActiveProviderReady: boolean;
   isFetchingModels: boolean;
+  modelErrorKeyId: string | null;
   modelFetchError: string | null;
   onDeleteSavedKey: (providerId: ProviderId, keyId: string) => void;
-  onFetchModels: () => void;
-  onProviderApiKeyChange: (providerId: ProviderId, apiKey: string) => void;
-  onProviderModelChange: (providerId: ProviderId, model: string) => void;
+  onFetchModels: (providerId: ProviderId, keyId: string) => void;
   onSaveApiKey: (providerId: ProviderId, label: string, apiKey: string) => void;
-  onSelectSavedKey: (providerId: ProviderId, keyId: string) => void;
+  onSavedKeyModelChange: (providerId: ProviderId, keyId: string, model: string) => void;
+  onSetActiveKey: (providerId: ProviderId, keyId: string) => void;
+  onUpdateSavedKey: (providerId: ProviderId, keyId: string, label: string, apiKey: string) => void;
   onThemeSelectionChange: (selection: WorkspaceThemeSelection) => void;
   themeSelection: WorkspaceThemeSelection;
 }
@@ -39,21 +41,20 @@ export function AgentConfigurationView({
   activeProvider,
   activeProviderLabel,
   activeProviderSettings,
-  availableModels,
+  fetchingModelsKeyId,
   isActiveProviderReady,
   isFetchingModels,
+  modelErrorKeyId,
   modelFetchError,
   onDeleteSavedKey,
   onFetchModels,
-  onProviderApiKeyChange,
-  onProviderModelChange,
   onSaveApiKey,
-  onSelectSavedKey,
+  onSavedKeyModelChange,
+  onSetActiveKey,
+  onUpdateSavedKey,
   onThemeSelectionChange,
   themeSelection,
 }: AgentConfigurationViewProps) {
-  const hasModels = availableModels.length > 0;
-  const hasApiKey = activeProviderSettings.apiKey.trim().length > 0;
   return (
     <>
       <header className="border-b border-[color:var(--border)] pb-6">
@@ -123,67 +124,29 @@ export function AgentConfigurationView({
                 </div>
               </summary>
 
-              <div className="border-t border-[color:var(--border)] px-4 py-4 space-y-4">
+              <div className="space-y-4 border-t border-[color:var(--border)] px-4 py-4">
                 <ApiKeyManager
                   activeKeyId={activeProviderSettings.activeKeyId}
                   activeProvider={activeProvider}
                   activeProviderLabel={activeProviderLabel}
                   apiKey={activeProviderSettings.apiKey}
-                  onApiKeyChange={onProviderApiKeyChange}
+                  fetchingModelsKeyId={fetchingModelsKeyId}
+                  isFetchingModels={isFetchingModels}
+                  modelErrorKeyId={modelErrorKeyId}
+                  modelFetchError={modelFetchError}
                   onDeleteSavedKey={onDeleteSavedKey}
+                  onFetchModels={onFetchModels}
                   onSaveApiKey={onSaveApiKey}
-                  onSelectSavedKey={onSelectSavedKey}
+                  onSavedKeyModelChange={onSavedKeyModelChange}
+                  onSetActiveKey={onSetActiveKey}
+                  onUpdateSavedKey={onUpdateSavedKey}
                   savedKeys={activeProviderSettings.savedKeys}
                 />
 
-                <div className="grid gap-2 text-sm">
-                  <span className="text-[color:var(--muted)]">{activeProviderLabel} model</span>
-
-                  {hasModels ? (
-                    <Select
-                      onChange={(event) =>
-                        onProviderModelChange(activeProvider, event.target.value)
-                      }
-                      value={activeProviderSettings.model}
-                    >
-                      {availableModels.map((modelId) => (
-                        <option key={modelId} value={modelId}>
-                          {modelId}
-                        </option>
-                      ))}
-                    </Select>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="flex h-10 cursor-pointer items-center gap-2 rounded-md border border-[color:var(--border)] bg-[color:var(--surface-strong)] px-3 text-sm text-[color:var(--foreground)] transition-all duration-150 hover:border-[color:var(--border-strong)] hover:bg-[color:var(--surface)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled={!hasApiKey || isFetchingModels}
-                        onClick={onFetchModels}
-                        type="button"
-                      >
-                        {isFetchingModels ? (
-                          <>
-                            <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
-                            Fetching...
-                          </>
-                        ) : (
-                          "Fetch models"
-                        )}
-                      </button>
-
-                      <span className="text-xs text-[color:var(--muted)]">
-                        {activeProviderSettings.model || providerCatalog[activeProvider].defaultModel}
-                      </span>
-                    </div>
-                  )}
-
-                  {modelFetchError ? (
-                    <p className="text-xs text-red-500">{modelFetchError}</p>
-                  ) : null}
-                </div>
-
                 <p className="text-xs leading-5 text-[color:var(--muted)]">
-                  Your {activeProviderLabel} keys stay in this browser&apos;s local storage and are
-                  only sent to the app when you trigger a live thread reply.
+                  Only one saved {activeProviderLabel} key can be active at a time. Each saved key
+                  keeps its own selected model and fetched model list in this browser&apos;s local
+                  storage.
                 </p>
               </div>
             </details>
@@ -203,115 +166,238 @@ interface ApiKeyManagerProps {
   activeProvider: ProviderId;
   activeProviderLabel: string;
   apiKey: string;
-  onApiKeyChange: (providerId: ProviderId, apiKey: string) => void;
+  fetchingModelsKeyId: string | null;
+  isFetchingModels: boolean;
+  modelErrorKeyId: string | null;
+  modelFetchError: string | null;
   onDeleteSavedKey: (providerId: ProviderId, keyId: string) => void;
+  onFetchModels: (providerId: ProviderId, keyId: string) => void;
   onSaveApiKey: (providerId: ProviderId, label: string, apiKey: string) => void;
-  onSelectSavedKey: (providerId: ProviderId, keyId: string) => void;
+  onSavedKeyModelChange: (providerId: ProviderId, keyId: string, model: string) => void;
+  onSetActiveKey: (providerId: ProviderId, keyId: string) => void;
+  onUpdateSavedKey: (providerId: ProviderId, keyId: string, label: string, apiKey: string) => void;
   savedKeys: SavedApiKey[];
 }
 
 /**
- * Manages saving, switching, and deleting named API keys for a single provider.
+ * Manages saving, activating, deleting, and configuring named API keys for one provider.
  */
 function ApiKeyManager({
   activeKeyId,
   activeProvider,
   activeProviderLabel,
   apiKey,
-  onApiKeyChange,
+  fetchingModelsKeyId,
+  isFetchingModels,
+  modelErrorKeyId,
+  modelFetchError,
   onDeleteSavedKey,
+  onFetchModels,
   onSaveApiKey,
-  onSelectSavedKey,
+  onSavedKeyModelChange,
+  onSetActiveKey,
+  onUpdateSavedKey,
   savedKeys,
 }: ApiKeyManagerProps) {
-  const [isAdding, setIsAdding] = useState(false);
-  const [newKeyLabel, setNewKeyLabel] = useState("");
-  const [newKeyValue, setNewKeyValue] = useState("");
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<"add" | "edit" | null>(null);
+  const [editingKeyId, setEditingKeyId] = useState<string | null>(null);
+  const [draftLabel, setDraftLabel] = useState("");
+  const [draftKeyValue, setDraftKeyValue] = useState("");
+  const [editorError, setEditorError] = useState<string | null>(null);
 
   const hasSavedKeys = savedKeys.length > 0;
 
   /**
-   * Validates and saves a new named key, then resets the form.
+   * Opens the add-key form and preloads the unsaved raw key when no saved entries exist yet.
    */
-  function handleSaveNewKey() {
-    const trimmedLabel = newKeyLabel.trim();
-    const trimmedKey = newKeyValue.trim();
+  function handleStartAdd() {
+    setEditorMode("add");
+    setEditingKeyId(null);
+    setDraftLabel("");
+    setDraftKeyValue(hasSavedKeys ? "" : apiKey);
+    setEditorError(null);
+  }
+
+  /**
+   * Opens the editor for one saved key so the label or raw key can be changed explicitly.
+   */
+  function handleStartEdit(savedKey: SavedApiKey) {
+    setEditorMode("edit");
+    setEditingKeyId(savedKey.id);
+    setDraftLabel(savedKey.label);
+    setDraftKeyValue(savedKey.apiKey);
+    setEditorError(null);
+  }
+
+  /**
+   * Validates and submits either a new saved key or edits to an existing one.
+   */
+  function handleSubmitEditor() {
+    const trimmedLabel = draftLabel.trim();
+    const trimmedKey = draftKeyValue.trim();
 
     if (!trimmedLabel) {
-      setSaveError("Give this key a name (e.g. \"Personal\", \"Work\").");
+      setEditorError("Give this key a name (e.g. \"Personal\", \"Work\").");
       return;
     }
 
     if (!trimmedKey) {
-      setSaveError("Paste an API key before saving.");
+      setEditorError("Paste an API key before saving.");
       return;
     }
 
-    if (savedKeys.some((k) => k.label.toLowerCase() === trimmedLabel.toLowerCase())) {
-      setSaveError(`A key named "${trimmedLabel}" already exists.`);
+    const labelConflict = savedKeys.some(
+      (savedKey) =>
+        savedKey.id !== editingKeyId && savedKey.label.toLowerCase() === trimmedLabel.toLowerCase(),
+    );
+
+    if (labelConflict) {
+      setEditorError(`A key named "${trimmedLabel}" already exists.`);
       return;
     }
 
-    onSaveApiKey(activeProvider, trimmedLabel, trimmedKey);
-    setNewKeyLabel("");
-    setNewKeyValue("");
-    setSaveError(null);
-    setIsAdding(false);
+    if (editorMode === "edit" && editingKeyId) {
+      onUpdateSavedKey(activeProvider, editingKeyId, trimmedLabel, trimmedKey);
+    } else {
+      onSaveApiKey(activeProvider, trimmedLabel, trimmedKey);
+    }
+
+    handleCloseEditor();
   }
 
   /**
-   * Discards the in-progress add form.
+   * Closes the add/edit panel and clears its transient field state.
    */
-  function handleCancelAdd() {
-    setNewKeyLabel("");
-    setNewKeyValue("");
-    setSaveError(null);
-    setIsAdding(false);
+  function handleCloseEditor() {
+    setEditorMode(null);
+    setEditingKeyId(null);
+    setDraftLabel("");
+    setDraftKeyValue("");
+    setEditorError(null);
   }
 
   return (
     <div className="space-y-3">
-      {/* Saved key switcher */}
       {hasSavedKeys ? (
         <div className="grid gap-2 text-sm">
           <span className="text-[color:var(--muted)]">Saved {activeProviderLabel} keys</span>
           <div className="space-y-1.5">
             {savedKeys.map((savedKey) => {
               const isActive = savedKey.id === activeKeyId;
+              const isFetchingThisKey = fetchingModelsKeyId === savedKey.id;
+              const availableModels =
+                savedKey.availableModels.length > 0 ? savedKey.availableModels : [savedKey.model];
+              const hasFetchedModels = savedKey.availableModels.length > 0;
+              const showsFetchError =
+                modelErrorKeyId === savedKey.id && Boolean(modelFetchError);
 
               return (
                 <div
-                  className="flex items-center gap-2"
+                  className={`rounded-md border px-3 py-2 transition-colors ${
+                    isActive
+                      ? "border-[color:var(--border-strong)] bg-[color:var(--surface)]"
+                      : "border-[color:var(--border)] bg-[color:var(--surface-strong)]"
+                  }`}
                   key={savedKey.id}
                 >
-                  <button
-                    aria-pressed={isActive}
-                    className={`flex-1 cursor-pointer rounded-md border px-3 py-2 text-left text-sm transition-all duration-150 active:scale-[0.99] ${
-                      isActive
-                        ? "border-[color:var(--border-strong)] bg-[color:var(--surface)] font-medium text-[color:var(--foreground)] shadow-[0_4px_12px_-6px_var(--shadow-color)]"
-                        : "border-[color:var(--border)] bg-[color:var(--surface-strong)] text-[color:var(--muted-strong)] hover:border-[color:var(--border-strong)] hover:bg-[color:var(--surface)]"
-                    }`}
-                    onClick={() => onSelectSavedKey(activeProvider, savedKey.id)}
-                    type="button"
-                  >
-                    <span>{savedKey.label}</span>
-                    <span className="ml-2 text-xs text-[color:var(--muted)]">
-                      {maskApiKey(savedKey.apiKey)}
-                    </span>
-                    {isActive ? (
-                      <Badge className="ml-2" variant="accent">Active</Badge>
-                    ) : null}
-                  </button>
+                  <div className="grid gap-3 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_auto] md:items-center">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
+                          {savedKey.label}
+                        </p>
+                        {isActive ? <Badge variant="accent">Active key</Badge> : null}
+                      </div>
+                      <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+                        {maskApiKey(savedKey.apiKey)}
+                      </p>
+                    </div>
 
-                  <button
-                    aria-label={`Delete key ${savedKey.label}`}
-                    className="cursor-pointer rounded-md p-2 text-[color:var(--muted)] transition-all duration-150 hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)] active:scale-95"
-                    onClick={() => onDeleteSavedKey(activeProvider, savedKey.id)}
-                    type="button"
-                  >
-                    <Trash2 aria-hidden="true" className="size-3.5" />
-                  </button>
+                    <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-center">
+                      <Select
+                        className="min-w-0 md:w-56 md:flex-none"
+                        onChange={(event) =>
+                          onSavedKeyModelChange(activeProvider, savedKey.id, event.target.value)
+                        }
+                        value={savedKey.model}
+                      >
+                        {availableModels.map((modelId) => (
+                          <option key={modelId} value={modelId}>
+                            {modelId}
+                          </option>
+                        ))}
+                      </Select>
+
+                      {hasFetchedModels ? (
+                        <Button
+                          aria-label={`Refresh models for ${savedKey.label}`}
+                          className="shrink-0"
+                          disabled={isFetchingModels}
+                          onClick={() => onFetchModels(activeProvider, savedKey.id)}
+                          size="icon"
+                          title={`Refresh models for ${savedKey.label}`}
+                          variant="outline"
+                        >
+                          {isFetchingThisKey ? (
+                            <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                          ) : (
+                            <RefreshCw aria-hidden="true" className="size-3.5" />
+                          )}
+                        </Button>
+                      ) : (
+                        <Button
+                          className="shrink-0"
+                          disabled={isFetchingModels}
+                          onClick={() => onFetchModels(activeProvider, savedKey.id)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {isFetchingThisKey ? (
+                            <>
+                              <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                              Fetching...
+                            </>
+                          ) : (
+                            "Fetch models"
+                          )}
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                      {!isActive ? (
+                        <Button
+                          onClick={() => onSetActiveKey(activeProvider, savedKey.id)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          Set key active
+                        </Button>
+                      ) : null}
+
+                      <Button
+                        onClick={() => handleStartEdit(savedKey)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Pencil aria-hidden="true" className="size-3.5" />
+                        Edit key
+                      </Button>
+
+                      <Button
+                        aria-label={`Delete key ${savedKey.label}`}
+                        onClick={() => onDeleteSavedKey(activeProvider, savedKey.id)}
+                        size="icon"
+                        variant="ghost"
+                      >
+                        <Trash2 aria-hidden="true" className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {showsFetchError ? (
+                    <p className="mt-2 text-xs text-red-500">{modelFetchError}</p>
+                  ) : null}
                 </div>
               );
             })}
@@ -319,69 +405,56 @@ function ApiKeyManager({
         </div>
       ) : null}
 
-      {/* Add new key form */}
-      {isAdding ? (
-        <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-3 space-y-2">
+      {editorMode ? (
+        <div className="space-y-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-3">
+          <p className="text-sm font-medium text-[color:var(--foreground)]">
+            {editorMode === "edit" ? "Edit API key" : "Add API key"}
+          </p>
           <label className="grid gap-1 text-sm">
             <span className="text-[color:var(--muted)]">Key name</span>
             <Input
-              onChange={(event) => { setNewKeyLabel(event.target.value); setSaveError(null); }}
+              onChange={(event) => {
+                setDraftLabel(event.target.value);
+                setEditorError(null);
+              }}
               placeholder="e.g. Personal, Work, Project"
-              value={newKeyLabel}
+              value={draftLabel}
             />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="text-[color:var(--muted)]">API key</span>
             <Input
-              onChange={(event) => { setNewKeyValue(event.target.value); setSaveError(null); }}
+              onChange={(event) => {
+                setDraftKeyValue(event.target.value);
+                setEditorError(null);
+              }}
               placeholder={providerCatalog[activeProvider].apiKeyPlaceholder}
               type="password"
-              value={newKeyValue}
+              value={draftKeyValue}
             />
           </label>
-          {saveError ? (
-            <p className="text-xs text-red-500">{saveError}</p>
-          ) : null}
+          {editorError ? <p className="text-xs text-red-500">{editorError}</p> : null}
           <div className="flex items-center gap-2 pt-1">
-            <button
-              className="cursor-pointer rounded-md border border-[color:var(--border-strong)] bg-[color:var(--accent)] px-3 py-1.5 text-sm font-medium text-[color:var(--accent-foreground)] transition-all duration-150 hover:opacity-90 active:scale-[0.98]"
-              onClick={handleSaveNewKey}
-              type="button"
-            >
-              Save key
-            </button>
-            <button
-              className="cursor-pointer rounded-md px-3 py-1.5 text-sm text-[color:var(--muted)] transition-all duration-150 hover:text-[color:var(--foreground)] active:opacity-70"
-              onClick={handleCancelAdd}
-              type="button"
-            >
+            <Button onClick={handleSubmitEditor} size="sm">
+              {editorMode === "edit" ? "Save changes" : "Add API key"}
+            </Button>
+            <Button onClick={handleCloseEditor} size="sm" variant="ghost">
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-3">
-          {/* Quick key input for users who don't want to save */}
-          {!hasSavedKeys ? (
-            <label className="grid flex-1 gap-1 text-sm">
-              <span className="text-[color:var(--muted)]">{activeProviderLabel} API key</span>
-              <Input
-                onChange={(event) => onApiKeyChange(activeProvider, event.target.value)}
-                placeholder={providerCatalog[activeProvider].apiKeyPlaceholder}
-                type="password"
-                value={apiKey}
-              />
-            </label>
+        <div className="flex flex-wrap items-end gap-3">
+          {!hasSavedKeys && apiKey ? (
+            <p className="text-xs text-[color:var(--muted)]">
+              Unsaved key detected. Use &quot;Add API key&quot; to store it with a name.
+            </p>
           ) : null}
 
-          <button
-            className="flex h-10 cursor-pointer items-center gap-1.5 self-end rounded-md border border-[color:var(--border)] bg-[color:var(--surface-strong)] px-3 text-sm text-[color:var(--foreground)] transition-all duration-150 hover:border-[color:var(--border-strong)] hover:bg-[color:var(--surface)] active:scale-[0.98]"
-            onClick={() => setIsAdding(true)}
-            type="button"
-          >
+          <Button className="self-end" onClick={handleStartAdd} variant="subtle">
             <Plus aria-hidden="true" className="size-3.5" />
-            {hasSavedKeys ? "Add another key" : "Save this key"}
-          </button>
+            Add API key
+          </Button>
         </div>
       )}
     </div>

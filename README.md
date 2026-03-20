@@ -15,7 +15,7 @@ This app lives at the repository root (`ai-task-manager/`).
 - Delete a task
 - Call one built-in agent from inside a task drill-down
 - Delete one saved agent contribution from a task drill-down
-- Configure OpenAI with a local API key and model
+- Configure OpenAI with named local API keys and key-specific model selection
 - Make live OpenAI-backed agent calls through the app
 - Render basic markdown and safe HTML formatting inside saved agent responses
 - Persist tasks and agent history in browser local storage
@@ -77,6 +77,7 @@ The app is the primary project in this repository.
 - There is one built-in agent flow rather than multiple agent types.
 - Tasks and provider configuration should stay visually separate.
 - Provider settings, tasks, and agent history are stored in browser local storage for this prototype.
+- Only one saved OpenAI key is active at a time, and each saved key keeps its own fetched model list.
 - OpenAI is the only live provider wired in during this pass.
 - More Relay features can be layered in after this baseline feels right.
 

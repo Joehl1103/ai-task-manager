@@ -37,8 +37,10 @@ import {
   agentConfigStorageKey,
   createApiKeyId,
   createDefaultAgentConfig,
+  createDefaultProviderSettings,
   getProviderLabel,
   normalizeAgentConfig,
+  providerCatalog,
 } from "@/features/workspace/provider-config";
 import { TaskManagementView } from "@/features/workspace/task-management-view";
 import { buildThreadContextSummary, readThreadOwnerName } from "@/features/workspace/thread-context";
@@ -111,8 +113,9 @@ export function WorkspaceApp() {
   const [pendingThreadOwnerKey, setPendingThreadOwnerKey] = useState<string | null>(null);
   const [filterInitiativeId, setFilterInitiativeId] = useState<string | null>(null);
   const [filterProjectId, setFilterProjectId] = useState<string | null>(null);
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [fetchingModelsKeyId, setFetchingModelsKeyId] = useState<string | null>(null);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
+  const [modelErrorKeyId, setModelErrorKeyId] = useState<string | null>(null);
   const [modelFetchError, setModelFetchError] = useState<string | null>(null);
 
   const activeProvider: ProviderId = "openai";
@@ -593,52 +596,102 @@ export function WorkspaceApp() {
   }
 
   /**
-   * Stores the latest API key for a provider in browser local storage and clears the cached
-   * model list so the user fetches fresh models after changing keys.
+   * Stores the selected model on the targeted saved key and mirrors it onto the active provider.
    */
-  function handleProviderApiKeyChange(providerId: ProviderId, apiKey: string) {
-    setAgentConfig((currentConfig) => ({
-      ...currentConfig,
-      providers: {
-        ...currentConfig.providers,
-        [providerId]: {
-          ...currentConfig.providers[providerId],
-          apiKey,
+  function handleSavedKeyModelChange(providerId: ProviderId, keyId: string, model: string) {
+    setAgentConfig((currentConfig) => {
+      const providerState = currentConfig.providers[providerId];
+      const targetKey = providerState.savedKeys.find((savedKey) => savedKey.id === keyId);
+
+      if (!targetKey) {
+        return currentConfig;
+      }
+
+      const updatedKeys = providerState.savedKeys.map((savedKey) =>
+        savedKey.id === keyId ? { ...savedKey, model } : savedKey,
+      );
+
+      return {
+        ...currentConfig,
+        providers: {
+          ...currentConfig.providers,
+          [providerId]: {
+            ...providerState,
+            model: providerState.activeKeyId === keyId ? model : providerState.model,
+            savedKeys: updatedKeys,
+          },
         },
-      },
-    }));
-    setAvailableModels([]);
+      };
+    });
+    setModelErrorKeyId(null);
     setModelFetchError(null);
   }
 
   /**
-   * Stores the selected model name for a provider in browser local storage.
+   * Updates the saved label or API key for an existing entry while preserving its selection state.
    */
-  function handleProviderModelChange(providerId: ProviderId, model: string) {
-    setAgentConfig((currentConfig) => ({
-      ...currentConfig,
-      providers: {
-        ...currentConfig.providers,
-        [providerId]: {
-          ...currentConfig.providers[providerId],
-          model,
+  function handleUpdateSavedKey(
+    providerId: ProviderId,
+    keyId: string,
+    label: string,
+    apiKey: string,
+  ) {
+    setAgentConfig((currentConfig) => {
+      const providerState = currentConfig.providers[providerId];
+      const targetKey = providerState.savedKeys.find((savedKey) => savedKey.id === keyId);
+
+      if (!targetKey) {
+        return currentConfig;
+      }
+
+      const trimmedLabel = label.trim();
+      const trimmedApiKey = apiKey.trim();
+      const apiKeyChanged = targetKey.apiKey !== trimmedApiKey;
+      const updatedKeys = providerState.savedKeys.map((savedKey) =>
+        savedKey.id === keyId
+          ? {
+              ...savedKey,
+              label: trimmedLabel,
+              apiKey: trimmedApiKey,
+              availableModels: apiKeyChanged ? [] : savedKey.availableModels,
+            }
+          : savedKey,
+      );
+
+      return {
+        ...currentConfig,
+        providers: {
+          ...currentConfig.providers,
+          [providerId]: {
+            ...providerState,
+            apiKey: providerState.activeKeyId === keyId ? trimmedApiKey : providerState.apiKey,
+            savedKeys: updatedKeys,
+          },
         },
-      },
-    }));
+      };
+    });
+    setFetchingModelsKeyId(null);
+    setModelErrorKeyId(null);
+    setModelFetchError(null);
   }
 
   /**
-   * Fetches available models from OpenAI using the current API key and populates the picker.
+   * Fetches models for the targeted saved key and keeps the result attached to that key.
    */
-  async function handleFetchModels() {
-    const apiKey = activeProviderSettings.apiKey.trim();
+  async function handleFetchModels(providerId: ProviderId, keyId: string) {
+    const providerState = agentConfig.providers[providerId];
+    const targetKey = providerState.savedKeys.find((savedKey) => savedKey.id === keyId);
+    const apiKey = targetKey?.apiKey.trim() ?? "";
 
     if (!apiKey) {
+      setModelErrorKeyId(keyId);
       setModelFetchError("Enter an API key before fetching models.");
       return;
     }
 
     setIsFetchingModels(true);
+    setFetchingModelsKeyId(keyId);
+    setModelErrorKeyId(null);
     setModelFetchError(null);
 
     try {
@@ -651,6 +704,7 @@ export function WorkspaceApp() {
       const payload = (await response.json()) as Record<string, unknown>;
 
       if (!response.ok) {
+        setModelErrorKeyId(keyId);
         setModelFetchError(
           typeof payload.error === "string" ? payload.error : "Failed to fetch models.",
         );
@@ -660,25 +714,60 @@ export function WorkspaceApp() {
       const models = Array.isArray(payload.models) ? (payload.models as string[]) : [];
 
       if (models.length === 0) {
+        setModelErrorKeyId(keyId);
         setModelFetchError("No chat models found for this API key.");
         return;
       }
 
-      setAvailableModels(models);
+      setModelErrorKeyId(null);
+      setModelFetchError(null);
 
-      /* Auto-select the current model if it exists in the list, otherwise pick the first. */
-      const currentModel = activeProviderSettings.model.trim();
-      const modelExists = models.includes(currentModel);
+      setAgentConfig((currentConfig) => {
+        const currentProviderState = currentConfig.providers[providerId];
+        const currentTargetKey = currentProviderState.savedKeys.find(
+          (savedKey) => savedKey.id === keyId,
+        );
 
-      if (!modelExists) {
-        handleProviderModelChange(activeProvider, models[0]);
-      }
+        if (!currentTargetKey) {
+          return currentConfig;
+        }
+
+        const nextModel = models.includes(currentTargetKey.model)
+          ? currentTargetKey.model
+          : models[0];
+        const updatedKeys = currentProviderState.savedKeys.map((savedKey) =>
+          savedKey.id === keyId
+            ? {
+                ...savedKey,
+                model: nextModel,
+                availableModels: models,
+              }
+            : savedKey,
+        );
+
+        return {
+          ...currentConfig,
+          providers: {
+            ...currentConfig.providers,
+            [providerId]: {
+              ...currentProviderState,
+              model:
+                currentProviderState.activeKeyId === keyId
+                  ? nextModel
+                  : currentProviderState.model,
+              savedKeys: updatedKeys,
+            },
+          },
+        };
+      });
     } catch (error) {
+      setModelErrorKeyId(keyId);
       setModelFetchError(
         error instanceof Error ? error.message : "Failed to fetch models.",
       );
     } finally {
       setIsFetchingModels(false);
+      setFetchingModelsKeyId(null);
     }
   }
 
@@ -686,7 +775,13 @@ export function WorkspaceApp() {
    * Saves a new named API key for the given provider and sets it as the active key.
    */
   function handleSaveApiKey(providerId: ProviderId, label: string, apiKey: string) {
-    const newKey = { id: createApiKeyId(), label, apiKey };
+    const newKey = {
+      id: createApiKeyId(),
+      label,
+      apiKey,
+      model: providerCatalog[providerId].defaultModel,
+      availableModels: [],
+    };
 
     setAgentConfig((currentConfig) => ({
       ...currentConfig,
@@ -695,22 +790,24 @@ export function WorkspaceApp() {
         [providerId]: {
           ...currentConfig.providers[providerId],
           apiKey,
+          model: newKey.model,
           savedKeys: [...currentConfig.providers[providerId].savedKeys, newKey],
           activeKeyId: newKey.id,
         },
       },
     }));
-    setAvailableModels([]);
+    setFetchingModelsKeyId(null);
+    setModelErrorKeyId(null);
     setModelFetchError(null);
   }
 
   /**
-   * Switches to an existing saved key by id and updates the active API key to match.
+   * Marks one saved key as active so only that key drives live requests and model selection.
    */
-  function handleSelectSavedKey(providerId: ProviderId, keyId: string) {
+  function handleSetActiveKey(providerId: ProviderId, keyId: string) {
     setAgentConfig((currentConfig) => {
       const providerState = currentConfig.providers[providerId];
-      const targetKey = providerState.savedKeys.find((k) => k.id === keyId);
+      const targetKey = providerState.savedKeys.find((savedKey) => savedKey.id === keyId);
 
       if (!targetKey) {
         return currentConfig;
@@ -723,26 +820,31 @@ export function WorkspaceApp() {
           [providerId]: {
             ...providerState,
             apiKey: targetKey.apiKey,
+            model: targetKey.model,
             activeKeyId: keyId,
           },
         },
       };
     });
-    setAvailableModels([]);
+    setFetchingModelsKeyId(null);
+    setModelErrorKeyId(null);
     setModelFetchError(null);
   }
 
   /**
-   * Removes a saved key and clears the active key if the deleted one was selected.
+   * Removes a saved key and promotes the next remaining key when the active one is deleted.
    */
   function handleDeleteSavedKey(providerId: ProviderId, keyId: string) {
     setAgentConfig((currentConfig) => {
       const providerState = currentConfig.providers[providerId];
-      const remainingKeys = providerState.savedKeys.filter((k) => k.id !== keyId);
+      const remainingKeys = providerState.savedKeys.filter((savedKey) => savedKey.id !== keyId);
       const wasActive = providerState.activeKeyId === keyId;
+      const defaultProviderState = createDefaultProviderSettings(providerId);
 
-      /* If the active key was deleted, fall back to the first remaining key or clear. */
-      const nextActiveKey = wasActive ? (remainingKeys[0] ?? null) : providerState.savedKeys.find((k) => k.id === providerState.activeKeyId) ?? null;
+      /* Keep the current active key when possible, otherwise fall forward to the next saved key. */
+      const nextActiveKey = wasActive
+        ? (remainingKeys[0] ?? null)
+        : remainingKeys.find((savedKey) => savedKey.id === providerState.activeKeyId) ?? null;
 
       return {
         ...currentConfig,
@@ -750,14 +852,16 @@ export function WorkspaceApp() {
           ...currentConfig.providers,
           [providerId]: {
             ...providerState,
-            apiKey: nextActiveKey ? nextActiveKey.apiKey : "",
+            apiKey: nextActiveKey ? nextActiveKey.apiKey : defaultProviderState.apiKey,
+            model: nextActiveKey ? nextActiveKey.model : defaultProviderState.model,
             savedKeys: remainingKeys,
             activeKeyId: nextActiveKey ? nextActiveKey.id : null,
           },
         },
       };
     });
-    setAvailableModels([]);
+    setFetchingModelsKeyId(null);
+    setModelErrorKeyId(null);
     setModelFetchError(null);
   }
 
@@ -1152,16 +1256,17 @@ export function WorkspaceApp() {
               activeProvider={activeProvider}
               activeProviderLabel={activeProviderLabel}
               activeProviderSettings={activeProviderSettings}
-              availableModels={availableModels}
+              fetchingModelsKeyId={fetchingModelsKeyId}
               isActiveProviderReady={isActiveProviderReady}
               isFetchingModels={isFetchingModels}
+              modelErrorKeyId={modelErrorKeyId}
               modelFetchError={modelFetchError}
               onDeleteSavedKey={handleDeleteSavedKey}
               onFetchModels={handleFetchModels}
-              onProviderApiKeyChange={handleProviderApiKeyChange}
-              onProviderModelChange={handleProviderModelChange}
               onSaveApiKey={handleSaveApiKey}
-              onSelectSavedKey={handleSelectSavedKey}
+              onSavedKeyModelChange={handleSavedKeyModelChange}
+              onSetActiveKey={handleSetActiveKey}
+              onUpdateSavedKey={handleUpdateSavedKey}
               onThemeSelectionChange={handleSelectTheme}
               themeSelection={themeSelection}
             />

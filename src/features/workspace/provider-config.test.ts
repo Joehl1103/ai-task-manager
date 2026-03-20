@@ -37,4 +37,47 @@ describe("provider config", () => {
     expect(config.providers.google.model).toBe(providerCatalog.google.defaultModel);
     expect(config.providers.openai.model).toBe(providerCatalog.openai.defaultModel);
   });
+
+  /**
+   * Ensures saved keys keep their own model state and always resolve to a single active key.
+   */
+  it("normalizes saved keys with key-level models and a fallback active key", () => {
+    const config = normalizeAgentConfig({
+      providers: {
+        openai: {
+          apiKey: "sk-raw-should-not-win",
+          model: "raw-model-should-not-win",
+          activeKeyId: "missing-key",
+          savedKeys: [
+            {
+              id: "work",
+              label: "Work",
+              apiKey: "sk-work-1234",
+              model: "gpt-5",
+              availableModels: ["gpt-5", "gpt-5-mini"],
+            },
+            {
+              id: "personal",
+              label: "Personal",
+              apiKey: "sk-personal-5678",
+              availableModels: ["gpt-4o"],
+            },
+          ],
+        },
+      },
+    });
+
+    expect(config.providers.openai.activeKeyId).toBe("work");
+    expect(config.providers.openai.apiKey).toBe("sk-work-1234");
+    expect(config.providers.openai.model).toBe("gpt-5");
+    expect(config.providers.openai.savedKeys[0].availableModels).toEqual([
+      "gpt-5",
+      "gpt-5-mini",
+    ]);
+    expect(config.providers.openai.savedKeys[1].model).toBe(providerCatalog.openai.defaultModel);
+    expect(config.providers.openai.savedKeys[1].availableModels).toEqual([
+      providerCatalog.openai.defaultModel,
+      "gpt-4o",
+    ]);
+  });
 });
