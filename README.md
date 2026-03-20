@@ -42,6 +42,10 @@ npm run build
 
 `npm run dev` now enables polling-based file watching automatically so edits inside worktrees and tmp-based directories are picked up without changing the dev-server command.
 
+You can also run multiple `npm run dev` instances at the same time now. The wrapper chooses an available port and gives each dev instance its own build directory under `.next/instances/port-<port>`, which avoids Next.js lock-file collisions between concurrent servers.
+
+Each instance also gets its own generated tsconfig under `.next/instances/port-<port>/tsconfig.json`, so Next can write port-specific type includes without mutating the tracked root `tsconfig.json`.
+
 The Next.js dev config also derives `allowedDevOrigins` from the machine's current IPv4 addresses so HMR stays connected when your LAN IP changes. If you use a custom local hostname, you can add it with `ALLOWED_DEV_ORIGINS=relay.local npm run dev`.
 
 ## Git Version Control

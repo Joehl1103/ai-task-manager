@@ -1,18 +1,15 @@
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 
-const resolveFromScript = createRequire(import.meta.url);
+import {
+  buildDevEnvironment,
+  ensureDevTsconfig,
+  findAvailablePort,
+  readRequestedPort,
+  upsertPortArgument,
+} from "./dev-instance.mjs";
 
-/**
- * Ensures the Next dev server uses polling-based file watching in worktrees and tmp directories
- * where native file events can be unreliable.
- */
-function buildDevEnvironment(currentEnvironment) {
-  return {
-    ...currentEnvironment,
-    WATCHPACK_POLLING: currentEnvironment.WATCHPACK_POLLING ?? "true",
-  };
-}
+const resolveFromScript = createRequire(import.meta.url);
 
 /**
  * Mirrors the child process exit so `npm run dev` behaves like the underlying Next process.
@@ -26,10 +23,33 @@ function exitFromChild(code, signal) {
   process.exit(code ?? 0);
 }
 
-const nextBinPath = resolveFromScript.resolve("next/dist/bin/next");
-const child = spawn(process.execPath, [nextBinPath, "dev", ...process.argv.slice(2)], {
-  stdio: "inherit",
-  env: buildDevEnvironment(process.env),
-});
+async function main() {
+  const forwardedArguments = process.argv.slice(2);
+  const requestedPort = readRequestedPort(forwardedArguments, process.env);
+  const selectedPort = await findAvailablePort(requestedPort);
 
-child.on("exit", exitFromChild);
+  if (selectedPort !== requestedPort) {
+    console.warn(
+      `⚠ Port ${requestedPort} is in use, using available port ${selectedPort} instead.`,
+    );
+  }
+
+  ensureDevTsconfig(process.cwd(), selectedPort);
+
+  const nextBinPath = resolveFromScript.resolve("next/dist/bin/next");
+  const child = spawn(
+    process.execPath,
+    [nextBinPath, "dev", ...upsertPortArgument(forwardedArguments, selectedPort)],
+    {
+      stdio: "inherit",
+      env: buildDevEnvironment(process.env, selectedPort),
+    },
+  );
+
+  child.on("exit", exitFromChild);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
