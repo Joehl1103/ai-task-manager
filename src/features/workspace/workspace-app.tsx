@@ -512,6 +512,12 @@ export function WorkspaceApp() {
         tags: parseTagsFromString(editTags),
       }),
     );
+
+    // If in inbox and task was assigned to a project, return to overview
+    if (activeMenu === "inbox" && editProject !== "") {
+      setSelectedTaskId(null);
+    }
+
     setEditingTaskId(null);
     setEditTitle("");
     setEditDetails("");

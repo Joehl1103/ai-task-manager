@@ -198,7 +198,7 @@ export function InboxView({
           />
         ) : inboxTasks.length === 0 ? (
           <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">
-            Your inbox is empty. Add a task to get started!
+            No tasks in inbox
           </p>
         ) : (
           <InboxTaskList
