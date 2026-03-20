@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ interface WorkspaceTopMenuProps {
 }
 
 /**
- * Renders a slim desktop top menu that keeps navigation tucked away until it is needed.
+ * Renders a slim desktop top menu that opens from the current-view label.
  */
 export function WorkspaceTopMenu({
   activeMenu,
@@ -29,23 +29,32 @@ export function WorkspaceTopMenu({
 }: WorkspaceTopMenuProps) {
   return (
     <section className="workspace-top-menu-shell pb-2">
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <p className="text-[color:var(--muted)]">{readWorkspaceMenuLabel(activeMenu)}</p>
-
+      <div className="flex items-center gap-3 text-sm">
         <Button
+          aria-controls="workspace-top-menu"
           aria-expanded={isExpanded}
-          className="shrink-0 transition-all duration-150 hover:opacity-80 active:scale-95"
+          aria-haspopup="true"
+          className="shrink-0 -ml-3 transition-all duration-150 hover:opacity-80 active:scale-95"
           onClick={onToggleMenu}
           size="sm"
           variant="ghost"
         >
-          <Menu className="size-4" />
-          Menu
+          <span className="text-sm">{readWorkspaceMenuLabel(activeMenu)}</span>
+          <ChevronDown
+            className={cn(
+              "size-4 transition-transform duration-150",
+              isExpanded ? "rotate-180" : "",
+            )}
+          />
         </Button>
       </div>
 
       {isExpanded ? (
-        <nav aria-label="Workspace menu" className="mt-2 flex flex-wrap gap-3 text-sm">
+        <nav
+          aria-label="Workspace menu"
+          className="mt-2 flex flex-wrap gap-3 text-sm"
+          id="workspace-top-menu"
+        >
           {workspaceMenus.map((menu) => {
             const isActive = activeMenu === menu;
 

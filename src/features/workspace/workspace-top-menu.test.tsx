@@ -10,7 +10,7 @@ describe("workspace top menu", () => {
   it("renders the lightweight top-menu shell class", () => {
     const markup = renderToStaticMarkup(
       <WorkspaceTopMenu
-        activeMenu="tasks"
+        activeMenu="inbox"
         isExpanded={false}
         onSelectMenu={vi.fn()}
         onToggleMenu={vi.fn()}
@@ -18,5 +18,24 @@ describe("workspace top menu", () => {
     );
 
     expect(markup).toContain("workspace-top-menu-shell");
+  });
+
+  /**
+   * Keeps the current destination label as the primary navigation control so switching views does
+   * not require a reach to the far edge of the shell.
+   */
+  it("renders the active menu label as the trigger instead of a separate menu button", () => {
+    const markup = renderToStaticMarkup(
+      <WorkspaceTopMenu
+        activeMenu="projects"
+        isExpanded={false}
+        onSelectMenu={vi.fn()}
+        onToggleMenu={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain('aria-controls="workspace-top-menu"');
+    expect(markup).toContain("Projects");
+    expect(markup).not.toContain(">Menu<");
   });
 });
