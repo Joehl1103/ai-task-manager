@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,11 @@ export function AgentConfigurationView({
   onThemeSelectionChange,
   themeSelection,
 }: AgentConfigurationViewProps) {
+  const themeSummary = readWorkspaceThemeLabel(themeSelection);
+  const providerSummary = isActiveProviderReady
+    ? { text: "Live provider ready", showsCheckmark: true }
+    : { text: "API key needed", showsCheckmark: false };
+
   return (
     <>
       <header className="border-b border-[color:var(--border)] pb-6">
@@ -80,22 +85,11 @@ export function AgentConfigurationView({
         <ul className="mt-4 space-y-4">
           <li>
             <details className="configuration-disclosure rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)]">
-              <summary className="configuration-disclosure-summary flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4">
-                <div>
-                  <p className="text-sm font-medium">Workspace theme</p>
-                  <p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-                    Choose between six paired day and night themes, including Relay Original.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Badge variant="accent">{readWorkspaceThemeLabel(themeSelection)}</Badge>
-                  <ChevronDown
-                    aria-hidden="true"
-                    className="configuration-disclosure-chevron size-4 shrink-0 text-[color:var(--muted)]"
-                  />
-                </div>
-              </summary>
+              <ConfigurationDisclosureSummary
+                description="Choose between six paired day and night themes, including Relay Original."
+                statusText={themeSummary}
+                title="Workspace theme"
+              />
 
               <div className="border-t border-[color:var(--border)] px-4 py-4">
                 <WorkspaceThemeSelector
@@ -109,24 +103,12 @@ export function AgentConfigurationView({
 
           <li>
             <details className="configuration-disclosure rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)]">
-              <summary className="configuration-disclosure-summary flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4">
-                <div>
-                  <p className="text-sm font-medium">Agent settings</p>
-                  <p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-                    Add your OpenAI API key and adjust the model used for live thread replies.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Badge variant={isActiveProviderReady ? "success" : "warning"}>
-                    {isActiveProviderReady ? "Live provider ready" : "API key needed"}
-                  </Badge>
-                  <ChevronDown
-                    aria-hidden="true"
-                    className="configuration-disclosure-chevron size-4 shrink-0 text-[color:var(--muted)]"
-                  />
-                </div>
-              </summary>
+              <ConfigurationDisclosureSummary
+                description="Add your OpenAI API key and adjust the model used for live thread replies."
+                showsStatusCheckmark={providerSummary.showsCheckmark}
+                statusText={providerSummary.text}
+                title="Agent settings"
+              />
 
               <div className="space-y-4 border-t border-[color:var(--border)] px-4 py-4">
                 <ApiKeyManager
@@ -158,6 +140,50 @@ export function AgentConfigurationView({
         </ul>
       </section>
     </>
+  );
+}
+
+interface ConfigurationDisclosureSummaryProps {
+  description: string;
+  showsStatusCheckmark?: boolean;
+  statusText: string;
+  title: string;
+}
+
+/**
+ * Keeps the disclosure headers readable by using a compact text status instead of summary badges.
+ */
+function ConfigurationDisclosureSummary({
+  description,
+  showsStatusCheckmark = false,
+  statusText,
+  title,
+}: ConfigurationDisclosureSummaryProps) {
+  return (
+    <summary className="configuration-disclosure-summary cursor-pointer list-none px-4 py-4">
+      <div className="configuration-disclosure-copy">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">{description}</p>
+      </div>
+
+      <div className="configuration-disclosure-meta">
+        {showsStatusCheckmark ? (
+          <p className="configuration-disclosure-status flex items-center justify-end gap-1">
+            <Check
+              aria-hidden="true"
+              className="size-3 shrink-0 text-[color:var(--muted-strong)]"
+            />
+            <span className="min-w-0 truncate">{statusText}</span>
+          </p>
+        ) : (
+          <p className="configuration-disclosure-status">{statusText}</p>
+        )}
+        <ChevronDown
+          aria-hidden="true"
+          className="configuration-disclosure-chevron size-4 shrink-0 text-[color:var(--muted)]"
+        />
+      </div>
+    </summary>
   );
 }
 

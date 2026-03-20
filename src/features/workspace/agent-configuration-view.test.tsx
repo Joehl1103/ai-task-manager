@@ -40,11 +40,17 @@ describe("agent configuration view", () => {
     expect(markup).toContain("Configuration sections");
     expect(markup).toContain("Workspace theme");
     expect(markup).toContain("Agent settings");
-    expect(markup).toContain("Relay Original / Day");
+    expect(markup).toContain('class="configuration-disclosure-status">Relay Original / Day</p>');
+    expect(markup).toContain('class="configuration-disclosure-status">API key needed</p>');
+    expect(markup).toContain("configuration-disclosure-meta");
+    expect(markup).not.toContain("lucide-check");
     expect(markup.match(/<details/g)).toHaveLength(2);
     expect(markup).not.toContain("<details open");
     expect(markup).not.toContain("Separate workspace view");
     expect(markup).not.toContain("How this connects to the workspace");
+    expect(markup).not.toContain(
+      'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.16em]">Relay Original / Day</div>',
+    );
     expect(markup.match(/aria-label="[^"]+ day theme"/g)).toHaveLength(6);
     expect(markup.match(/aria-label="[^"]+ night theme"/g)).toHaveLength(6);
   });
@@ -104,6 +110,11 @@ describe("agent configuration view", () => {
     expect(markup).toContain("Refresh models for Work");
     expect(markup).toContain("Fetch models");
     expect(markup).toContain("Add API key");
+    expect(markup).toContain(
+      'class="configuration-disclosure-status flex items-center justify-end gap-1"',
+    );
+    expect(markup).toContain("lucide-check");
+    expect(markup).toContain(">Live provider ready</span>");
     expect(markup).toContain("Only one saved OpenAI key can be active at a time.");
     expect(markup).toContain("gpt-5-mini");
     expect(markup).toContain("Saved OpenAI keys");
