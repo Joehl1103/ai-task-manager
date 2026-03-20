@@ -1198,6 +1198,7 @@ export function WorkspaceApp() {
               activeProviderLabel={activeProviderLabel}
               activeProviderModel={activeProviderSettings.model}
               filterInitiativeId={filterInitiativeId}
+              filterProjectId={filterProjectId}
               initiatives={workspace.initiatives}
               onAddProject={handleAddProject}
               onAddTask={handleAddTaskFromProject}

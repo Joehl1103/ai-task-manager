@@ -141,18 +141,18 @@ export function InitiativeView({
         <h1 className="text-2xl font-semibold">Initiatives</h1>
       </header>
 
-      <section className="mt-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+      <section className="mt-4">
         <button
-          className="flex w-full items-center gap-2 text-left text-sm text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
-          onClick={() => setIsComposerExpanded(true)}
+          className="flex w-full items-center gap-2 text-left text-sm font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+          onClick={() => setIsComposerExpanded(!isComposerExpanded)}
           type="button"
         >
-          <Plus className="size-4" />
-          Add initiative
+          <Plus className="size-4 shrink-0" />
+          <span>Add initiative</span>
         </button>
 
         {isComposerExpanded && (
-          <div className="mt-3 grid gap-3">
+          <div className="mt-3 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
             <Input
               autoFocus
               onChange={(e) => setNewName(e.target.value)}
@@ -179,34 +179,33 @@ export function InitiativeView({
                   setNewDeadline("");
                 }}
                 variant="ghost"
-                className="transition-all duration-150 active:scale-95"
+                size="sm"
               >
                 Cancel
               </Button>
               <Button
                 disabled={!newName.trim()}
                 onClick={handleAdd}
-                className="transition-all duration-150 active:scale-95"
+                size="sm"
               >
-                <Plus className="size-4" />
-                Add
+                Add initiative
               </Button>
             </div>
           </div>
         )}
       </section>
 
-      <section className="mt-6 space-y-3">
+      <section className="mt-4 space-y-1">
         {initiatives.length === 0 ? (
-          <p className="text-sm text-[color:var(--muted)]">No initiatives yet.</p>
+          <p className="px-1 text-sm text-[color:var(--muted)]">No initiatives yet.</p>
         ) : (
           initiatives.map((initiative) => (
             <div
               key={initiative.id}
-              className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
+              className="group border-b border-[color:var(--border)] last:border-0"
             >
               {editingId === initiative.id ? (
-                <div className="space-y-3">
+                <div className="my-2 space-y-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
                   <Input
                     autoFocus
                     onChange={(e) => setEditName(e.target.value)}
@@ -224,161 +223,172 @@ export function InitiativeView({
                     value={editDescription}
                   />
                   <div className="flex justify-end gap-2">
-                    <Button onClick={handleCancelEdit} variant="ghost" size="sm" className="transition-all duration-150 active:scale-95">
+                    <Button onClick={handleCancelEdit} variant="ghost" size="sm">
                       Cancel
                     </Button>
-                    <Button onClick={handleSaveEdit} size="sm" className="transition-all duration-150 active:scale-95">
+                    <Button onClick={handleSaveEdit} size="sm">
                       Save
                     </Button>
                   </div>
                 </div>
               ) : (
-                <>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
+                <div className="py-2">
+                  <div className="flex items-center justify-between gap-3">
                     <button
-                      className="text-left font-medium hover:text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer active:opacity-70"
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       onClick={() => onSelectInitiative(initiative.id)}
                       type="button"
                     >
-                      {initiative.name}
+                      <span className="truncate text-sm font-medium transition-colors group-hover:text-[color:var(--muted-strong)]">
+                        {initiative.name}
+                      </span>
+                      <div className="flex items-center gap-3 text-xs text-[color:var(--muted)]">
+                        {initiative.deadline && (
+                          <span>Due: {formatDeadline(initiative.deadline)}</span>
+                        )}
+                        <span>{getProjectCountLabel(initiative.id)}</span>
+                      </div>
                     </button>
-                    {initiative.description && (
-                      <p className="mt-1 text-sm text-[color:var(--muted)] line-clamp-2">
-                        {initiative.description}
-                      </p>
+                    <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEdit(initiative);
+                        }}
+                        size="icon"
+                        variant="ghost"
+                        className="size-8"
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm("Delete this initiative? Projects will be unlinked.")) {
+                            onDeleteInitiative(initiative.id);
+                          }
+                        }}
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {initiative.description && (
+                    <p className="mt-1 pl-6 text-sm text-[color:var(--muted)] line-clamp-2">
+                      {initiative.description}
+                    </p>
+                  )}
+
+                  <div className="mt-3 pl-4 border-l-2 border-[color:var(--border-muted)]">
+                    {getChildProjects(initiative.id).length > 0 && (
+                      <div className="mb-4 space-y-1.5">
+                        {getChildProjects(initiative.id).map((project) => (
+                          <div key={project.id} className="flex items-center gap-2 text-xs text-[color:var(--muted-strong)]">
+                            <div className="size-1 rounded-full bg-[color:var(--muted)]" />
+                            <span className="truncate">{project.name}</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                    <div className="mt-2 flex items-center gap-3 text-xs text-[color:var(--muted)]">
-                      {initiative.deadline && (
-                        <span>Due: {formatDeadline(initiative.deadline)}</span>
-                      )}
-                      <span>{getProjectCountLabel(initiative.id)}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      onClick={() => handleStartEdit(initiative)}
-                      size="sm"
-                      variant="ghost"
-                      className="transition-all duration-150 active:scale-95"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        if (confirm("Delete this initiative? Projects will be unlinked.")) {
-                          onDeleteInitiative(initiative.id);
-                        }
-                      }}
-                      size="sm"
-                      variant="ghost"
-                      className="transition-all duration-150 active:scale-95"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                </div>
 
-                {getChildProjects(initiative.id).length > 0 && (
-                  <div className="mt-3 space-y-1">
-                    {getChildProjects(initiative.id).map((project) => (
-                      <p key={project.id} className="text-xs text-[color:var(--muted)]">
-                        • {project.name}
-                      </p>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-3">
-                  <button
-                    className="flex items-center gap-1 text-xs text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
-                    onClick={() =>
-                      setOpenThreadForId((currentThreadId) =>
-                        currentThreadId === initiative.id ? null : initiative.id,
-                      )
-                    }
-                    type="button"
-                  >
-                    {openThreadForId === initiative.id
-                      ? "Hide thread"
-                      : `Show thread (${initiative.agentThread.messages.length})`}
-                  </button>
-
-                  {openThreadForId === initiative.id ? (
-                    <div className="mt-3">
-                      <AgentThreadPanel
-                        activeProviderLabel={activeProviderLabel}
-                        activeProviderModel={activeProviderModel}
-                        composerPlaceholder={readThreadComposerPlaceholder({
-                          ownerType: "initiative",
-                          ownerId: initiative.id,
-                        })}
-                        draft={readThreadDraft(initiative.id)}
-                        isPending={pendingThreadId === initiative.id}
-                        onDeleteMessage={(messageId) => onDeleteThreadMessage(initiative.id, messageId)}
-                        onDraftChange={(message) => onThreadDraftChange(initiative.id, message)}
-                        onSend={() => onSendThreadMessage(initiative.id)}
-                        thread={initiative.agentThread}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="mt-3">
-                  <button
-                    className="flex items-center gap-1 text-xs text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
-                    onClick={() =>
-                      setAddProjectForId(
-                        addProjectForId === initiative.id ? null : initiative.id,
-                      )
-                    }
-                    type="button"
-                  >
-                    <Plus className="size-3" />
-                    Add project
-                  </button>
-
-                  {addProjectForId === initiative.id && (
-                    <div className="mt-2 grid gap-2">
-                      <Input
-                        autoFocus
-                        onChange={(e) => setNewProjectName(e.target.value)}
-                        placeholder="Project name"
-                        value={newProjectName}
-                      />
-                      <Input
-                        onChange={(e) => setNewProjectDeadline(e.target.value)}
-                        placeholder="Deadline"
-                        type="date"
-                        value={newProjectDeadline}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          onClick={() => {
-                            setAddProjectForId(null);
-                            setNewProjectName("");
-                            setNewProjectDeadline("");
-                          }}
-                          variant="ghost"
-                          size="sm"
-                          className="transition-all duration-150 active:scale-95"
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <button
+                          className="flex items-center gap-2 text-xs font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+                          onClick={() =>
+                            setOpenThreadForId((currentThreadId) =>
+                              currentThreadId === initiative.id ? null : initiative.id,
+                            )
+                          }
+                          type="button"
                         >
-                          Cancel
-                        </Button>
-                        <Button
-                          disabled={!newProjectName.trim()}
-                          onClick={() => handleAddChildProject(initiative.id)}
-                          size="sm"
-                          className="transition-all duration-150 active:scale-95"
+                          <span>
+                            {openThreadForId === initiative.id
+                              ? "Hide thread"
+                              : `Show thread (${initiative.agentThread.messages.length})`}
+                          </span>
+                        </button>
+
+                        {openThreadForId === initiative.id && (
+                          <div className="mt-3">
+                            <AgentThreadPanel
+                              activeProviderLabel={activeProviderLabel}
+                              activeProviderModel={activeProviderModel}
+                              composerPlaceholder={readThreadComposerPlaceholder({
+                                ownerType: "initiative",
+                                ownerId: initiative.id,
+                              })}
+                              draft={readThreadDraft(initiative.id)}
+                              isPending={pendingThreadId === initiative.id}
+                              onDeleteMessage={(messageId) => onDeleteThreadMessage(initiative.id, messageId)}
+                              onDraftChange={(message) => onThreadDraftChange(initiative.id, message)}
+                              onSend={() => onSendThreadMessage(initiative.id)}
+                              thread={initiative.agentThread}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <button
+                          className="flex items-center gap-2 text-xs font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+                          onClick={() =>
+                            setAddProjectForId(
+                              addProjectForId === initiative.id ? null : initiative.id,
+                            )
+                          }
+                          type="button"
                         >
-                          <Plus className="size-4" />
-                          Add
-                        </Button>
+                          <Plus className="size-3.5 shrink-0" />
+                          <span>Add project</span>
+                        </button>
+
+                        {addProjectForId === initiative.id && (
+                          <div className="mt-3 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+                            <Input
+                              autoFocus
+                              onChange={(e) => setNewProjectName(e.target.value)}
+                              placeholder="Project name"
+                              value={newProjectName}
+                              className="h-8 text-sm"
+                            />
+                            <Input
+                              onChange={(e) => setNewProjectDeadline(e.target.value)}
+                              placeholder="Deadline"
+                              type="date"
+                              value={newProjectDeadline}
+                              className="h-8 text-sm"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                onClick={() => {
+                                  setAddProjectForId(null);
+                                  setNewProjectName("");
+                                  setNewProjectDeadline("");
+                                }}
+                                variant="ghost"
+                                size="sm"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                disabled={!newProjectName.trim()}
+                                onClick={() => handleAddChildProject(initiative.id)}
+                                size="sm"
+                              >
+                                Add project
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
-                </>
               )}
             </div>
           ))

@@ -20,6 +20,7 @@ interface ProjectViewProps {
   initiatives: Initiative[];
   tasks: Task[];
   filterInitiativeId: string | null;
+  filterProjectId: string | null;
   pendingThreadId: string | null;
   readThreadDraft: (projectId: string) => ThreadDraft;
   onAddProject: (data: { name: string; initiativeId: string; deadline: string }) => void;
@@ -40,6 +41,7 @@ export function ProjectView({
   initiatives,
   tasks,
   filterInitiativeId,
+  filterProjectId,
   pendingThreadId,
   readThreadDraft,
   onAddProject,
@@ -174,18 +176,18 @@ export function ProjectView({
         </div>
       </header>
 
-      <section className="mt-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+      <section className="mt-4">
         <button
-          className="flex w-full items-center gap-2 text-left text-sm text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
-          onClick={() => setIsComposerExpanded(true)}
+          className="flex w-full items-center gap-2 text-left text-sm font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+          onClick={() => setIsComposerExpanded(!isComposerExpanded)}
           type="button"
         >
-          <Plus className="size-4" />
-          Add project
+          <Plus className="size-4 shrink-0" />
+          <span>Add project</span>
         </button>
 
         {isComposerExpanded && (
-          <div className="mt-3 grid gap-3">
+          <div className="mt-3 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
             <Input
               autoFocus
               onChange={(e) => setNewName(e.target.value)}
@@ -219,36 +221,35 @@ export function ProjectView({
                   setNewDeadline("");
                 }}
                 variant="ghost"
-                className="transition-all duration-150 active:scale-95"
+                size="sm"
               >
                 Cancel
               </Button>
               <Button
                 disabled={!newName.trim()}
                 onClick={handleAdd}
-                className="transition-all duration-150 active:scale-95"
+                size="sm"
               >
-                <Plus className="size-4" />
-                Add
+                Add project
               </Button>
             </div>
           </div>
         )}
       </section>
 
-      <section className="mt-6 space-y-3">
+      <section className="mt-4 space-y-1">
         {filteredProjects.length === 0 ? (
-          <p className="text-sm text-[color:var(--muted)]">
+          <p className="px-1 text-sm text-[color:var(--muted)]">
             {filterInitiativeId ? "No projects in this initiative." : "No projects yet."}
           </p>
         ) : (
           filteredProjects.map((project) => (
             <div
               key={project.id}
-              className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
+              className="group border-b border-[color:var(--border)] last:border-0"
             >
               {editingId === project.id ? (
-                <div className="space-y-3">
+                <div className="my-2 space-y-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
                   <Input
                     autoFocus
                     onChange={(e) => setEditName(e.target.value)}
@@ -273,166 +274,179 @@ export function ProjectView({
                     value={editDeadline}
                   />
                   <div className="flex justify-end gap-2">
-                    <Button onClick={handleCancelEdit} variant="ghost" size="sm" className="transition-all duration-150 active:scale-95">
+                    <Button onClick={handleCancelEdit} variant="ghost" size="sm">
                       Cancel
                     </Button>
-                    <Button onClick={handleSaveEdit} size="sm" className="transition-all duration-150 active:scale-95">
+                    <Button onClick={handleSaveEdit} size="sm">
                       Save
                     </Button>
                   </div>
                 </div>
               ) : (
-                <>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
+                <div className="py-2">
+                  <div className="flex items-center justify-between gap-3">
                     <button
-                      className="text-left font-medium hover:text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer active:opacity-70"
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       onClick={() => onSelectProject(project.id)}
                       type="button"
                     >
-                      {project.name}
+                      <span className="truncate text-sm font-medium transition-colors group-hover:text-[color:var(--muted-strong)]">
+                        {project.name}
+                      </span>
+                      <div className="flex items-center gap-3 text-xs text-[color:var(--muted)]">
+                        {getInitiativeName(project.initiativeId) && (
+                          <span className="truncate max-w-[120px]">{getInitiativeName(project.initiativeId)}</span>
+                        )}
+                        {project.deadline && (
+                          <span>Due: {formatDeadline(project.deadline)}</span>
+                        )}
+                        <span>{getTaskCount(project.id)} tasks</span>
+                      </div>
                     </button>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[color:var(--muted)]">
-                      {getInitiativeName(project.initiativeId) && (
-                        <span>{getInitiativeName(project.initiativeId)}</span>
-                      )}
-                      {project.deadline && (
-                        <span>Due: {formatDeadline(project.deadline)}</span>
-                      )}
-                      <span>{getTaskCount(project.id)} tasks</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      onClick={() => handleStartEdit(project)}
-                      size="sm"
-                      variant="ghost"
-                      className="transition-all duration-150 active:scale-95"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                    {!isPermanentProjectId(project.id) ? (
+                    <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <Button
-                        onClick={() => {
-                          if (confirm("Delete this project? Tasks will be moved to No Project.")) {
-                            onDeleteProject(project.id);
-                          }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEdit(project);
                         }}
-                        size="sm"
+                        size="icon"
                         variant="ghost"
-                        className="transition-all duration-150 active:scale-95"
+                        className="size-8"
                       >
-                        <Trash2 className="size-4" />
+                        <Pencil className="size-3.5" />
                       </Button>
-                    ) : null}
-                  </div>
-                </div>
-
-                {getChildTasks(project.id).length > 0 && (
-                  <div className="mt-3 space-y-1">
-                    {getChildTasks(project.id).map((task) => (
-                      <p key={task.id} className="text-xs text-[color:var(--muted)]">
-                        • {task.title}
-                      </p>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-3">
-                  <button
-                    className="flex items-center gap-1 text-xs text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
-                    onClick={() =>
-                      setOpenThreadForId((currentThreadId) =>
-                        currentThreadId === project.id ? null : project.id,
-                      )
-                    }
-                    type="button"
-                  >
-                    {openThreadForId === project.id
-                      ? "Hide thread"
-                      : `Show thread (${project.agentThread.messages.length})`}
-                  </button>
-
-                  {openThreadForId === project.id ? (
-                    <div className="mt-3">
-                      <AgentThreadPanel
-                        activeProviderLabel={activeProviderLabel}
-                        activeProviderModel={activeProviderModel}
-                        composerPlaceholder={readThreadComposerPlaceholder({
-                          ownerType: "project",
-                          ownerId: project.id,
-                        })}
-                        draft={readThreadDraft(project.id)}
-                        isPending={pendingThreadId === project.id}
-                        onDeleteMessage={(messageId) => onDeleteThreadMessage(project.id, messageId)}
-                        onDraftChange={(message) => onThreadDraftChange(project.id, message)}
-                        onSend={() => onSendThreadMessage(project.id)}
-                        thread={project.agentThread}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="mt-3">
-                  <button
-                    className="flex items-center gap-1 text-xs text-[color:var(--muted-strong)] transition-all duration-150 cursor-pointer hover:opacity-80 active:opacity-70"
-                    onClick={() =>
-                      setAddTaskForId(
-                        addTaskForId === project.id ? null : project.id,
-                      )
-                    }
-                    type="button"
-                  >
-                    <Plus className="size-3" />
-                    Add task
-                  </button>
-
-                  {addTaskForId === project.id && (
-                    <div className="mt-2 grid gap-2">
-                      <Input
-                        autoFocus
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        placeholder="Task title"
-                        value={newTaskTitle}
-                      />
-                      <Textarea
-                        onChange={(e) => setNewTaskDetails(e.target.value)}
-                        placeholder="Details (optional)"
-                        value={newTaskDetails}
-                      />
-                      <Input
-                        onChange={(e) => setNewTaskTags(e.target.value)}
-                        placeholder="Tags (comma-separated, optional)"
-                        value={newTaskTags}
-                      />
-                      <div className="flex justify-end gap-2">
+                      {!isPermanentProjectId(project.id) ? (
                         <Button
-                          onClick={() => {
-                            setAddTaskForId(null);
-                            setNewTaskTitle("");
-                            setNewTaskDetails("");
-                            setNewTaskTags("");
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("Delete this project? Tasks will be moved to No Project.")) {
+                              onDeleteProject(project.id);
+                            }
                           }}
+                          size="icon"
                           variant="ghost"
-                          size="sm"
-                          className="transition-all duration-150 active:scale-95"
+                          className="size-8 hover:text-destructive"
                         >
-                          Cancel
+                          <Trash2 className="size-3.5" />
                         </Button>
-                        <Button
-                          disabled={!newTaskTitle.trim()}
-                          onClick={() => handleAddChildTask(project.id)}
-                          size="sm"
-                          className="transition-all duration-150 active:scale-95"
-                        >
-                          <Plus className="size-4" />
-                          Add
-                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {filterProjectId === project.id && (
+                    <div className="mt-3 pl-4 border-l-2 border-[color:var(--border-muted)]">
+                      {getChildTasks(project.id).length > 0 && (
+                        <div className="mb-4 space-y-1.5">
+                          {getChildTasks(project.id).map((task) => (
+                            <div key={task.id} className="flex items-center gap-2 text-xs text-[color:var(--muted-strong)]">
+                              <div className="size-1 rounded-full bg-[color:var(--muted)]" />
+                              <span className="truncate">{task.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex flex-col gap-3">
+                        <div>
+                          <button
+                            className="flex items-center gap-2 text-xs font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+                            onClick={() =>
+                              setOpenThreadForId((currentThreadId) =>
+                                currentThreadId === project.id ? null : project.id,
+                              )
+                            }
+                            type="button"
+                          >
+                            <span>
+                              {openThreadForId === project.id
+                                ? "Hide thread"
+                                : `Show thread (${project.agentThread.messages.length})`}
+                            </span>
+                          </button>
+
+                          {openThreadForId === project.id && (
+                            <div className="mt-3">
+                              <AgentThreadPanel
+                                activeProviderLabel={activeProviderLabel}
+                                activeProviderModel={activeProviderModel}
+                                composerPlaceholder={readThreadComposerPlaceholder({
+                                  ownerType: "project",
+                                  ownerId: project.id,
+                                })}
+                                draft={readThreadDraft(project.id)}
+                                isPending={pendingThreadId === project.id}
+                                onDeleteMessage={(messageId) => onDeleteThreadMessage(project.id, messageId)}
+                                onDraftChange={(message) => onThreadDraftChange(project.id, message)}
+                                onSend={() => onSendThreadMessage(project.id)}
+                                thread={project.agentThread}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <button
+                            className="flex items-center gap-2 text-xs font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+                            onClick={() =>
+                              setAddTaskForId(
+                                addTaskForId === project.id ? null : project.id,
+                              )
+                            }
+                            type="button"
+                          >
+                            <Plus className="size-3.5 shrink-0" />
+                            <span>Add task</span>
+                          </button>
+
+                          {addTaskForId === project.id && (
+                            <div className="mt-3 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+                              <Input
+                                autoFocus
+                                onChange={(e) => setNewTaskTitle(e.target.value)}
+                                placeholder="Task title"
+                                value={newTaskTitle}
+                                className="h-8 text-sm"
+                              />
+                              <Textarea
+                                onChange={(e) => setNewTaskDetails(e.target.value)}
+                                placeholder="Details (optional)"
+                                value={newTaskDetails}
+                                className="min-h-[60px] text-sm"
+                              />
+                              <Input
+                                onChange={(e) => setNewTaskTags(e.target.value)}
+                                placeholder="Tags (comma-separated, optional)"
+                                value={newTaskTags}
+                                className="h-8 text-sm"
+                              />
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  onClick={() => {
+                                    setAddTaskForId(null);
+                                    setNewTaskTitle("");
+                                    setNewTaskDetails("");
+                                    setNewTaskTags("");
+                                  }}
+                                  variant="ghost"
+                                  size="sm"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  disabled={!newTaskTitle.trim()}
+                                  onClick={() => handleAddChildTask(project.id)}
+                                  size="sm"
+                                >
+                                  Add task
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
-                </>
               )}
             </div>
           ))
