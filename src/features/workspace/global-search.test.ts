@@ -86,6 +86,18 @@ describe("global search", () => {
   });
 
   /**
+   * Labels unassigned tasks as inbox work without surfacing the hidden inbox project itself.
+   */
+  it("labels inbox tasks without adding an inbox project result", () => {
+    const results = buildSeedResults();
+    const inboxTask = results.find((candidate) => candidate.id === "task-3");
+
+    expect(inboxTask?.contextLabel).toBe("Inbox");
+    expect(results.some((candidate) => candidate.entityType === "project" && candidate.id === "project-inbox")).toBe(false);
+    expect(results.some((candidate) => candidate.entityType === "project" && candidate.id === "project-no-project")).toBe(true);
+  });
+
+  /**
    * Ensures task selections navigate to the inbox view with the selected task open.
    */
   it("maps task selections back into the inbox view", () => {

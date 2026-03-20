@@ -8,6 +8,14 @@ import { AgentThreadPanel } from "@/features/workspace/agent-thread-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  filterVisibleProjects,
+  inboxPickerLabel,
+  inboxProjectName,
+  isHiddenInboxProjectId,
+  isTaskInInbox,
+  readProjectPickerValue,
+} from "@/features/workspace/inbox-project";
 import { readThreadComposerPlaceholder } from "@/features/workspace/thread-context";
 import { type Project, type Task, type ThreadDraft } from "@/features/workspace/types";
 
@@ -90,10 +98,11 @@ export function InboxView({
   onSendThreadMessage,
 }: InboxViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
-
-  const inboxTasks = tasks.filter((task) => task.projectId === "");
+  const visibleProjects = filterVisibleProjects(projects);
+  const inboxTasks = tasks.filter((task) => isTaskInInbox(task));
 
   function handleExpandComposer() {
+    onSetNewTaskProject("");
     setIsComposerExpanded(true);
   }
 
@@ -152,8 +161,8 @@ export function InboxView({
               onChange={(e) => onSetNewTaskProject(e.target.value)}
               value={newTaskProject}
             >
-              <option value="">Inbox (no project)</option>
-              {projects.map((project) => (
+              <option value="">{inboxPickerLabel}</option>
+              {visibleProjects.map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name}
                 </option>
@@ -210,7 +219,7 @@ export function InboxView({
             onSendThreadMessage={onSendThreadMessage}
             onThreadDraftChange={onThreadDraftChange}
             pendingTaskId={pendingTaskId}
-            projects={projects}
+            projects={visibleProjects}
             task={selectedTask}
           />
         ) : inboxTasks.length === 0 ? (
@@ -367,9 +376,9 @@ function InboxTaskDrillDown({
 }: InboxTaskDrillDownProps) {
   const isEditing = editingTaskId === task.id;
   const isCallingTask = pendingTaskId === task.id;
-  const projectName = task.projectId
-    ? projects.find((p) => p.id === task.projectId)?.name
-    : null;
+  const projectName = isHiddenInboxProjectId(task.projectId)
+    ? inboxProjectName
+    : projects.find((project) => project.id === task.projectId)?.name ?? null;
 
   return (
     <article className="mt-2 space-y-4">
@@ -417,9 +426,9 @@ function InboxTaskDrillDown({
           <select
             className="w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
             onChange={(e) => onSetEditProject(e.target.value)}
-            value={editProject}
+            value={readProjectPickerValue(editProject)}
           >
-            <option value="">No project</option>
+            <option value="">{inboxPickerLabel}</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}

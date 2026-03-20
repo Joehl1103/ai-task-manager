@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { inboxProjectId } from "./inbox-project";
 import {
   countGroupedTasks,
   groupTasksByProject,
@@ -84,7 +85,7 @@ describe("task grouping", () => {
 
     expect(groups).toHaveLength(2);
     expect(groups[1]?.label).toBe(noProjectLabel);
-    expect(groups[1]?.project).toBe("");
+    expect(groups[1]?.project).toBe(inboxProjectId);
     expect(groups[1]?.tasks).toHaveLength(2);
   });
 

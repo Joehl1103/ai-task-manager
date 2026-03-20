@@ -1,3 +1,4 @@
+import { inboxProjectName, isTaskInInbox } from "./inbox-project";
 import { type ThreadOwnerRef, type WorkspaceSnapshot } from "./types";
 
 const defaultChildSummaryLimit = 8;
@@ -72,13 +73,14 @@ function buildTaskContextSummary(workspace: WorkspaceSnapshot, taskId: string) {
   const initiative = project?.initiativeId
     ? workspace.initiatives.find((candidate) => candidate.id === project.initiativeId)
     : null;
+  const projectLabel = isTaskInInbox(task) ? inboxProjectName : project?.name || inboxProjectName;
 
   return [
     `Task title: ${task.title}`,
     `Task details: ${task.details || "No task details provided."}`,
     `Task deadline: ${task.deadline || "No deadline"}`,
     `Task tags: ${task.tags.length > 0 ? task.tags.join(", ") : "No tags"}`,
-    `Project: ${project?.name || "No project"}`,
+    `Project: ${projectLabel}`,
     `Initiative: ${initiative?.name || "No initiative"}`,
   ].join("\n");
 }

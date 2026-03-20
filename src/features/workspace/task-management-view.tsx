@@ -8,6 +8,13 @@ import { AgentThreadPanel } from "@/features/workspace/agent-thread-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  filterVisibleProjects,
+  inboxPickerLabel,
+  inboxProjectName,
+  isHiddenInboxProjectId,
+  readProjectPickerValue,
+} from "@/features/workspace/inbox-project";
 import { cn } from "@/lib/utils";
 import { readThreadComposerPlaceholder } from "@/features/workspace/thread-context";
 import {
@@ -105,6 +112,7 @@ export function TaskManagementView({
   onToggleGroupingMode,
 }: TaskManagementViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
+  const visibleProjects = filterVisibleProjects(projects);
   const emptyStateMessage = activeProjectFilterName
     ? `No tasks in ${activeProjectFilterName} yet.`
     : "No tasks yet.";
@@ -177,8 +185,8 @@ export function TaskManagementView({
               onChange={(e) => onSetNewTaskProject(e.target.value)}
               value={newTaskProject}
             >
-              <option value="">No project</option>
-              {projects.map((project) => (
+              <option value="">{inboxPickerLabel}</option>
+              {visibleProjects.map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name}
                 </option>
@@ -235,7 +243,7 @@ export function TaskManagementView({
             onSendThreadMessage={onSendThreadMessage}
             onThreadDraftChange={onThreadDraftChange}
             pendingTaskId={pendingTaskId}
-            projects={projects}
+            projects={visibleProjects}
             task={selectedTask}
           />
         ) : (
@@ -244,7 +252,7 @@ export function TaskManagementView({
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
             onToggleGroupingMode={onToggleGroupingMode}
-            projects={projects}
+            projects={visibleProjects}
             taskGroupingMode={taskGroupingMode}
             tasks={tasks}
           />
@@ -478,9 +486,9 @@ function TaskDrillDown({
 }: TaskDrillDownProps) {
   const isEditing = editingTaskId === task.id;
   const isCallingTask = pendingTaskId === task.id;
-  const projectName = task.projectId
-    ? projects.find((p) => p.id === task.projectId)?.name
-    : null;
+  const projectName = isHiddenInboxProjectId(task.projectId)
+    ? inboxProjectName
+    : projects.find((project) => project.id === task.projectId)?.name ?? null;
 
   return (
     <article className="mt-2 space-y-4">
@@ -528,9 +536,9 @@ function TaskDrillDown({
           <select
             className="w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
             onChange={(e) => onSetEditProject(e.target.value)}
-            value={editProject}
+            value={readProjectPickerValue(editProject)}
           >
-            <option value="">No project</option>
+            <option value="">{inboxPickerLabel}</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}

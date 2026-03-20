@@ -1,3 +1,8 @@
+import {
+  filterVisibleProjects,
+  inboxProjectName,
+  isTaskInInbox,
+} from "./inbox-project";
 import { type WorkspaceMenu } from "./workspace-navigation";
 import { type WorkspaceSnapshot } from "./types";
 
@@ -41,14 +46,15 @@ export function buildGlobalSearchResults(
     const initiativeName = project?.initiativeId
       ? initiativeNameById.get(project.initiativeId) ?? null
       : null;
+    const isInboxTask = isTaskInInbox(task);
 
     return {
       id: task.id,
       entityType: "task" as const,
       title: task.title,
       description: task.details,
-      contextLabel: readTaskContextLabel(projectName, initiativeName),
-      projectId: readOptionalValue(task.projectId),
+      contextLabel: readTaskContextLabel(projectName, initiativeName, isInboxTask),
+      projectId: isInboxTask ? null : readOptionalValue(task.projectId),
       initiativeId: readOptionalValue(project?.initiativeId),
       normalizedSearchText: normalizeSearchText([
         task.title,
@@ -60,7 +66,7 @@ export function buildGlobalSearchResults(
     };
   });
 
-  const projectResults = workspace.projects.map((project) => {
+  const projectResults = filterVisibleProjects(workspace.projects).map((project) => {
     const initiativeName = project.initiativeId
       ? initiativeNameById.get(project.initiativeId) ?? null
       : null;
@@ -195,7 +201,12 @@ export function readGlobalSearchEntityLabel(
 function readTaskContextLabel(
   projectName: string | null,
   initiativeName: string | null,
+  isInboxTask: boolean,
 ): string {
+  if (isInboxTask) {
+    return inboxProjectName;
+  }
+
   if (projectName && initiativeName) {
     return `Project: ${projectName} · Initiative: ${initiativeName}`;
   }
@@ -204,7 +215,7 @@ function readTaskContextLabel(
     return `Project: ${projectName}`;
   }
 
-  return "No project";
+  return inboxProjectName;
 }
 
 /**

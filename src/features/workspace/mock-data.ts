@@ -1,3 +1,8 @@
+import {
+  createInboxProject,
+  createNoProjectProject,
+  inboxProjectId,
+} from "./inbox-project";
 import { createAgentThread } from "./thread-helpers";
 import { type WorkspaceSnapshot } from "./types";
 
@@ -31,16 +36,8 @@ export const workspaceSeed: WorkspaceSnapshot = {
     },
   ],
   projects: [
-    {
-      id: "project-no-project",
-      name: "No Project",
-      initiativeId: "",
-      deadline: "",
-      agentThread: {
-        ...createAgentThread("project", "project-no-project"),
-        messages: [],
-      },
-    },
+    createInboxProject(),
+    createNoProjectProject(),
     {
       id: "project-1",
       name: "Relay MVP",
@@ -113,7 +110,7 @@ export const workspaceSeed: WorkspaceSnapshot = {
       id: "task-3",
       title: "Review quarterly goals",
       details: "Compare current progress against initial targets.",
-      projectId: "",
+      projectId: inboxProjectId,
       deadline: "",
       tags: ["review"],
       agentThread: {

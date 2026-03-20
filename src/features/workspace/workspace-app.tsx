@@ -9,6 +9,10 @@ import {
 } from "@/features/workspace/delete-confirmation";
 import { GlobalSearchDialog } from "@/features/workspace/global-search-dialog";
 import {
+  filterVisibleProjects,
+  readProjectPickerValue,
+} from "@/features/workspace/inbox-project";
+import {
   addInitiative,
   deleteInitiative,
   updateInitiative,
@@ -30,7 +34,6 @@ import {
 import {
   buildProjectTaskSelection,
   filterTasksByProject,
-  readProjectFilterName,
 } from "@/features/workspace/project-selection";
 import { ProjectView } from "@/features/workspace/project-view";
 import {
@@ -43,7 +46,6 @@ import {
   providerCatalog,
 } from "@/features/workspace/provider-config";
 import { InboxView } from "@/features/workspace/inbox-view";
-import { TaskManagementView } from "@/features/workspace/task-management-view";
 import { buildThreadContextSummary, readThreadOwnerName } from "@/features/workspace/thread-context";
 import { buildThreadOwnerKey } from "@/features/workspace/thread-helpers";
 import { readSelectedTask } from "@/features/workspace/task-overview";
@@ -125,8 +127,8 @@ export function WorkspaceApp() {
   const isActiveProviderReady = Boolean(
     activeProviderSettings.apiKey.trim() && activeProviderSettings.model.trim(),
   );
+  const visibleProjects = filterVisibleProjects(workspace.projects);
   const visibleTasks = filterTasksByProject(workspace.tasks, filterProjectId);
-  const activeProjectFilterName = readProjectFilterName(workspace.projects, filterProjectId);
   const selectedTask = readSelectedTask(visibleTasks, selectedTaskId);
   const selectedThreadDraft = selectedTask
     ? readThreadDraft(threadDrafts, {
@@ -331,13 +333,6 @@ export function WorkspaceApp() {
   }
 
   /**
-   * Toggles between project and tag grouping modes for the task overview.
-   */
-  function handleToggleGroupingMode() {
-    setTaskGroupingMode((currentMode) => (currentMode === "project" ? "tag" : "project"));
-  }
-
-  /**
    * Switches the active theme option so the user can compare directions in real time.
    */
   function handleSelectTheme(nextSelection: WorkspaceThemeSelection) {
@@ -408,10 +403,6 @@ export function WorkspaceApp() {
     setFilterProjectId(selection.filterProjectId);
     setSelectedTaskId(selection.selectedTaskId);
     setNewTaskProject(projectId);
-  }
-
-  function handleClearProjectFilter() {
-    setFilterProjectId(null);
   }
 
   function handleClearInitiativeFilter() {
@@ -491,7 +482,7 @@ export function WorkspaceApp() {
     setEditingTaskId(task.id);
     setEditTitle(task.title);
     setEditDetails(task.details);
-    setEditProject(task.projectId);
+    setEditProject(readProjectPickerValue(task.projectId));
     setEditTags(task.tags.join(", "));
   }
 
@@ -1149,7 +1140,7 @@ export function WorkspaceApp() {
                   ? pendingThreadOwnerKey.slice("task:".length)
                   : null
               }
-              projects={workspace.projects}
+              projects={visibleProjects}
               selectedThreadDraft={selectedThreadDraft}
               selectedTask={selectedTask}
               tasks={workspace.tasks}
@@ -1194,7 +1185,7 @@ export function WorkspaceApp() {
                   ? pendingThreadOwnerKey.slice("initiative:".length)
                   : null
               }
-              projects={workspace.projects}
+              projects={visibleProjects}
               readThreadDraft={(initiativeId) =>
                 readThreadDraft(threadDrafts, {
                   ownerType: "initiative",
@@ -1244,7 +1235,7 @@ export function WorkspaceApp() {
                   ? pendingThreadOwnerKey.slice("project:".length)
                   : null
               }
-              projects={workspace.projects}
+              projects={visibleProjects}
               readThreadDraft={(projectId) =>
                 readThreadDraft(threadDrafts, {
                   ownerType: "project",

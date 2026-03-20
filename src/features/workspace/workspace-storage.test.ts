@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { inboxProjectId, noProjectProjectId } from "./inbox-project";
 import { normalizeWorkspaceSnapshot, workspaceStorageKey } from "./workspace-storage";
 
 describe("workspace storage", () => {
@@ -189,7 +190,7 @@ describe("workspace storage", () => {
       id: "task-old",
       title: "Task without project",
       details: "Some details",
-      projectId: "",
+      projectId: inboxProjectId,
     });
   });
 
@@ -214,9 +215,61 @@ describe("workspace storage", () => {
       id: "task-old",
       title: "Task without tags",
       details: "Some details",
-      projectId: "",
+      projectId: inboxProjectId,
       tags: [],
     });
+  });
+
+  /**
+   * Preserves the visible No Project project as a real project assignment.
+   */
+  it("preserves the no-project project id as a visible project", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      initiatives: [],
+      projects: [
+        {
+          id: "project-no-project",
+          name: "No Project",
+          initiativeId: "",
+          deadline: "",
+        },
+      ],
+      tasks: [
+        {
+          id: "task-old",
+          title: "Inbox task",
+          details: "",
+          projectId: "project-no-project",
+        },
+      ],
+    });
+
+    expect(workspace.projects.some((project) => project.id === inboxProjectId && project.name === "Inbox")).toBe(true);
+    expect(workspace.projects.some((project) => project.id === noProjectProjectId && project.name === "No Project")).toBe(true);
+    expect(workspace.tasks[0]).toMatchObject({
+      projectId: noProjectProjectId,
+    });
+  });
+
+  /**
+   * Adds the visible No Project project when saved data only contains other projects.
+   */
+  it("ensures the visible no-project project exists", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      initiatives: [],
+      projects: [
+        {
+          id: "project-1",
+          name: "Relay MVP",
+          initiativeId: "",
+          deadline: "",
+        },
+      ],
+      tasks: [],
+    });
+
+    expect(workspace.projects.some((project) => project.id === inboxProjectId && project.name === "Inbox")).toBe(true);
+    expect(workspace.projects.some((project) => project.id === noProjectProjectId && project.name === "No Project")).toBe(true);
   });
 
   /**

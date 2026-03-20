@@ -1,3 +1,12 @@
+import {
+  createInboxProject,
+  createNoProjectProject,
+  inboxProjectId,
+  inboxProjectName,
+  noProjectProjectId,
+  noProjectProjectName,
+  normalizeTaskProjectId,
+} from "./inbox-project";
 import { workspaceSeed } from "./mock-data";
 import { isProviderId } from "./provider-config";
 import { createAgentThread } from "./thread-helpers";
@@ -67,6 +76,16 @@ export function normalizeWorkspaceSnapshot(value: unknown): WorkspaceSnapshot {
     return defaults;
   }
 
+  const normalizedProjects = Array.isArray(value.projects)
+    ? ensureSystemProjects(
+        value.projects.flatMap((project, index) => {
+          const normalizedProject = normalizeProject(project, index);
+
+          return normalizedProject ? [normalizedProject] : [];
+        }),
+      )
+    : [createInboxProject(), createNoProjectProject()];
+
   return {
     initiatives: Array.isArray(value.initiatives)
       ? value.initiatives.flatMap((initiative, index) => {
@@ -75,13 +94,7 @@ export function normalizeWorkspaceSnapshot(value: unknown): WorkspaceSnapshot {
           return normalizedInitiative ? [normalizedInitiative] : [];
         })
       : [],
-    projects: Array.isArray(value.projects)
-      ? value.projects.flatMap((project, index) => {
-          const normalizedProject = normalizeProject(project, index);
-
-          return normalizedProject ? [normalizedProject] : [];
-        })
-      : [],
+    projects: normalizedProjects,
     tasks: value.tasks.flatMap((task, index) => {
       const normalizedTask = normalizeTask(task, index);
 
@@ -95,7 +108,7 @@ export function normalizeWorkspaceSnapshot(value: unknown): WorkspaceSnapshot {
  */
 function migrateFromLegacyFormat(legacyTasks: unknown[]): WorkspaceSnapshot {
   const projectNameToId = new Map<string, string>();
-  const projects: Project[] = [];
+  const projects: Project[] = [createInboxProject(), createNoProjectProject()];
   let projectCounter = 1;
 
   for (const task of legacyTasks) {
@@ -109,15 +122,18 @@ function migrateFromLegacyFormat(legacyTasks: unknown[]): WorkspaceSnapshot {
       continue;
     }
 
-    const projectId = `project-${projectCounter++}`;
+    const projectId =
+      projectName === noProjectProjectName ? noProjectProjectId : `project-${projectCounter++}`;
     projectNameToId.set(projectName, projectId);
-    projects.push({
-      id: projectId,
-      name: projectName,
-      initiativeId: "",
-      deadline: "",
-      agentThread: createAgentThread("project", projectId),
-    });
+    if (projectId !== noProjectProjectId) {
+      projects.push({
+        id: projectId,
+        name: projectName,
+        initiativeId: "",
+        deadline: "",
+        agentThread: createAgentThread("project", projectId),
+      });
+    }
   }
 
   const tasks: Task[] = legacyTasks.flatMap((task, index) => {
@@ -127,7 +143,7 @@ function migrateFromLegacyFormat(legacyTasks: unknown[]): WorkspaceSnapshot {
 
     const taskId = readString(task.id) || `task-${index + 1}`;
     const projectName = typeof task.project === "string" ? task.project.trim() : "";
-    const projectId = projectNameToId.get(projectName) || "";
+    const projectId = normalizeTaskProjectId(projectNameToId.get(projectName));
 
     return [
       {
@@ -176,11 +192,17 @@ function normalizeProject(value: unknown, index: number): Project | null {
     return null;
   }
 
-  const projectId = readString(value.id) || `project-${index + 1}`;
+  const rawProjectId = readString(value.id) || `project-${index + 1}`;
+  const projectId = rawProjectId;
 
   return {
     id: projectId,
-    name: readString(value.name) || "Untitled project",
+    name:
+      projectId === inboxProjectId
+        ? inboxProjectName
+        : projectId === noProjectProjectId
+          ? noProjectProjectName
+        : readString(value.name) || "Untitled project",
     initiativeId: readString(value.initiativeId),
     deadline: readString(value.deadline),
     agentThread: normalizeAgentThread(value.agentThread, "project", projectId),
@@ -201,7 +223,7 @@ function normalizeTask(value: unknown, index: number): Task | null {
     id: taskId,
     title: readString(value.title) || "Untitled task",
     details: readString(value.details),
-    projectId: readString(value.projectId),
+    projectId: normalizeTaskProjectId(readString(value.projectId)),
     deadline: readString(value.deadline),
     tags: normalizeTags(value.tags),
     agentThread: normalizeTaskThread(value, taskId),
@@ -249,6 +271,45 @@ function normalizeAgentThread(
         })
       : [],
   };
+}
+
+/**
+ * Ensures both built-in system projects exist once saved data is normalized.
+ */
+function ensureSystemProjects(projects: Project[]): Project[] {
+  const seenProjectIds = new Set<string>();
+  const normalizedProjects: Project[] = [];
+
+  for (const project of projects) {
+    if (seenProjectIds.has(project.id)) {
+      continue;
+    }
+
+    seenProjectIds.add(project.id);
+    normalizedProjects.push(
+      project.id === inboxProjectId
+        ? {
+            ...project,
+            name: inboxProjectName,
+          }
+        : project.id === noProjectProjectId
+          ? {
+              ...project,
+              name: noProjectProjectName,
+            }
+        : project,
+    );
+  }
+
+  if (!seenProjectIds.has(noProjectProjectId)) {
+    normalizedProjects.unshift(createNoProjectProject());
+  }
+
+  if (!seenProjectIds.has(inboxProjectId)) {
+    normalizedProjects.unshift(createInboxProject());
+  }
+
+  return normalizedProjects;
 }
 
 /**

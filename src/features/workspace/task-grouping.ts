@@ -1,6 +1,11 @@
+import {
+  inboxProjectId,
+  inboxProjectName,
+  normalizeTaskProjectId,
+} from "./inbox-project";
 import { type Project, type Task } from "./types";
 
-export const noProjectLabel = "No project";
+export const noProjectLabel = inboxProjectName;
 export const noTagsLabel = "No tags";
 
 export interface TaskGroup {
@@ -22,23 +27,23 @@ export function createProjectNameMap(projects: Project[]): Map<string, string> {
 
 /**
  * Groups tasks by project while preserving task order within each group.
- * Tasks without a project are collected into a fallback group labeled "No project".
+ * Tasks without a visible project are collected into the inbox group.
  */
 export function groupTasksByProject(tasks: Task[], projects: Project[]): TaskGroup[] {
   const projectNameMap = createProjectNameMap(projects);
   const groupMap = new Map<string, Task[]>();
 
   for (const task of tasks) {
-    const projectKey = task.projectId.trim() || "";
+    const projectKey = normalizeTaskProjectId(task.projectId);
     const existingTasks = groupMap.get(projectKey) ?? [];
     groupMap.set(projectKey, [...existingTasks, task]);
   }
 
   const groups: TaskGroup[] = [];
-  const noProjectTasks = groupMap.get("");
+  const noProjectTasks = groupMap.get(inboxProjectId);
 
   for (const [projectId, projectTasks] of groupMap) {
-    if (projectId === "") {
+    if (projectId === inboxProjectId) {
       continue;
     }
 
@@ -52,7 +57,7 @@ export function groupTasksByProject(tasks: Task[], projects: Project[]): TaskGro
 
   if (noProjectTasks && noProjectTasks.length > 0) {
     groups.push({
-      project: "",
+      project: inboxProjectId,
       label: noProjectLabel,
       tasks: noProjectTasks,
     });

@@ -1,3 +1,4 @@
+import { normalizeTaskProjectId } from "./inbox-project";
 import { createAgentThread } from "./thread-helpers";
 import {
   type AddAgentThreadMessageInput,
@@ -53,7 +54,7 @@ export function addTask(
     id: nextTaskId,
     title: input.title.trim(),
     details: input.details.trim(),
-    projectId: input.projectId?.trim() ?? "",
+    projectId: normalizeTaskProjectId(input.projectId),
     deadline: normalizeDeadline(input.deadline),
     tags: normalizeTags(input.tags),
     agentThread: createAgentThread("task", nextTaskId),
@@ -80,7 +81,10 @@ export function updateTask(
             ...task,
             title: input.title.trim(),
             details: input.details.trim(),
-            projectId: input.projectId?.trim() ?? task.projectId,
+            projectId:
+              input.projectId !== undefined
+                ? normalizeTaskProjectId(input.projectId)
+                : task.projectId,
             deadline:
               input.deadline !== undefined ? normalizeDeadline(input.deadline) : task.deadline,
             tags: input.tags !== undefined ? normalizeTags(input.tags) : task.tags,

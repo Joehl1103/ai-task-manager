@@ -36,7 +36,10 @@ describe("project view", () => {
   it("renders child task titles and thread toggle", () => {
     const markup = renderToStaticMarkup(<ProjectView {...buildProjectViewProps()} />);
 
+    expect(markup).toContain("No Project");
     expect(markup).toContain("Relay MVP");
+    expect(markup).not.toContain("project-inbox");
+    expect(markup).not.toContain(">Inbox<");
     expect(markup).toContain("Define the smallest possible task manager");
     expect(markup).toContain("List the next three product decisions");
     expect(markup).toContain("Show thread (0)");

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { inboxProjectId } from "./inbox-project";
 import { workspaceSeed } from "./mock-data";
 import {
   addTask,
@@ -24,7 +25,7 @@ describe("workspace operations", () => {
     expect(updatedWorkspace.tasks[0]).toMatchObject({
       title: "Write Monday priorities",
       details: "Keep it short and practical.",
-      projectId: "",
+      projectId: inboxProjectId,
     });
     expect(updatedWorkspace.tasks[0]?.agentThread.messages).toEqual([]);
   });
@@ -130,6 +131,22 @@ describe("workspace operations", () => {
 
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
       projectId: "project-2",
+    });
+  });
+
+  /**
+   * Routes blank task assignments back into the hidden inbox project.
+   */
+  it("keeps blank task project updates in inbox", () => {
+    const updatedWorkspace = updateTask(workspaceSeed, {
+      taskId: "task-1",
+      title: "Define the smallest possible task manager",
+      details: "Keep only create, edit, delete, and call-agent actions.",
+      projectId: "",
+    });
+
+    expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
+      projectId: inboxProjectId,
     });
   });
 

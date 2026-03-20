@@ -7,6 +7,10 @@ import { AgentThreadPanel } from "@/features/workspace/agent-thread-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  filterVisibleProjects,
+  isPermanentProjectId,
+} from "@/features/workspace/inbox-project";
 import { readThreadComposerPlaceholder } from "@/features/workspace/thread-context";
 
 import { type Initiative, type Project, type Task, type ThreadDraft } from "./types";
@@ -63,10 +67,11 @@ export function ProjectView({
   const [newTaskDetails, setNewTaskDetails] = useState("");
   const [newTaskTags, setNewTaskTags] = useState("");
   const [openThreadForId, setOpenThreadForId] = useState<string | null>(null);
+  const visibleProjects = filterVisibleProjects(projects);
 
   const filteredProjects = filterInitiativeId
-    ? projects.filter((p) => p.initiativeId === filterInitiativeId)
-    : projects;
+    ? visibleProjects.filter((project) => project.initiativeId === filterInitiativeId)
+    : visibleProjects;
 
   const filterInitiative = filterInitiativeId
     ? initiatives.find((i) => i.id === filterInitiativeId)
@@ -308,18 +313,20 @@ export function ProjectView({
                     >
                       <Pencil className="size-4" />
                     </Button>
-                    <Button
-                      onClick={() => {
-                        if (confirm("Delete this project? Tasks will be unlinked.")) {
-                          onDeleteProject(project.id);
-                        }
-                      }}
-                      size="sm"
-                      variant="ghost"
-                      className="transition-all duration-150 active:scale-95"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                    {!isPermanentProjectId(project.id) ? (
+                      <Button
+                        onClick={() => {
+                          if (confirm("Delete this project? Tasks will be moved to No Project.")) {
+                            onDeleteProject(project.id);
+                          }
+                        }}
+                        size="sm"
+                        variant="ghost"
+                        className="transition-all duration-150 active:scale-95"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
 

@@ -1,4 +1,8 @@
 import {
+  isPermanentProjectId,
+  noProjectProjectId,
+} from "./inbox-project";
+import {
   type AddProjectInput,
   type Project,
   type UpdateProjectInput,
@@ -57,12 +61,16 @@ export function deleteProject(
   workspace: WorkspaceSnapshot,
   projectId: string,
 ): WorkspaceSnapshot {
+  if (isPermanentProjectId(projectId)) {
+    return workspace;
+  }
+
   return {
     ...workspace,
     projects: workspace.projects.filter((p) => p.id !== projectId),
     tasks: workspace.tasks.map((task) =>
       task.projectId === projectId
-        ? { ...task, projectId: "" }
+        ? { ...task, projectId: noProjectProjectId }
         : task,
     ),
   };

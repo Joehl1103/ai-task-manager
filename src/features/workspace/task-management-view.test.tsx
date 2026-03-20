@@ -60,7 +60,7 @@ describe("task management view", () => {
 
     expect(markup).toContain("task-overview-line-item");
     expect(markup).toContain("Relay MVP");
-    expect(markup).toContain("No project");
+    expect(markup).toContain("Inbox");
   });
 
   /**
