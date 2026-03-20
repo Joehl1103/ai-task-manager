@@ -138,18 +138,19 @@ export function InboxView({
         </p>
       ) : null}
 
-      <section className="mt-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+      <section className="mt-4">
         <button
-          className="flex w-full items-center gap-2 text-left text-sm text-[color:var(--muted-strong)]"
+          aria-expanded={isComposerExpanded}
+          className="flex w-full items-center gap-2 text-left text-sm font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
           onClick={handleExpandComposer}
           type="button"
         >
-          <Plus className="size-4" />
-          Add task
+          <Plus className="size-4 shrink-0" />
+          <span>Add task</span>
         </button>
 
         {isComposerExpanded ? (
-          <div className="mt-3 grid gap-3">
+          <div className="mt-3 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
             <Input
               autoFocus
               onChange={(event) => onSetNewTaskTitle(event.target.value)}
@@ -188,11 +189,7 @@ export function InboxView({
               </Button>
             </div>
           </div>
-        ) : (
-          <p className="mt-2 text-xs text-[color:var(--muted)]">
-            Click to open the full task composer.
-          </p>
-        )}
+        ) : null}
       </section>
 
       <section className="mt-6">

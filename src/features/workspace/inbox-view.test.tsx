@@ -49,6 +49,18 @@ function buildInboxViewProps() {
 
 describe("inbox view", () => {
   /**
+   * Keeps the collapsed add-task affordance light by removing the boxed shell and helper copy.
+   */
+  it("renders a line-first add-task trigger when the composer is collapsed", () => {
+    const markup = renderToStaticMarkup(<InboxView {...buildInboxViewProps()} />);
+
+    expect(markup).toContain("Add task");
+    expect(markup).not.toContain("Click to open the full task composer.");
+    expect(markup).not.toContain("border-b border-[color:var(--border)]");
+    expect(markup).not.toContain("rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3");
+  });
+
+  /**
    * Shows only inbox-assigned tasks in the dedicated inbox list.
    */
   it("renders only inbox tasks in the overview list", () => {
