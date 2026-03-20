@@ -18,6 +18,7 @@ interface InboxViewProps {
   selectedThreadDraft: ThreadDraft;
   newTaskTitle: string;
   newTaskDetails: string;
+  newTaskProject: string;
   newTaskTags: string;
   editingTaskId: string | null;
   editTitle: string;
@@ -30,6 +31,7 @@ interface InboxViewProps {
   isActiveProviderReady: boolean;
   onSetNewTaskTitle: (value: string) => void;
   onSetNewTaskDetails: (value: string) => void;
+  onSetNewTaskProject: (value: string) => void;
   onSetNewTaskTags: (value: string) => void;
   onAddTask: () => void;
   onOpenTask: (taskId: string) => void;
@@ -57,6 +59,7 @@ export function InboxView({
   selectedThreadDraft,
   newTaskTitle,
   newTaskDetails,
+  newTaskProject,
   newTaskTags,
   editingTaskId,
   editTitle,
@@ -69,6 +72,7 @@ export function InboxView({
   isActiveProviderReady,
   onSetNewTaskTitle,
   onSetNewTaskDetails,
+  onSetNewTaskProject,
   onSetNewTaskTags,
   onAddTask,
   onOpenTask,
@@ -106,6 +110,7 @@ export function InboxView({
     setIsComposerExpanded(false);
     onSetNewTaskTitle("");
     onSetNewTaskDetails("");
+    onSetNewTaskProject("");
     onSetNewTaskTags("");
   }
 
@@ -142,6 +147,18 @@ export function InboxView({
               placeholder="Task title"
               value={newTaskTitle}
             />
+            <select
+              className="w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+              onChange={(e) => onSetNewTaskProject(e.target.value)}
+              value={newTaskProject}
+            >
+              <option value="">Inbox (no project)</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
             <Input
               onChange={(event) => onSetNewTaskTags(event.target.value)}
               placeholder="Tags (optional, comma-separated)"

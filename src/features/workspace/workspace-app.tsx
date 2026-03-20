@@ -1102,6 +1102,7 @@ export function WorkspaceApp() {
               editTitle={editTitle}
               isActiveProviderReady={isActiveProviderReady}
               newTaskDetails={newTaskDetails}
+              newTaskProject={newTaskProject}
               newTaskTags={newTaskTags}
               newTaskTitle={newTaskTitle}
               onAddTask={handleAddTask}
@@ -1124,6 +1125,7 @@ export function WorkspaceApp() {
               onSetEditTags={setEditTags}
               onSetEditTitle={setEditTitle}
               onSetNewTaskDetails={setNewTaskDetails}
+              onSetNewTaskProject={setNewTaskProject}
               onSetNewTaskTags={setNewTaskTags}
               onSetNewTaskTitle={setNewTaskTitle}
               onStartEdit={handleStartEdit}
