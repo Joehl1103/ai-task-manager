@@ -1,4 +1,4 @@
-import { type AgentConfigState, type ProviderId } from "./types";
+import { type AgentConfigState, type ProviderId, type SavedApiKey } from "./types";
 
 export const agentConfigStorageKey = "relay-agent-config";
 
@@ -37,17 +37,30 @@ export function createDefaultAgentConfig(): AgentConfigState {
       anthropic: {
         apiKey: "",
         model: providerCatalog.anthropic.defaultModel,
+        savedKeys: [],
+        activeKeyId: null,
       },
       openai: {
         apiKey: "",
         model: providerCatalog.openai.defaultModel,
+        savedKeys: [],
+        activeKeyId: null,
       },
       google: {
         apiKey: "",
         model: providerCatalog.google.defaultModel,
+        savedKeys: [],
+        activeKeyId: null,
       },
     },
   };
+}
+
+/**
+ * Generates a short unique id for saved API key entries.
+ */
+export function createApiKeyId(): string {
+  return `key-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 /**
@@ -101,12 +114,53 @@ function normalizeProviderEntry(value: unknown, providerId: ProviderId) {
   }
 
   const candidate = value as Record<string, unknown>;
+  const savedKeys = normalizeSavedKeys(candidate.savedKeys);
+  const activeKeyId =
+    typeof candidate.activeKeyId === "string" && savedKeys.some((k) => k.id === candidate.activeKeyId)
+      ? candidate.activeKeyId
+      : null;
+
+  /* Resolve the effective API key: use the active saved key when set, fall back to the raw field. */
+  const activeKey = activeKeyId ? savedKeys.find((k) => k.id === activeKeyId) : null;
+  const rawApiKey = typeof candidate.apiKey === "string" ? candidate.apiKey : defaults.apiKey;
 
   return {
-    apiKey: typeof candidate.apiKey === "string" ? candidate.apiKey : defaults.apiKey,
+    apiKey: activeKey ? activeKey.apiKey : rawApiKey,
     model:
       typeof candidate.model === "string" && candidate.model.trim()
         ? candidate.model
         : defaults.model,
+    savedKeys,
+    activeKeyId,
   };
+}
+
+/**
+ * Validates an array of saved API key entries from local storage.
+ */
+function normalizeSavedKeys(value: unknown): SavedApiKey[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") {
+      return [];
+    }
+
+    const candidate = entry as Record<string, unknown>;
+
+    if (
+      typeof candidate.id !== "string" ||
+      typeof candidate.label !== "string" ||
+      typeof candidate.apiKey !== "string" ||
+      !candidate.id.trim() ||
+      !candidate.label.trim() ||
+      !candidate.apiKey.trim()
+    ) {
+      return [];
+    }
+
+    return [{ id: candidate.id, label: candidate.label, apiKey: candidate.apiKey }];
+  });
 }

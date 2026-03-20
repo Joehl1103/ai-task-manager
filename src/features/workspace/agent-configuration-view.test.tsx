@@ -15,10 +15,19 @@ describe("agent configuration view", () => {
         activeProviderSettings={{
           apiKey: "",
           model: "gpt-5.1",
+          savedKeys: [],
+          activeKeyId: null,
         }}
+        availableModels={[]}
         isActiveProviderReady={false}
+        isFetchingModels={false}
+        modelFetchError={null}
+        onDeleteSavedKey={vi.fn()}
+        onFetchModels={vi.fn()}
         onProviderApiKeyChange={vi.fn()}
         onProviderModelChange={vi.fn()}
+        onSaveApiKey={vi.fn()}
+        onSelectSavedKey={vi.fn()}
         onThemeSelectionChange={vi.fn()}
         themeSelection={{
           themeId: "relay-original",

@@ -6,9 +6,17 @@ export type ThreadMessageRole = "human" | "agent";
 
 export type ThreadMessageStatus = "done" | "error";
 
+export interface SavedApiKey {
+  id: string;
+  label: string;
+  apiKey: string;
+}
+
 export interface ProviderSettings {
   apiKey: string;
   model: string;
+  savedKeys: SavedApiKey[];
+  activeKeyId: string | null;
 }
 
 export interface AgentConfigState {
