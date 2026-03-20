@@ -42,6 +42,8 @@ npm run build
 
 `npm run dev` now enables polling-based file watching automatically so edits inside worktrees and tmp-based directories are picked up without changing the dev-server command.
 
+The Next.js dev config also derives `allowedDevOrigins` from the machine's current IPv4 addresses so HMR stays connected when your LAN IP changes. If you use a custom local hostname, you can add it with `ALLOWED_DEV_ORIGINS=relay.local npm run dev`.
+
 ## Git Version Control
 
 The app is the primary project in this repository.
