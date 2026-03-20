@@ -1,19 +1,14 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
   buildDevEnvironment,
-  ensureDevTsconfig,
   findAvailablePort,
   readRequestedPort,
   upsertPortArgument,
 } from "./dev-instance.mjs";
 
-const tempDirectories = [];
 const openServers = [];
 
 afterEach(async () => {
@@ -34,14 +29,6 @@ afterEach(async () => {
         resolve();
       });
     });
-  }
-
-  while (tempDirectories.length > 0) {
-    const directory = tempDirectories.pop();
-
-    if (directory) {
-      rmSync(directory, { force: true, recursive: true });
-    }
   }
 });
 
@@ -79,30 +66,8 @@ describe("buildDevEnvironment", () => {
     expect(buildDevEnvironment({}, 4020)).toMatchObject({
       PORT: "4020",
       RELAY_NEXT_DIST_DIR: ".next/instances/port-4020",
-      RELAY_NEXT_TSCONFIG_PATH: ".next/instances/port-4020/tsconfig.json",
       WATCHPACK_POLLING: "true",
     });
-  });
-
-  it("writes a generated per-port tsconfig that extends the root config", () => {
-    const projectRoot = mkdtempSync(join(tmpdir(), "relay-dev-instance-"));
-
-    tempDirectories.push(projectRoot);
-    writeFileSync(
-      join(projectRoot, "tsconfig.json"),
-      `{
-  "compilerOptions": {
-    "strict": true
-  }
-}
-`,
-    );
-
-    ensureDevTsconfig(projectRoot, 4021);
-
-    expect(
-      readFileSync(join(projectRoot, ".next", "instances", "port-4021", "tsconfig.json"), "utf8"),
-    ).toBe('{\n  "extends": "../../../tsconfig.json"\n}\n');
   });
 });
 

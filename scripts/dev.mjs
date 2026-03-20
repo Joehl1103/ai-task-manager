@@ -3,7 +3,6 @@ import { createRequire } from "node:module";
 
 import {
   buildDevEnvironment,
-  ensureDevTsconfig,
   findAvailablePort,
   readRequestedPort,
   upsertPortArgument,
@@ -33,8 +32,6 @@ async function main() {
       `⚠ Port ${requestedPort} is in use, using available port ${selectedPort} instead.`,
     );
   }
-
-  ensureDevTsconfig(process.cwd(), selectedPort);
 
   const nextBinPath = resolveFromScript.resolve("next/dist/bin/next");
   const child = spawn(

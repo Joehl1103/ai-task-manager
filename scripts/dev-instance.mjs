@@ -1,10 +1,7 @@
-import { mkdirSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { relative, resolve } from "node:path";
 
 export const DEFAULT_DEV_PORT = 3000;
 export const DEV_DIST_DIR_ENV = "RELAY_NEXT_DIST_DIR";
-export const DEV_TSCONFIG_ENV = "RELAY_NEXT_TSCONFIG_PATH";
 const PORT_ARGUMENT_FLAGS = new Set(["-p", "--port"]);
 
 /**
@@ -83,34 +80,6 @@ function buildDevDistDirectory(selectedPort) {
 }
 
 /**
- * Stores each generated tsconfig beside its matching dev instance so the project
- * root stays clean even when multiple dev ports have been used.
- */
-function buildDevTsconfigPath(selectedPort) {
-  return `${buildDevDistDirectory(selectedPort)}/tsconfig.json`;
-}
-
-/**
- * Creates a generated tsconfig that extends the tracked root config, which keeps
- * relative paths rooted in the real project config while still giving each port its
- * own mutable file for Next's dev-time adjustments.
- */
-export function ensureDevTsconfig(projectRoot, selectedPort) {
-  const instanceDirectory = resolve(projectRoot, buildDevDistDirectory(selectedPort));
-  const rootTsconfigPath = resolve(projectRoot, "tsconfig.json");
-  const tsconfigPath = resolve(projectRoot, buildDevTsconfigPath(selectedPort));
-  const relativeRootTsconfigPath = relative(instanceDirectory, rootTsconfigPath)
-    .split("\\")
-    .join("/");
-
-  mkdirSync(instanceDirectory, { recursive: true });
-  writeFileSync(
-    tsconfigPath,
-    `${JSON.stringify({ extends: relativeRootTsconfigPath }, null, 2)}\n`,
-  );
-}
-
-/**
  * Ensures worktree-safe polling and a per-port build directory for each Next dev instance.
  */
 export function buildDevEnvironment(currentEnvironment, selectedPort) {
@@ -120,8 +89,6 @@ export function buildDevEnvironment(currentEnvironment, selectedPort) {
     WATCHPACK_POLLING: currentEnvironment.WATCHPACK_POLLING ?? "true",
     [DEV_DIST_DIR_ENV]:
       currentEnvironment[DEV_DIST_DIR_ENV] ?? buildDevDistDirectory(selectedPort),
-    [DEV_TSCONFIG_ENV]:
-      currentEnvironment[DEV_TSCONFIG_ENV] ?? buildDevTsconfigPath(selectedPort),
   };
 }
 
