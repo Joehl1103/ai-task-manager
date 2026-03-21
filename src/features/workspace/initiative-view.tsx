@@ -1,10 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, MoreHorizontal, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   type Initiative,
@@ -112,56 +120,58 @@ export function InitiativeView({
           No initiatives yet. Add one to create strategic context for your projects.
         </p>
       ) : (
-        <section className="border-t border-[color:var(--row-divider)]">
-          {initiatives.map((initiative) => {
+        <section>
+          {initiatives.map((initiative, index) => {
             const childProjects = projects.filter(
               (project) => project.initiativeId === initiative.id,
             );
 
             return (
-              <button
-                className="group block w-full border-b border-[color:var(--row-divider)] py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
-                key={initiative.id}
-                onClick={() => onSelectInitiative(initiative.id)}
-                type="button"
-              >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <p className="text-sm font-medium text-[color:var(--foreground)]">
-                        {initiative.name}
+              <div key={initiative.id}>
+                {index > 0 ? <Separator /> : null}
+                <button
+                  className="group block w-full py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
+                  onClick={() => onSelectInitiative(initiative.id)}
+                  type="button"
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <p className="text-sm font-medium text-[color:var(--foreground)]">
+                          {initiative.name}
+                        </p>
+                        <p className="text-xs text-[color:var(--muted)]">
+                          {readProjectCountLabel(childProjects.length)}
+                        </p>
+                        <p className="text-xs text-[color:var(--muted)]">
+                          {initiative.deadline
+                            ? `Due ${formatDeadline(initiative.deadline)}`
+                            : "No deadline"}
+                        </p>
+                        <p className="text-xs text-[color:var(--muted)]">
+                          {initiative.agentThread.messages.length} messages
+                        </p>
+                      </div>
+
+                      <p className="mt-2 max-w-3xl text-sm leading-6 text-[color:var(--muted)] line-clamp-2">
+                        {initiative.description || "No description yet."}
                       </p>
-                      <p className="text-xs text-[color:var(--muted)]">
-                        {readProjectCountLabel(childProjects.length)}
-                      </p>
-                      <p className="text-xs text-[color:var(--muted)]">
-                        {initiative.deadline
-                          ? `Due ${formatDeadline(initiative.deadline)}`
-                          : "No deadline"}
-                      </p>
-                      <p className="text-xs text-[color:var(--muted)]">
-                        {initiative.agentThread.messages.length} messages
-                      </p>
+
+                      {childProjects.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[color:var(--muted)]">
+                          {childProjects.slice(0, 2).map((project) => (
+                            <span key={project.id}>{project.name}</span>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
 
-                    <p className="mt-2 max-w-3xl text-sm leading-6 text-[color:var(--muted)] line-clamp-2">
-                      {initiative.description || "No description yet."}
-                    </p>
-
-                    {childProjects.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[color:var(--muted)]">
-                        {childProjects.slice(0, 2).map((project) => (
-                          <span key={project.id}>{project.name}</span>
-                        ))}
-                      </div>
-                    ) : null}
+                    <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
+                      Open
+                    </span>
                   </div>
-
-                  <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
-                    Open
-                  </span>
-                </div>
-              </button>
+                </button>
+              </div>
             );
           })}
         </section>
@@ -330,27 +340,16 @@ function InitiativeDetailContent({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            onClick={() => setIsEditing((currentValue) => !currentValue)}
-            variant="ghost"
-          >
-            <Pencil className="size-4" />
-            {isEditing ? "Stop editing" : "Edit initiative"}
-          </Button>
-          <Button
-            onClick={() => {
-              if (confirm("Delete this initiative? Projects will be unlinked.")) {
-                onDeleteInitiative(activeInitiative.id);
-                onBack();
-              }
-            }}
-            variant="ghost"
-          >
-            <Trash2 className="size-4" />
-            Delete
-          </Button>
-        </div>
+        <InitiativeActionsMenu
+          isEditing={isEditing}
+          onDeleteInitiative={() => {
+            if (confirm("Delete this initiative? Projects will be unlinked.")) {
+              onDeleteInitiative(activeInitiative.id);
+              onBack();
+            }
+          }}
+          onToggleEdit={() => setIsEditing((currentValue) => !currentValue)}
+        />
       </div>
 
       {isEditing ? (
@@ -390,7 +389,8 @@ function InitiativeDetailContent({
         </section>
       ) : null}
 
-      <section className="border-t border-[color:var(--row-divider)] pt-6">
+      <section className="pt-6">
+        <Separator className="mb-6" />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold">Projects inside this initiative</h2>
@@ -444,32 +444,35 @@ function InitiativeDetailContent({
             No projects linked to this initiative yet.
           </p>
         ) : (
-          <div className="mt-4 border-t border-[color:var(--row-divider)]">
-            {childProjects.map((project) => (
-              <button
-                className="group flex w-full items-start justify-between gap-3 border-b border-[color:var(--row-divider)] py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
-                key={project.id}
-                onClick={() => onSelectProject(project.id)}
-                type="button"
-              >
-                <div className="min-w-0">
-                  <h3 className="text-sm font-medium text-[color:var(--foreground)]">
-                    {project.name}
-                  </h3>
-                  <p className="mt-2 text-sm text-[color:var(--muted)]">
-                    {project.deadline ? `Due ${formatDeadline(project.deadline)}` : "No deadline"}
-                  </p>
-                </div>
-                <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
-                  Open project
-                </span>
-              </button>
+          <div className="mt-4">
+            {childProjects.map((project, index) => (
+              <div key={project.id}>
+                {index > 0 ? <Separator /> : null}
+                <button
+                  className="group flex w-full items-start justify-between gap-3 py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
+                  onClick={() => onSelectProject(project.id)}
+                  type="button"
+                >
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-medium text-[color:var(--foreground)]">
+                      {project.name}
+                    </h3>
+                    <p className="mt-2 text-sm text-[color:var(--muted)]">
+                      {project.deadline ? `Due ${formatDeadline(project.deadline)}` : "No deadline"}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
+                    Open project
+                  </span>
+                </button>
+              </div>
             ))}
           </div>
         )}
       </section>
 
-      <section className="border-t border-[color:var(--row-divider)] pt-6">
+      <section className="pt-6">
+        <Separator className="mb-6" />
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">Initiative thread</h2>
@@ -509,6 +512,41 @@ function InitiativeDetailContent({
         ) : null}
       </section>
     </div>
+  );
+}
+
+interface InitiativeActionsMenuProps {
+  isEditing: boolean;
+  onDeleteInitiative: () => void;
+  onToggleEdit: () => void;
+}
+
+function InitiativeActionsMenu({
+  isEditing,
+  onDeleteInitiative,
+  onToggleEdit,
+}: InitiativeActionsMenuProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button aria-label="Initiative actions" size="icon" variant="ghost">
+          <MoreHorizontal aria-hidden="true" className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={onToggleEdit}>
+          {isEditing ? "Stop editing" : "Edit initiative"}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-rose-600 focus:text-rose-700"
+          onSelect={onDeleteInitiative}
+        >
+          Delete initiative
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

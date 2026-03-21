@@ -28,6 +28,9 @@ describe("global search dialog", () => {
     expect(markup).toContain("Initiative");
     expect(markup).toContain("Project: Relay MVP");
     expect(markup).toContain("Q2 Product Launch");
+    expect(markup).toContain('data-slot="dialog-content"');
+    expect(markup).toContain('data-slot="dialog-title"');
+    expect(markup).toContain('data-slot="separator"');
   });
 
   /**

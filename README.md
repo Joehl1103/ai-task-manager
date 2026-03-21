@@ -25,7 +25,7 @@ This app lives at the repository root (`ai-task-manager/`).
 - Next.js 16
 - TypeScript
 - Tailwind CSS v4
-- shadcn-style primitives with shared design tokens and Radix-backed Button slotting / Select behavior
+- shadcn-style primitives with shared design tokens and Radix-backed Select, Dialog, DropdownMenu, Tooltip, Label, and Separator behavior
 - Vitest
 
 ## Commands
@@ -81,7 +81,7 @@ The app is the primary project in this repository.
 - `src/features/workspace/theme/*`: theme registry and selector
 - `src/features/workspace/navigation/*`: top-menu UI and menu metadata
 - `config/next/*`: Next dev-server config helpers and tests
-- `src/components/ui/*`: reusable shadcn-style UI primitives, with Radix used where accessibility or composition needs it
+- `src/components/ui/*`: reusable shadcn-style UI primitives, with Radix used where accessibility or composition needs it across Select, Dialog, DropdownMenu, Tooltip, Label, and Separator
 
 ## Product Assumptions
 

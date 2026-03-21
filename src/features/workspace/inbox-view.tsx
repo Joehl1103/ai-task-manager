@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-import { ArrowLeft, ArrowUpRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   filterVisibleProjects,
@@ -15,6 +16,7 @@ import {
   isTaskInInbox,
   readProjectPickerValue,
 } from "@/features/workspace/projects";
+import { TaskDetailActionsMenu, TaskOverviewActionsMenu } from "@/features/workspace/tasks";
 import { AgentThreadPanel, readThreadComposerPlaceholder } from "@/features/workspace/threads";
 import { type Project, type Task, type ThreadDraft } from "@/features/workspace/core";
 
@@ -245,16 +247,20 @@ interface InboxTaskListProps {
  */
 function InboxTaskList({ tasks, onOpenTask, onDeleteTask }: InboxTaskListProps) {
   return (
-    <ul className="border-t border-[color:var(--row-divider)]">
-      {tasks.map((task) => (
-        <InboxTaskRow
-          key={task.id}
-          onDeleteTask={onDeleteTask}
-          onOpenTask={onOpenTask}
-          task={task}
-        />
-      ))}
-    </ul>
+    <div>
+      <Separator className="mb-2" />
+      <ul>
+        {tasks.map((task, index) => (
+          <InboxTaskRow
+            key={task.id}
+            onDeleteTask={onDeleteTask}
+            onOpenTask={onOpenTask}
+            showsSeparator={index < tasks.length - 1}
+            task={task}
+          />
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -262,14 +268,20 @@ interface InboxTaskRowProps {
   task: Task;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  showsSeparator: boolean;
 }
 
 /**
  * Shows each inbox task as a lightweight line item.
  */
-function InboxTaskRow({ task, onOpenTask, onDeleteTask }: InboxTaskRowProps) {
+function InboxTaskRow({
+  task,
+  onOpenTask,
+  onDeleteTask,
+  showsSeparator,
+}: InboxTaskRowProps) {
   return (
-    <li className="task-overview-line-item border-b border-[color:var(--row-divider)] py-2">
+    <li className="task-overview-line-item py-2">
       <div className="flex min-h-8 items-center gap-2">
         <button
           className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left hover:text-[color:var(--muted-strong)]"
@@ -290,28 +302,16 @@ function InboxTaskRow({ task, onOpenTask, onDeleteTask }: InboxTaskRowProps) {
             </span>
           ) : null}
         </button>
-
-        <Button
-          aria-label="Open task"
-          className="h-8 w-8 text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
-          onClick={() => onOpenTask(task.id)}
-          size="icon"
-          title="Open task"
-          variant="ghost"
-        >
-          <ArrowUpRight className="size-4" />
-        </Button>
-        <Button
-          aria-label="Remove task"
-          className="h-8 w-8 text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
-          onClick={() => onDeleteTask(task.id)}
-          size="icon"
-          title="Remove task"
-          variant="ghost"
-        >
-          <Trash2 className="size-4" />
-        </Button>
       </div>
+
+      <div className="mt-2 flex justify-end">
+        <TaskOverviewActionsMenu
+          onDeleteTask={() => onDeleteTask(task.id)}
+          onOpenTask={() => onOpenTask(task.id)}
+        />
+      </div>
+
+      {showsSeparator ? <Separator className="mt-2" /> : null}
     </li>
   );
 }
@@ -399,16 +399,11 @@ function InboxTaskDrillDown({
             </div>
           ) : null}
         </div>
-        <div className="flex flex-wrap gap-1">
-          <Button disabled={isEditing} onClick={() => onStartEdit(task.id)} size="sm" variant="ghost">
-            <Pencil className="size-4" />
-            {isEditing ? "Editing" : "Edit"}
-          </Button>
-          <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
-            <Trash2 className="size-4" />
-            Delete
-          </Button>
-        </div>
+        <TaskDetailActionsMenu
+          isEditing={isEditing}
+          onDeleteTask={() => onDeleteTask(task.id)}
+          onStartEdit={() => onStartEdit(task.id)}
+        />
       </div>
 
       {isEditing ? (

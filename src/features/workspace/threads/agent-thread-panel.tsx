@@ -3,6 +3,7 @@
 import { Bot, Send, Trash2, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { type AgentThread, type ThreadDraft } from "@/features/workspace/core";
 import { getProviderLabel } from "@/features/workspace/providers";
@@ -38,7 +39,8 @@ export function AgentThreadPanel({
   onDeleteMessage,
 }: AgentThreadPanelProps) {
   return (
-    <section className="space-y-3 border-t border-[color:var(--row-divider)] pt-3">
+    <section className="space-y-3 pt-3">
+      <Separator />
       <p className="text-xs uppercase tracking-[0.14em] text-[color:var(--muted)]">
         {readThreadActivityLabel(thread.messages.length)}
       </p>

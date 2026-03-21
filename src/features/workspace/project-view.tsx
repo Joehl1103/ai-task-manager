@@ -1,10 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, MoreHorizontal, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   filterVisibleProjects,
@@ -127,58 +135,62 @@ export function ProjectView({
           No projects yet. Add one to create a new destination in the sidebar.
         </p>
       ) : (
-        <section className="border-t border-[color:var(--row-divider)]">
-          {visibleProjects.map((project) => {
+        <section>
+          {visibleProjects.map((project, index) => {
             const projectInitiative = project.initiativeId
               ? initiatives.find((initiative) => initiative.id === project.initiativeId) ?? null
               : null;
             const projectTasks = tasks.filter((task) => task.projectId === project.id);
 
             return (
-              <button
-                className="group block w-full border-b border-[color:var(--row-divider)] py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
-                key={project.id}
-                onClick={() => onSelectProject(project.id)}
-                type="button"
-              >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <p className="text-sm font-medium text-[color:var(--foreground)]">
-                        {project.name}
-                      </p>
-                      <p className="text-xs text-[color:var(--muted)]">
-                        {projectInitiative ? projectInitiative.name : "No initiative"}
-                      </p>
-                      <p className="text-xs text-[color:var(--muted)]">
-                        {readTaskCountLabel(projectTasks.length)}
-                      </p>
-                      <p className="text-xs text-[color:var(--muted)]">
-                        {project.deadline ? `Due ${formatDeadline(project.deadline)}` : "No deadline"}
-                      </p>
-                      <p className="text-xs text-[color:var(--muted)]">
-                        {project.agentThread.messages.length} messages
-                      </p>
+              <div key={project.id}>
+                {index > 0 ? <Separator /> : null}
+                <button
+                  className="group block w-full py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
+                  onClick={() => onSelectProject(project.id)}
+                  type="button"
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <p className="text-sm font-medium text-[color:var(--foreground)]">
+                          {project.name}
+                        </p>
+                        <p className="text-xs text-[color:var(--muted)]">
+                          {projectInitiative ? projectInitiative.name : "No initiative"}
+                        </p>
+                        <p className="text-xs text-[color:var(--muted)]">
+                          {readTaskCountLabel(projectTasks.length)}
+                        </p>
+                        <p className="text-xs text-[color:var(--muted)]">
+                          {project.deadline
+                            ? `Due ${formatDeadline(project.deadline)}`
+                            : "No deadline"}
+                        </p>
+                        <p className="text-xs text-[color:var(--muted)]">
+                          {project.agentThread.messages.length} messages
+                        </p>
+                      </div>
+
+                      {projectTasks.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[color:var(--muted)]">
+                          {projectTasks.slice(0, 2).map((task) => (
+                            <span key={task.id}>{task.title}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-sm text-[color:var(--muted)]">
+                          No tasks linked yet.
+                        </p>
+                      )}
                     </div>
 
-                    {projectTasks.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[color:var(--muted)]">
-                        {projectTasks.slice(0, 2).map((task) => (
-                          <span key={task.id}>{task.title}</span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-2 text-sm text-[color:var(--muted)]">
-                        No tasks linked yet.
-                      </p>
-                    )}
+                    <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
+                      Open
+                    </span>
                   </div>
-
-                  <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
-                    Open
-                  </span>
-                </div>
-              </button>
+                </button>
+              </div>
             );
           })}
         </section>
@@ -365,26 +377,17 @@ function ProjectDetailContent({
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={() => setIsEditing((currentValue) => !currentValue)} variant="ghost">
-            <Pencil className="size-4" />
-            {isEditing ? "Stop editing" : "Edit project"}
-          </Button>
-          {!isPermanentProjectId(activeProject.id) ? (
-            <Button
-              onClick={() => {
-                if (confirm("Delete this project? Tasks will be moved to No Project.")) {
-                  onDeleteProject(activeProject.id);
-                  onBack();
-                }
-              }}
-              variant="ghost"
-            >
-              <Trash2 className="size-4" />
-              Delete
-            </Button>
-          ) : null}
-        </div>
+        <ProjectActionsMenu
+          canDelete={!isPermanentProjectId(activeProject.id)}
+          isEditing={isEditing}
+          onDeleteProject={() => {
+            if (confirm("Delete this project? Tasks will be moved to No Project.")) {
+              onDeleteProject(activeProject.id);
+              onBack();
+            }
+          }}
+          onToggleEdit={() => setIsEditing((currentValue) => !currentValue)}
+        />
       </div>
 
       {isEditing ? (
@@ -431,7 +434,8 @@ function ProjectDetailContent({
         </section>
       ) : null}
 
-      <section className="border-t border-[color:var(--row-divider)] pt-6">
+      <section className="pt-6">
+        <Separator className="mb-6" />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold">Tasks in this project</h2>
@@ -488,44 +492,45 @@ function ProjectDetailContent({
         {childTasks.length === 0 ? (
           <p className="mt-4 text-sm text-[color:var(--muted)]">No tasks yet for this project.</p>
         ) : (
-          <div className="mt-4 border-t border-[color:var(--row-divider)]">
-            {childTasks.map((task) => (
-              <article
-                className="border-b border-[color:var(--row-divider)] py-4"
-                key={task.id}
-              >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-medium text-[color:var(--foreground)]">
-                      {task.title}
-                    </h3>
-                    {task.details ? (
-                      <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-                        {task.details}
-                      </p>
-                    ) : (
-                      <p className="mt-2 text-sm text-[color:var(--muted)]">No details yet.</p>
-                    )}
+          <div className="mt-4">
+            {childTasks.map((task, index) => (
+              <div key={task.id}>
+                {index > 0 ? <Separator /> : null}
+                <article className="py-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium text-[color:var(--foreground)]">
+                        {task.title}
+                      </h3>
+                      {task.details ? (
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
+                          {task.details}
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-sm text-[color:var(--muted)]">No details yet.</p>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-sm text-[color:var(--muted)]">
+                      {task.tags.length > 0 ? (
+                        <div className="flex flex-wrap justify-start gap-x-3 gap-y-1 lg:justify-end">
+                          {task.tags.map((tag) => (
+                            <span key={tag}>#{tag}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span>No tags</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="shrink-0 text-sm text-[color:var(--muted)]">
-                    {task.tags.length > 0 ? (
-                      <div className="flex flex-wrap justify-start gap-x-3 gap-y-1 lg:justify-end">
-                        {task.tags.map((tag) => (
-                          <span key={tag}>#{tag}</span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span>No tags</span>
-                    )}
-                  </div>
-                </div>
-              </article>
+                </article>
+              </div>
             ))}
           </div>
         )}
       </section>
 
-      <section className="border-t border-[color:var(--row-divider)] pt-6">
+      <section className="pt-6">
+        <Separator className="mb-6" />
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">Project thread</h2>
@@ -565,6 +570,47 @@ function ProjectDetailContent({
         ) : null}
       </section>
     </div>
+  );
+}
+
+interface ProjectActionsMenuProps {
+  canDelete: boolean;
+  isEditing: boolean;
+  onDeleteProject: () => void;
+  onToggleEdit: () => void;
+}
+
+function ProjectActionsMenu({
+  canDelete,
+  isEditing,
+  onDeleteProject,
+  onToggleEdit,
+}: ProjectActionsMenuProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button aria-label="Project actions" size="icon" variant="ghost">
+          <MoreHorizontal aria-hidden="true" className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={onToggleEdit}>
+          {isEditing ? "Stop editing" : "Edit project"}
+        </DropdownMenuItem>
+        {canDelete ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-rose-600 focus:text-rose-700"
+              onSelect={onDeleteProject}
+            >
+              Delete project
+            </DropdownMenuItem>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

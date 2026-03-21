@@ -2,7 +2,14 @@
 
 import { type KeyboardEvent } from "react";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 import {
@@ -69,17 +76,17 @@ export function GlobalSearchDialog({
   }
 
   return (
-    <div
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/35 px-4 py-12"
-      onClick={onClose}
-      role="dialog"
-    >
-      <div
-        className="w-full max-w-2xl overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
+    <Dialog onOpenChange={(nextOpen) => !nextOpen && onClose()} open={isOpen}>
+      <DialogContent
+        className="max-w-2xl gap-0 overflow-hidden p-0"
+        onOpenAutoFocus={(event) => event.preventDefault()}
       >
-        <div className="border-b border-[color:var(--border)] p-3">
+        <DialogTitle className="sr-only">Global search</DialogTitle>
+        <DialogDescription className="sr-only">
+          Search tasks, projects, and initiatives.
+        </DialogDescription>
+
+        <div className="p-3">
           <Input
             aria-label="Global search"
             autoFocus
@@ -89,6 +96,8 @@ export function GlobalSearchDialog({
             value={query}
           />
         </div>
+
+        <Separator />
 
         <div className="max-h-[24rem] overflow-y-auto p-2">
           {results.length === 0 ? (
@@ -137,11 +146,13 @@ export function GlobalSearchDialog({
           )}
         </div>
 
-        <div className="border-t border-[color:var(--border)] px-3 py-2 text-xs text-[color:var(--muted)]">
+        <Separator />
+
+        <div className="px-3 py-2 text-xs text-[color:var(--muted)]">
           Use <kbd>↑</kbd> <kbd>↓</kbd> to navigate, <kbd>Enter</kbd> to open, and <kbd>Esc</kbd>{" "}
           to close.
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

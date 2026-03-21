@@ -12,6 +12,13 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { type Initiative, type Project } from "@/features/workspace/core";
 import { filterVisibleProjects } from "@/features/workspace/projects";
 import { cn } from "@/lib/utils";
@@ -57,87 +64,99 @@ export function WorkspaceSidebar({
   selectedProjectId,
 }: WorkspaceSidebarProps) {
   const visibleProjects = filterVisibleProjects(projects);
+  const projectsToggleLabel = `${isProjectsExpanded ? "Collapse" : "Expand"} projects`;
+  const initiativesToggleLabel = `${isInitiativesExpanded ? "Collapse" : "Expand"} initiatives`;
 
   return (
-    <aside
-      aria-label="Workspace sidebar"
-      className="workspace-sidebar-shell flex h-full flex-col border-r border-[color:var(--row-divider)] pr-5"
-    >
-      <div className="flex justify-end pb-4">
-        <Button
-          aria-label="Hide sidebar"
-          className="mt-[-0.25rem] shrink-0"
-          onClick={onToggleSidebar}
-          size="icon"
-          variant="ghost"
-        >
-          <PanelLeftClose className="size-4" />
-        </Button>
-      </div>
-
-      <nav aria-label="Workspace destinations" className="flex flex-1 flex-col gap-6">
-        <section className="space-y-1">
-          <p className="px-2 text-xs font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
-            Views
-          </p>
-          <SidebarMenuButton
-            active={activeMenu === "inbox"}
-            hint={readWorkspaceMenuHint("inbox")}
-            icon={<Inbox className="size-4" />}
-            label={readWorkspaceMenuLabel("inbox")}
-            onClick={() => onSelectMenu("inbox")}
-          />
-        </section>
-
-        <SidebarSection
-          active={activeMenu === "projects" && selectedProjectId === null}
-          icon={<FolderKanban className="size-4" />}
-          isExpanded={isProjectsExpanded}
-          itemCount={visibleProjects.length}
-          onSelect={() => onSelectMenu("projects")}
-          onToggle={onToggleProjects}
-          title="Projects"
-        >
-          {visibleProjects.map((project) => (
-            <SidebarChildButton
-              active={selectedProjectId === project.id}
-              key={project.id}
-              label={project.name}
-              onClick={() => onSelectProject(project.id)}
-            />
-          ))}
-        </SidebarSection>
-
-        <SidebarSection
-          active={activeMenu === "initiatives" && selectedInitiativeId === null}
-          icon={<Sparkles className="size-4" />}
-          isExpanded={isInitiativesExpanded}
-          itemCount={initiatives.length}
-          onSelect={() => onSelectMenu("initiatives")}
-          onToggle={onToggleInitiatives}
-          title="Initiatives"
-        >
-          {initiatives.map((initiative) => (
-            <SidebarChildButton
-              active={selectedInitiativeId === initiative.id}
-              key={initiative.id}
-              label={initiative.name}
-              onClick={() => onSelectInitiative(initiative.id)}
-            />
-          ))}
-        </SidebarSection>
-
-        <div className="mt-auto border-t border-[color:var(--row-divider)] pt-4">
-          <SidebarMenuButton
-            active={activeMenu === "configuration"}
-            hint={readWorkspaceMenuHint("configuration")}
-            icon={<Settings2 className="size-4" />}
-            label={readWorkspaceMenuLabel("configuration")}
-            onClick={() => onSelectMenu("configuration")}
-          />
+    <TooltipProvider>
+      <aside
+        aria-label="Workspace sidebar"
+        className="workspace-sidebar-shell flex h-full flex-col border-r border-[color:var(--row-divider)] pr-5"
+      >
+        <div className="flex justify-end pb-4">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                aria-label="Hide sidebar"
+                className="mt-[-0.25rem] shrink-0"
+                onClick={onToggleSidebar}
+                size="icon"
+                variant="ghost"
+              >
+                <PanelLeftClose className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Hide sidebar</TooltipContent>
+          </Tooltip>
         </div>
-      </nav>
-    </aside>
+
+        <nav aria-label="Workspace destinations" className="flex flex-1 flex-col gap-6">
+          <section className="space-y-1">
+            <p className="px-2 text-xs font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
+              Views
+            </p>
+            <SidebarMenuButton
+              active={activeMenu === "inbox"}
+              hint={readWorkspaceMenuHint("inbox")}
+              icon={<Inbox className="size-4" />}
+              label={readWorkspaceMenuLabel("inbox")}
+              onClick={() => onSelectMenu("inbox")}
+            />
+          </section>
+
+          <SidebarSection
+            active={activeMenu === "projects" && selectedProjectId === null}
+            icon={<FolderKanban className="size-4" />}
+            isExpanded={isProjectsExpanded}
+            itemCount={visibleProjects.length}
+            onSelect={() => onSelectMenu("projects")}
+            onToggle={onToggleProjects}
+            title="Projects"
+            toggleLabel={projectsToggleLabel}
+          >
+            {visibleProjects.map((project) => (
+              <SidebarChildButton
+                active={selectedProjectId === project.id}
+                key={project.id}
+                label={project.name}
+                onClick={() => onSelectProject(project.id)}
+              />
+            ))}
+          </SidebarSection>
+
+          <SidebarSection
+            active={activeMenu === "initiatives" && selectedInitiativeId === null}
+            icon={<Sparkles className="size-4" />}
+            isExpanded={isInitiativesExpanded}
+            itemCount={initiatives.length}
+            onSelect={() => onSelectMenu("initiatives")}
+            onToggle={onToggleInitiatives}
+            title="Initiatives"
+            toggleLabel={initiativesToggleLabel}
+          >
+            {initiatives.map((initiative) => (
+              <SidebarChildButton
+                active={selectedInitiativeId === initiative.id}
+                key={initiative.id}
+                label={initiative.name}
+                onClick={() => onSelectInitiative(initiative.id)}
+              />
+            ))}
+          </SidebarSection>
+
+          <div className="mt-auto pt-4">
+            <Separator className="mb-4" />
+            <SidebarMenuButton
+              active={activeMenu === "configuration"}
+              hint={readWorkspaceMenuHint("configuration")}
+              icon={<Settings2 className="size-4" />}
+              label={readWorkspaceMenuLabel("configuration")}
+              onClick={() => onSelectMenu("configuration")}
+            />
+          </div>
+        </nav>
+      </aside>
+    </TooltipProvider>
   );
 }
 
@@ -193,6 +212,7 @@ interface SidebarSectionProps {
   onSelect: () => void;
   onToggle: () => void;
   title: string;
+  toggleLabel: string;
 }
 
 function SidebarSection({
@@ -204,6 +224,7 @@ function SidebarSection({
   onSelect,
   onToggle,
   title,
+  toggleLabel,
 }: SidebarSectionProps) {
   return (
     <section className="space-y-2">
@@ -234,20 +255,25 @@ function SidebarSection({
             </span>
           </span>
         </button>
-        <Button
-          aria-expanded={isExpanded}
-          aria-label={`${isExpanded ? "Collapse" : "Expand"} ${title.toLowerCase()}`}
-          className="mt-0.5 shrink-0"
-          onClick={onToggle}
-          size="icon"
-          variant="ghost"
-        >
-          {isExpanded ? (
-            <ChevronDown className="size-4" />
-          ) : (
-            <ChevronRight className="size-4" />
-          )}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-expanded={isExpanded}
+              aria-label={toggleLabel}
+              className="mt-0.5 shrink-0"
+              onClick={onToggle}
+              size="icon"
+              variant="ghost"
+            >
+              {isExpanded ? (
+                <ChevronDown className="size-4" />
+              ) : (
+                <ChevronRight className="size-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">{toggleLabel}</TooltipContent>
+        </Tooltip>
       </div>
 
       {isExpanded ? (

@@ -74,6 +74,9 @@ describe("project view", () => {
     expect(markup).toContain("Tasks in this project");
     expect(markup).toContain("Project thread");
     expect(markup).toContain("Show thread (0)");
+    expect(markup).toContain('aria-label="Project actions"');
+    expect(markup).toContain('data-slot="dropdown-menu-trigger"');
+    expect(markup).toContain('data-slot="separator"');
     expect(markup).toContain('class="mt-2 text-2xl font-semibold tracking-tight">Relay MVP</h1>');
     expect(markup).not.toContain("text-3xl");
   });

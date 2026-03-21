@@ -64,14 +64,15 @@ describe("task management view", () => {
   });
 
   /**
-   * Keeps task row chips compact and adds hover color feedback for icon actions.
+   * Keeps task row chips compact while moving secondary actions into a quieter menu trigger.
    */
-  it("renders thin tag chips and icon buttons with hover color feedback", () => {
+  it("renders thin tag chips and task action menu triggers", () => {
     const markup = renderToStaticMarkup(<TaskManagementView {...buildTaskManagementViewProps()} />);
 
     expect(markup).toContain("py-px");
-    expect(markup).toContain('aria-label="Open task"');
-    expect(markup).toContain('aria-label="Remove task"');
+    expect(markup).toContain('aria-label="Task actions"');
+    expect(markup).toContain('data-slot="dropdown-menu-trigger"');
+    expect(markup).toContain('data-slot="separator"');
     expect(markup).toContain("text-[color:var(--muted)]");
     expect(markup).toContain("hover:text-[color:var(--foreground)]");
   });

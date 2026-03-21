@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-import { ArrowLeft, ArrowUpRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   filterVisibleProjects,
@@ -18,6 +19,8 @@ import { cn } from "@/lib/utils";
 import {
   groupTasksByProject,
   groupTasksByTag,
+  TaskDetailActionsMenu,
+  TaskOverviewActionsMenu,
   type TaskGroup,
 } from "@/features/workspace/tasks";
 import { type Project, type Task, type ThreadDraft } from "@/features/workspace/core";
@@ -357,12 +360,13 @@ function ProjectSection({ group, onOpenTask, onDeleteTask }: ProjectSectionProps
         {group.label}
         <span className="ml-2 text-[color:var(--muted)]">({group.tasks.length})</span>
       </h3>
-      <ul className="mt-1 border-t border-[color:var(--row-divider)]">
-        {group.tasks.map((task) => (
+      <ul className="mt-2">
+        {group.tasks.map((task, index) => (
           <TaskOverviewRow
             key={task.id}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
+            showsSeparator={index < group.tasks.length - 1}
             task={task}
           />
         ))}
@@ -375,14 +379,20 @@ interface TaskOverviewRowProps {
   task: Task;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  showsSeparator: boolean;
 }
 
 /**
  * Shows each task as a lightweight line item so scanning stays fast.
  */
-function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProps) {
+function TaskOverviewRow({
+  task,
+  onOpenTask,
+  onDeleteTask,
+  showsSeparator,
+}: TaskOverviewRowProps) {
   return (
-    <li className="task-overview-line-item border-b border-[color:var(--row-divider)] py-2">
+    <li className="task-overview-line-item py-2">
       <div className="flex min-h-8 items-center gap-2">
         <button
           className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left hover:text-[color:var(--muted-strong)]"
@@ -403,28 +413,16 @@ function TaskOverviewRow({ task, onOpenTask, onDeleteTask }: TaskOverviewRowProp
             </span>
           ) : null}
         </button>
-
-        <Button
-          aria-label="Open task"
-          className="h-8 w-8 text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
-          onClick={() => onOpenTask(task.id)}
-          size="icon"
-          title="Open task"
-          variant="ghost"
-        >
-          <ArrowUpRight className="size-4" />
-        </Button>
-        <Button
-          aria-label="Remove task"
-          className="h-8 w-8 text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
-          onClick={() => onDeleteTask(task.id)}
-          size="icon"
-          title="Remove task"
-          variant="ghost"
-        >
-          <Trash2 className="size-4" />
-        </Button>
       </div>
+
+      <div className="mt-2 flex justify-end">
+        <TaskOverviewActionsMenu
+          onDeleteTask={() => onDeleteTask(task.id)}
+          onOpenTask={() => onOpenTask(task.id)}
+        />
+      </div>
+
+      {showsSeparator ? <Separator className="mt-2" /> : null}
     </li>
   );
 }
@@ -512,16 +510,11 @@ function TaskDrillDown({
             </div>
           ) : null}
         </div>
-        <div className="flex flex-wrap gap-1">
-          <Button disabled={isEditing} onClick={() => onStartEdit(task.id)} size="sm" variant="ghost">
-            <Pencil className="size-4" />
-            {isEditing ? "Editing" : "Edit"}
-          </Button>
-          <Button onClick={() => onDeleteTask(task.id)} size="sm" variant="ghost">
-            <Trash2 className="size-4" />
-            Delete
-          </Button>
-        </div>
+        <TaskDetailActionsMenu
+          isEditing={isEditing}
+          onDeleteTask={() => onDeleteTask(task.id)}
+          onStartEdit={() => onStartEdit(task.id)}
+        />
       </div>
 
       {isEditing ? (

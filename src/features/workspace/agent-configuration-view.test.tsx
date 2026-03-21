@@ -124,6 +124,7 @@ describe("agent configuration view", () => {
     expect(markup).toContain("space-y-1.5");
     expect(markup).toContain("md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_auto]");
     expect(markup).toContain("md:w-56 md:flex-none");
+    expect(markup).toContain('data-slot="tooltip-trigger"');
     expect(markup).not.toContain("Save this key");
     expect(markup).not.toContain("lg:grid-cols-[minmax(0,1fr)_minmax(15rem,1.2fr)_auto]");
   });

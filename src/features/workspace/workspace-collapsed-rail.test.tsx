@@ -16,6 +16,7 @@ describe("workspace collapsed rail", () => {
     expect(markup).toContain('aria-label="Collapsed workspace sidebar"');
     expect(markup).toContain('aria-label="Expand sidebar"');
     expect(markup).toContain("w-8");
+    expect(markup).toContain('data-slot="tooltip-trigger"');
     expect(markup).not.toContain("Show sidebar");
   });
 });

@@ -3,7 +3,20 @@ import { describe, expect, it } from "vitest";
 
 import { Badge } from "./badge";
 import { Button } from "./button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "./dialog";
 import { Input } from "./input";
+import { Label } from "./label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -11,7 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./select";
+import { Separator } from "./separator";
 import { Textarea } from "./textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./tooltip";
 
 describe("workspace ui primitives", () => {
   /**
@@ -58,5 +78,49 @@ describe("workspace ui primitives", () => {
     expect(markup).toContain('role="combobox"');
     expect(markup).toContain('aria-expanded="false"');
     expect(markup).not.toContain("<option");
+  });
+
+  /**
+   * Confirms the additive phase-3 primitives expose stable slots so their no-chrome overrides stay
+   * encapsulated in the shared component layer.
+   */
+  it("renders dialog, dropdown menu, tooltip, label, and separator with named slots", () => {
+    const markup = renderToStaticMarkup(
+      <TooltipProvider>
+        <Dialog open>
+          <DialogContent>
+            <DialogTitle>Global search</DialogTitle>
+            <DialogDescription>Search tasks, projects, and initiatives.</DialogDescription>
+          </DialogContent>
+        </Dialog>
+
+        <DropdownMenu open>
+          <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Open task</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Tooltip defaultOpen>
+          <TooltipTrigger>Hover me</TooltipTrigger>
+          <TooltipContent>Helpful context</TooltipContent>
+        </Tooltip>
+
+        <Label htmlFor="api-key">API key</Label>
+        <Input id="api-key" />
+        <Separator />
+      </TooltipProvider>,
+    );
+
+    expect(markup).toContain('data-slot="dialog-content"');
+    expect(markup).toContain('data-slot="dialog-title"');
+    expect(markup).toContain('data-slot="dialog-description"');
+    expect(markup).toContain('data-slot="dropdown-menu-trigger"');
+    expect(markup).toContain('data-slot="dropdown-menu-content"');
+    expect(markup).toContain('data-slot="dropdown-menu-item"');
+    expect(markup).toContain('data-slot="tooltip-trigger"');
+    expect(markup).toContain('data-slot="tooltip-content"');
+    expect(markup).toContain('data-slot="label"');
+    expect(markup).toContain('data-slot="separator"');
   });
 });

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Check, ChevronDown, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,6 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   type ProviderId,
   type ProviderSettings,
@@ -240,6 +247,9 @@ function ApiKeyManager({
   const [draftLabel, setDraftLabel] = useState("");
   const [draftKeyValue, setDraftKeyValue] = useState("");
   const [editorError, setEditorError] = useState<string | null>(null);
+  const keyNameInputId = useId();
+  const apiKeyInputId = useId();
+  const editorErrorId = useId();
 
   const hasSavedKeys = savedKeys.length > 0;
 
@@ -313,194 +323,215 @@ function ApiKeyManager({
   }
 
   return (
-    <div className="space-y-3">
-      {hasSavedKeys ? (
-        <div className="grid gap-2 text-sm">
-          <span className="text-[color:var(--muted)]">Saved {activeProviderLabel} keys</span>
-          <div className="space-y-1.5">
-            {savedKeys.map((savedKey) => {
-              const isActive = savedKey.id === activeKeyId;
-              const isFetchingThisKey = fetchingModelsKeyId === savedKey.id;
-              const availableModels =
-                savedKey.availableModels.length > 0 ? savedKey.availableModels : [savedKey.model];
-              const hasFetchedModels = savedKey.availableModels.length > 0;
-              const showsFetchError =
-                modelErrorKeyId === savedKey.id && Boolean(modelFetchError);
+    <TooltipProvider>
+      <div className="space-y-3">
+        {hasSavedKeys ? (
+          <div className="grid gap-2 text-sm">
+            <span className="text-[color:var(--muted)]">Saved {activeProviderLabel} keys</span>
+            <div className="space-y-1.5">
+              {savedKeys.map((savedKey) => {
+                const isActive = savedKey.id === activeKeyId;
+                const isFetchingThisKey = fetchingModelsKeyId === savedKey.id;
+                const availableModels =
+                  savedKey.availableModels.length > 0 ? savedKey.availableModels : [savedKey.model];
+                const hasFetchedModels = savedKey.availableModels.length > 0;
+                const showsFetchError =
+                  modelErrorKeyId === savedKey.id && Boolean(modelFetchError);
 
-              return (
-                <div
-                  className={`rounded-md border px-3 py-2 transition-colors ${
-                    isActive
-                      ? "border-[color:var(--border-strong)] bg-[color:var(--surface)]"
-                      : "border-[color:var(--border)] bg-[color:var(--surface-strong)]"
-                  }`}
-                  key={savedKey.id}
-                >
-                  <div className="grid gap-3 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_auto] md:items-center">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
-                          {savedKey.label}
+                return (
+                  <div
+                    className={`rounded-md border px-3 py-2 transition-colors ${
+                      isActive
+                        ? "border-[color:var(--border-strong)] bg-[color:var(--surface)]"
+                        : "border-[color:var(--border)] bg-[color:var(--surface-strong)]"
+                    }`}
+                    key={savedKey.id}
+                  >
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_auto] md:items-center">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
+                            {savedKey.label}
+                          </p>
+                          {isActive ? <Badge variant="secondary">Active key</Badge> : null}
+                        </div>
+                        <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+                          {maskApiKey(savedKey.apiKey)}
                         </p>
-                        {isActive ? <Badge variant="secondary">Active key</Badge> : null}
                       </div>
-                      <p className="mt-0.5 text-xs text-[color:var(--muted)]">
-                        {maskApiKey(savedKey.apiKey)}
-                      </p>
-                    </div>
 
-                    <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-center">
-                      <Select
-                        onValueChange={(value) =>
-                          onSavedKeyModelChange(activeProvider, savedKey.id, value)
-                        }
-                        value={savedKey.model}
-                      >
-                        <SelectTrigger
-                          aria-label={`${savedKey.label} model`}
-                          className="min-w-0 md:w-56 md:flex-none"
+                      <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-center">
+                        <Select
+                          onValueChange={(value) =>
+                            onSavedKeyModelChange(activeProvider, savedKey.id, value)
+                          }
+                          value={savedKey.model}
                         >
-                          <SelectValue placeholder="Select model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableModels.map((modelId) => (
-                            <SelectItem key={modelId} value={modelId}>
-                              {modelId}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          <SelectTrigger
+                            aria-label={`${savedKey.label} model`}
+                            className="min-w-0 md:w-56 md:flex-none"
+                          >
+                            <SelectValue placeholder="Select model" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableModels.map((modelId) => (
+                              <SelectItem key={modelId} value={modelId}>
+                                {modelId}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
 
-                      {hasFetchedModels ? (
+                        {hasFetchedModels ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                aria-label={`Refresh models for ${savedKey.label}`}
+                                className="shrink-0"
+                                disabled={isFetchingModels}
+                                onClick={() => onFetchModels(activeProvider, savedKey.id)}
+                                size="icon"
+                                variant="outline"
+                              >
+                                {isFetchingThisKey ? (
+                                  <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                                ) : (
+                                  <RefreshCw aria-hidden="true" className="size-3.5" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Refresh models for {savedKey.label}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <Button
+                            className="shrink-0"
+                            disabled={isFetchingModels}
+                            onClick={() => onFetchModels(activeProvider, savedKey.id)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            {isFetchingThisKey ? (
+                              <>
+                                <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                                Fetching...
+                              </>
+                            ) : (
+                              "Fetch models"
+                            )}
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                        {!isActive ? (
+                          <Button
+                            onClick={() => onSetActiveKey(activeProvider, savedKey.id)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            Set key active
+                          </Button>
+                        ) : null}
+
                         <Button
-                          aria-label={`Refresh models for ${savedKey.label}`}
-                          className="shrink-0"
-                          disabled={isFetchingModels}
-                          onClick={() => onFetchModels(activeProvider, savedKey.id)}
-                          size="icon"
-                          title={`Refresh models for ${savedKey.label}`}
-                          variant="outline"
-                        >
-                          {isFetchingThisKey ? (
-                            <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
-                          ) : (
-                            <RefreshCw aria-hidden="true" className="size-3.5" />
-                          )}
-                        </Button>
-                      ) : (
-                        <Button
-                          className="shrink-0"
-                          disabled={isFetchingModels}
-                          onClick={() => onFetchModels(activeProvider, savedKey.id)}
+                          onClick={() => handleStartEdit(savedKey)}
                           size="sm"
                           variant="outline"
                         >
-                          {isFetchingThisKey ? (
-                            <>
-                              <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
-                              Fetching...
-                            </>
-                          ) : (
-                            "Fetch models"
-                          )}
+                          <Pencil aria-hidden="true" className="size-3.5" />
+                          Edit key
                         </Button>
-                      )}
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              aria-label={`Delete key ${savedKey.label}`}
+                              onClick={() => onDeleteSavedKey(activeProvider, savedKey.id)}
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <Trash2 aria-hidden="true" className="size-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Delete key {savedKey.label}</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                      {!isActive ? (
-                        <Button
-                          onClick={() => onSetActiveKey(activeProvider, savedKey.id)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          Set key active
-                        </Button>
-                      ) : null}
-
-                      <Button
-                        onClick={() => handleStartEdit(savedKey)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Pencil aria-hidden="true" className="size-3.5" />
-                        Edit key
-                      </Button>
-
-                      <Button
-                        aria-label={`Delete key ${savedKey.label}`}
-                        onClick={() => onDeleteSavedKey(activeProvider, savedKey.id)}
-                        size="icon"
-                        variant="ghost"
-                      >
-                        <Trash2 aria-hidden="true" className="size-3.5" />
-                      </Button>
-                    </div>
+                    {showsFetchError ? (
+                      <p className="mt-2 text-xs text-red-500">{modelFetchError}</p>
+                    ) : null}
                   </div>
-
-                  {showsFetchError ? (
-                    <p className="mt-2 text-xs text-red-500">{modelFetchError}</p>
-                  ) : null}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {editorMode ? (
-        <div className="space-y-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-3">
-          <p className="text-sm font-medium text-[color:var(--foreground)]">
-            {editorMode === "edit" ? "Edit API key" : "Add API key"}
-          </p>
-          <label className="grid gap-1 text-sm">
-            <span className="text-[color:var(--muted)]">Key name</span>
-            <Input
-              onChange={(event) => {
-                setDraftLabel(event.target.value);
-                setEditorError(null);
-              }}
-              placeholder="e.g. Personal, Work, Project"
-              value={draftLabel}
-            />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span className="text-[color:var(--muted)]">API key</span>
-            <Input
-              onChange={(event) => {
-                setDraftKeyValue(event.target.value);
-                setEditorError(null);
-              }}
-              placeholder={providerCatalog[activeProvider].apiKeyPlaceholder}
-              type="password"
-              value={draftKeyValue}
-            />
-          </label>
-          {editorError ? <p className="text-xs text-red-500">{editorError}</p> : null}
-          <div className="flex items-center gap-2 pt-1">
-            <Button onClick={handleSubmitEditor} size="sm">
-              {editorMode === "edit" ? "Save changes" : "Add API key"}
-            </Button>
-            <Button onClick={handleCloseEditor} size="sm" variant="ghost">
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-end gap-3">
-          {!hasSavedKeys && apiKey ? (
-            <p className="text-xs text-[color:var(--muted)]">
-              Unsaved key detected. Use &quot;Add API key&quot; to store it with a name.
+        {editorMode ? (
+          <div className="space-y-3 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] p-3">
+            <p className="text-sm font-medium text-[color:var(--foreground)]">
+              {editorMode === "edit" ? "Edit API key" : "Add API key"}
             </p>
-          ) : null}
+            <div className="grid gap-1.5">
+              <Label htmlFor={keyNameInputId}>Key name</Label>
+              <Input
+                aria-describedby={editorError ? editorErrorId : undefined}
+                id={keyNameInputId}
+                onChange={(event) => {
+                  setDraftLabel(event.target.value);
+                  setEditorError(null);
+                }}
+                placeholder="e.g. Personal, Work, Project"
+                value={draftLabel}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={apiKeyInputId}>API key</Label>
+              <Input
+                aria-describedby={editorError ? editorErrorId : undefined}
+                id={apiKeyInputId}
+                onChange={(event) => {
+                  setDraftKeyValue(event.target.value);
+                  setEditorError(null);
+                }}
+                placeholder={providerCatalog[activeProvider].apiKeyPlaceholder}
+                type="password"
+                value={draftKeyValue}
+              />
+            </div>
+            {editorError ? (
+              <p className="text-xs text-red-500" id={editorErrorId}>
+                {editorError}
+              </p>
+            ) : null}
+            <div className="flex items-center gap-2 pt-1">
+              <Button onClick={handleSubmitEditor} size="sm">
+                {editorMode === "edit" ? "Save changes" : "Add API key"}
+              </Button>
+              <Button onClick={handleCloseEditor} size="sm" variant="ghost">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-end gap-3">
+            {!hasSavedKeys && apiKey ? (
+              <p className="text-xs text-[color:var(--muted)]">
+                Unsaved key detected. Use &quot;Add API key&quot; to store it with a name.
+              </p>
+            ) : null}
 
-          <Button className="self-end" onClick={handleStartAdd} variant="subtle">
-            <Plus aria-hidden="true" className="size-3.5" />
-            Add API key
-          </Button>
-        </div>
-      )}
-    </div>
+            <Button className="self-end" onClick={handleStartAdd} variant="subtle">
+              <Plus aria-hidden="true" className="size-3.5" />
+              Add API key
+            </Button>
+          </div>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }
 

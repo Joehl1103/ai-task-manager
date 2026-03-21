@@ -69,6 +69,9 @@ describe("inbox view", () => {
     expect(markup).toContain("Review quarterly goals");
     expect(markup).not.toContain("Define the smallest possible task manager");
     expect(markup).not.toContain("List the next three product decisions");
+    expect(markup).toContain('aria-label="Task actions"');
+    expect(markup).toContain('data-slot="dropdown-menu-trigger"');
+    expect(markup).toContain('data-slot="separator"');
   });
 
   /**
