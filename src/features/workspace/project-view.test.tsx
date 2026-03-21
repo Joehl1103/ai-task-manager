@@ -15,24 +15,51 @@ function buildProjectViewProps() {
 }
 
 function buildProjectDetailViewProps() {
+  const task = workspaceSeed.tasks.find((candidate) => candidate.id === "task-1") ?? null;
+
   return {
     activeProviderLabel: "OpenAI",
     activeProviderModel: "gpt-5",
+    editDetails: task?.details ?? "",
+    editingTaskId: null,
+    editProject: task?.projectId ?? "",
+    editTags: task?.tags.join(", ") ?? "",
+    editTitle: task?.title ?? "",
     initiatives: workspaceSeed.initiatives,
     onAddTask: vi.fn(),
     onBack: vi.fn(),
+    onCancelEdit: vi.fn(),
     onDeleteProject: vi.fn(),
     onDeleteThreadMessage: vi.fn(),
+    onDeleteTask: vi.fn(),
+    onDeleteTaskThreadMessage: vi.fn(),
     onOpenInitiative: vi.fn(),
+    onOpenTask: vi.fn(),
+    onReturnToOverview: vi.fn(),
+    onSaveEdit: vi.fn(),
     onSendThreadMessage: vi.fn(),
+    onSendTaskThreadMessage: vi.fn(),
+    onSetEditDetails: vi.fn(),
+    onSetEditProject: vi.fn(),
+    onSetEditTags: vi.fn(),
+    onSetEditTitle: vi.fn(),
+    onStartEdit: vi.fn(),
     onThreadDraftChange: vi.fn(),
+    onTaskThreadDraftChange: vi.fn(),
     onUpdateProject: vi.fn(),
+    pendingTaskId: null,
     pendingThreadId: null,
     project: workspaceSeed.projects.find((project) => project.id === "project-1") ?? null,
+    projects: workspaceSeed.projects,
     readThreadDraft: vi.fn(() => ({
       message: "",
       error: null,
     })),
+    selectedTask: null,
+    selectedThreadDraft: {
+      message: "",
+      error: null,
+    },
     tasks: workspaceSeed.tasks,
   } as const;
 }
@@ -78,15 +105,31 @@ describe("project view", () => {
 
     expect(markup).toContain("Back to projects");
     expect(markup).toContain("Project detail");
-    expect(markup).toContain("Open initiative");
     expect(markup).toContain("Tasks in this project");
     expect(markup).toContain("Project thread");
     expect(markup).toContain("Show thread (0)");
+    expect(markup).toContain('aria-label="Open task Define the smallest possible task manager"');
     expect(markup).toContain('aria-label="Project actions"');
     expect(markup).toContain('data-slot="dropdown-menu-trigger"');
     expect(markup).toContain('data-slot="separator"');
     expect(markup).toContain('class="mt-2 text-2xl font-semibold tracking-tight">Relay MVP</h1>');
     expect(markup).not.toContain("text-3xl");
+  });
+
+  /**
+   * Confirms project tasks can swap into the same shared task drill-down used elsewhere.
+   */
+  it("renders the shared task drill-down when a project task is selected", () => {
+    const selectedTask = workspaceSeed.tasks.find((task) => task.id === "task-1") ?? null;
+    const markup = renderToStaticMarkup(
+      <ProjectDetailView {...buildProjectDetailViewProps()} selectedTask={selectedTask} />,
+    );
+
+    expect(markup).toContain("Back to project tasks");
+    expect(markup).toContain("Define the smallest possible task manager");
+    expect(markup).toContain("Keep only create, edit, delete, and call-agent actions.");
+    expect(markup).toContain('aria-label="Task actions"');
+    expect(markup).not.toContain('aria-label="Open task List the next three product decisions"');
   });
 
   /**

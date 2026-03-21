@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { featureFlags } from "@/features/feature-flags";
+
 import { workspaceSeed } from "./mock-data";
 import {
   buildGlobalSearchResults,
@@ -22,17 +24,14 @@ describe("global search", () => {
    */
   it("builds searchable results for tasks, projects, and initiatives", () => {
     const results = buildSeedResults();
+    const expectedEntityLabels = featureFlags.initiatives
+      ? ["Task", "Task", "Task", "Project", "Project", "Project", "Initiative"]
+      : ["Task", "Task", "Task", "Project", "Project", "Project"];
 
-    expect(results).toHaveLength(7);
-    expect(results.map((result) => readGlobalSearchEntityLabel(result.entityType))).toEqual([
-      "Task",
-      "Task",
-      "Task",
-      "Project",
-      "Project",
-      "Project",
-      "Initiative",
-    ]);
+    expect(results).toHaveLength(expectedEntityLabels.length);
+    expect(results.map((result) => readGlobalSearchEntityLabel(result.entityType))).toEqual(
+      expectedEntityLabels,
+    );
   });
 
   /**
@@ -53,12 +52,11 @@ describe("global search", () => {
       "task-2",
       "project-1",
     ]);
-    expect(filterGlobalSearchResults(results, "product launch").map((result) => result.id)).toEqual([
-      "task-1",
-      "task-2",
-      "project-1",
-      "initiative-1",
-    ]);
+    expect(filterGlobalSearchResults(results, "product launch").map((result) => result.id)).toEqual(
+      featureFlags.initiatives
+        ? ["task-1", "task-2", "project-1", "initiative-1"]
+        : ["task-1", "task-2", "project-1"],
+    );
   });
 
   /**
@@ -68,9 +66,9 @@ describe("global search", () => {
   it("matches initiative results by description text", () => {
     const results = buildSeedResults();
 
-    expect(filterGlobalSearchResults(results, "marketing").map((result) => result.id)).toEqual([
-      "initiative-1",
-    ]);
+    expect(filterGlobalSearchResults(results, "marketing").map((result) => result.id)).toEqual(
+      featureFlags.initiatives ? ["initiative-1"] : [],
+    );
   });
 
   /**
@@ -151,6 +149,11 @@ describe("global search", () => {
   it("maps initiative selections into the initiatives view", () => {
     const results = buildSeedResults();
     const initiativeResult = results.find((candidate) => candidate.id === "initiative-1");
+
+    if (!featureFlags.initiatives) {
+      expect(initiativeResult).toBeUndefined();
+      return;
+    }
 
     expect(initiativeResult).toBeDefined();
     expect(resolveGlobalSearchSelection(initiativeResult!, workspaceSeed)).toEqual({

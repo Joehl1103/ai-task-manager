@@ -352,6 +352,24 @@ export function WorkspaceApp() {
   }, [activeMenu]);
 
   /**
+   * Clears project-detail task drill-down state when the selected task no longer belongs to the
+   * active project, such as after reassignment or cross-project navigation.
+   */
+  useEffect(() => {
+    if (activeMenu !== "projects" || !selectedProjectId || !selectedTaskId) {
+      return;
+    }
+
+    const activeTask = readSelectedTask(workspace.tasks, selectedTaskId);
+
+    if (activeTask && activeTask.projectId === selectedProjectId) {
+      return;
+    }
+
+    clearTaskFocus();
+  }, [activeMenu, selectedProjectId, selectedTaskId, workspace.tasks]);
+
+  /**
    * Resets the highlighted search row whenever the query changes so Enter always targets the
    * first visible match by default.
    */
@@ -579,6 +597,10 @@ export function WorkspaceApp() {
 
     // If in inbox and task was assigned to a project, return to overview
     if (activeMenu === "inbox" && editProject !== "") {
+      setSelectedTaskId(null);
+    }
+
+    if (activeMenu === "projects" && selectedProjectId !== null && editProject !== selectedProjectId) {
       setSelectedTaskId(null);
     }
 
@@ -1277,9 +1299,15 @@ export function WorkspaceApp() {
           <ProjectDetailView
             activeProviderLabel={activeProviderLabel}
             activeProviderModel={activeProviderSettings.model}
+            editDetails={editDetails}
+            editingTaskId={editingTaskId}
+            editProject={editProject}
+            editTags={editTags}
+            editTitle={editTitle}
             initiatives={workspace.initiatives}
             onAddTask={handleAddTaskFromProject}
             onBack={() => setSelectedProjectId(null)}
+            onCancelEdit={handleCancelEdit}
             onDeleteProject={handleDeleteProject}
             onDeleteThreadMessage={(projectId, messageId) =>
               handleDeleteThreadMessage(
@@ -1290,13 +1318,37 @@ export function WorkspaceApp() {
                 messageId,
               )
             }
+            onDeleteTask={handleDeleteTask}
+            onDeleteTaskThreadMessage={(taskId, messageId) =>
+              handleDeleteThreadMessage(
+                {
+                  ownerType: "task",
+                  ownerId: taskId,
+                },
+                messageId,
+              )
+            }
             onOpenInitiative={handleSelectInitiative}
+            onOpenTask={handleOpenTask}
+            onReturnToOverview={handleReturnToOverview}
+            onSaveEdit={handleSaveEdit}
             onSendThreadMessage={(projectId) =>
               handleSendThreadMessage({
                 ownerType: "project",
                 ownerId: projectId,
               })
             }
+            onSendTaskThreadMessage={(taskId) =>
+              handleSendThreadMessage({
+                ownerType: "task",
+                ownerId: taskId,
+              })
+            }
+            onSetEditDetails={setEditDetails}
+            onSetEditProject={setEditProject}
+            onSetEditTags={setEditTags}
+            onSetEditTitle={setEditTitle}
+            onStartEdit={handleStartEdit}
             onThreadDraftChange={(projectId, message) =>
               handleThreadDraftChange(
                 {
@@ -1306,19 +1358,36 @@ export function WorkspaceApp() {
                 message,
               )
             }
+            onTaskThreadDraftChange={(taskId, message) =>
+              handleThreadDraftChange(
+                {
+                  ownerType: "task",
+                  ownerId: taskId,
+                },
+                message,
+              )
+            }
             onUpdateProject={handleUpdateProject}
+            pendingTaskId={
+              pendingThreadOwnerKey?.startsWith("task:")
+                ? pendingThreadOwnerKey.slice("task:".length)
+                : null
+            }
             pendingThreadId={
               pendingThreadOwnerKey?.startsWith("project:")
                 ? pendingThreadOwnerKey.slice("project:".length)
                 : null
             }
             project={selectedProject}
+            projects={visibleProjects}
             readThreadDraft={(projectId) =>
               readThreadDraft(threadDrafts, {
                 ownerType: "project",
                 ownerId: projectId,
               })
             }
+            selectedTask={selectedTask}
+            selectedThreadDraft={selectedThreadDraft}
             tasks={workspace.tasks}
           />
         );

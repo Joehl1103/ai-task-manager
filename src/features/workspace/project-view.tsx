@@ -21,6 +21,7 @@ import {
   isPermanentProjectId,
   supportsProjectThread,
 } from "@/features/workspace/projects";
+import { collectTaskTags, TaskDrillDown } from "@/features/workspace/tasks";
 import {
   type Initiative,
   type Project,
@@ -216,18 +217,40 @@ export function ProjectView({
 interface ProjectDetailViewProps {
   activeProviderLabel: string;
   activeProviderModel: string;
+  editDetails: string;
+  editingTaskId: string | null;
+  editProject: string;
+  editTags: string;
+  editTitle: string;
   initiatives: Initiative[];
   onAddTask: (data: { title: string; details: string; projectId: string; tags: string[] }) => void;
   onBack: () => void;
+  onCancelEdit: () => void;
   onDeleteProject: (projectId: string) => void;
   onDeleteThreadMessage: (projectId: string, messageId: string) => void;
+  onDeleteTask: (taskId: string) => void;
+  onDeleteTaskThreadMessage: (taskId: string, messageId: string) => void;
   onOpenInitiative: (initiativeId: string) => void;
+  onOpenTask: (taskId: string) => void;
+  onReturnToOverview: () => void;
+  onSaveEdit: (taskId: string) => void;
   onSendThreadMessage: (projectId: string) => void;
+  onSendTaskThreadMessage: (taskId: string) => void;
+  onSetEditDetails: (value: string) => void;
+  onSetEditProject: (value: string) => void;
+  onSetEditTags: (value: string) => void;
+  onSetEditTitle: (value: string) => void;
+  onStartEdit: (taskId: string) => void;
   onThreadDraftChange: (projectId: string, message: string) => void;
+  onTaskThreadDraftChange: (taskId: string, message: string) => void;
   onUpdateProject: (data: { id: string; name: string; initiativeId: string; deadline: string }) => void;
+  pendingTaskId: string | null;
   pendingThreadId: string | null;
   project: Project | null;
+  projects: Project[];
   readThreadDraft: (projectId: string) => ThreadDraft;
+  selectedTask: Task | null;
+  selectedThreadDraft: ThreadDraft;
   tasks: Task[];
 }
 
@@ -237,18 +260,40 @@ interface ProjectDetailViewProps {
 export function ProjectDetailView({
   activeProviderLabel,
   activeProviderModel,
+  editDetails,
+  editingTaskId,
+  editProject,
+  editTags,
+  editTitle,
   initiatives,
   onAddTask,
   onBack,
+  onCancelEdit,
   onDeleteProject,
   onDeleteThreadMessage,
+  onDeleteTask,
+  onDeleteTaskThreadMessage,
   onOpenInitiative,
+  onOpenTask,
+  onReturnToOverview,
+  onSaveEdit,
   onSendThreadMessage,
+  onSendTaskThreadMessage,
+  onSetEditDetails,
+  onSetEditProject,
+  onSetEditTags,
+  onSetEditTitle,
+  onStartEdit,
   onThreadDraftChange,
+  onTaskThreadDraftChange,
   onUpdateProject,
+  pendingTaskId,
   pendingThreadId,
   project,
+  projects,
   readThreadDraft,
+  selectedTask,
+  selectedThreadDraft,
   tasks,
 }: ProjectDetailViewProps) {
   if (!project) {
@@ -266,19 +311,41 @@ export function ProjectDetailView({
     <ProjectDetailContent
       activeProviderLabel={activeProviderLabel}
       activeProviderModel={activeProviderModel}
+      editDetails={editDetails}
+      editingTaskId={editingTaskId}
+      editProject={editProject}
+      editTags={editTags}
+      editTitle={editTitle}
       initiatives={initiatives}
       key={readProjectDetailKey(project)}
       onAddTask={onAddTask}
       onBack={onBack}
+      onCancelEdit={onCancelEdit}
       onDeleteProject={onDeleteProject}
       onDeleteThreadMessage={onDeleteThreadMessage}
+      onDeleteTask={onDeleteTask}
+      onDeleteTaskThreadMessage={onDeleteTaskThreadMessage}
       onOpenInitiative={onOpenInitiative}
+      onOpenTask={onOpenTask}
+      onReturnToOverview={onReturnToOverview}
+      onSaveEdit={onSaveEdit}
       onSendThreadMessage={onSendThreadMessage}
+      onSendTaskThreadMessage={onSendTaskThreadMessage}
+      onSetEditDetails={onSetEditDetails}
+      onSetEditProject={onSetEditProject}
+      onSetEditTags={onSetEditTags}
+      onSetEditTitle={onSetEditTitle}
+      onStartEdit={onStartEdit}
       onThreadDraftChange={onThreadDraftChange}
+      onTaskThreadDraftChange={onTaskThreadDraftChange}
       onUpdateProject={onUpdateProject}
+      pendingTaskId={pendingTaskId}
       pendingThreadId={pendingThreadId}
       project={project}
+      projects={projects}
       readThreadDraft={readThreadDraft}
+      selectedTask={selectedTask}
+      selectedThreadDraft={selectedThreadDraft}
       tasks={tasks}
     />
   );
@@ -292,18 +359,40 @@ interface ProjectDetailContentProps
 function ProjectDetailContent({
   activeProviderLabel,
   activeProviderModel,
+  editDetails,
+  editingTaskId,
+  editProject,
+  editTags,
+  editTitle,
   initiatives,
   onAddTask,
   onBack,
+  onCancelEdit,
   onDeleteProject,
   onDeleteThreadMessage,
+  onDeleteTask,
+  onDeleteTaskThreadMessage,
   onOpenInitiative,
+  onOpenTask,
+  onReturnToOverview,
+  onSaveEdit,
   onSendThreadMessage,
+  onSendTaskThreadMessage,
+  onSetEditDetails,
+  onSetEditProject,
+  onSetEditTags,
+  onSetEditTitle,
+  onStartEdit,
   onThreadDraftChange,
+  onTaskThreadDraftChange,
   onUpdateProject,
+  pendingTaskId,
   pendingThreadId,
   project,
+  projects,
   readThreadDraft,
+  selectedTask,
+  selectedThreadDraft,
   tasks,
 }: ProjectDetailContentProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -320,8 +409,12 @@ function ProjectDetailContent({
   const linkedInitiative = activeProject.initiativeId
     ? initiatives.find((initiative) => initiative.id === activeProject.initiativeId) ?? null
     : null;
+  const visibleProjects = filterVisibleProjects(projects);
   const childTasks = tasks.filter((task) => task.projectId === activeProject.id);
+  const allTaskTags = collectTaskTags(tasks);
   const canUseProjectThread = supportsProjectThread(activeProject.id);
+  const selectedProjectTask =
+    selectedTask && selectedTask.projectId === activeProject.id ? selectedTask : null;
 
   function handleSaveProject() {
     if (!editName.trim()) {
@@ -465,19 +558,23 @@ function ProjectDetailContent({
           <div>
             <h2 className="text-xl font-semibold">Tasks in this project</h2>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
-              Keep the task list readable and the project itself in the foreground.
+              {selectedProjectTask
+                ? "Stay inside the current project while reviewing and editing one task."
+                : "Keep the task list readable and the project itself in the foreground."}
             </p>
           </div>
-          <Button
-            onClick={() => setIsTaskComposerOpen((currentValue) => !currentValue)}
-            variant={isTaskComposerOpen ? "subtle" : "ghost"}
-          >
-            <Plus className="size-4" />
-            Add task
-          </Button>
+          {!selectedProjectTask ? (
+            <Button
+              onClick={() => setIsTaskComposerOpen((currentValue) => !currentValue)}
+              variant={isTaskComposerOpen ? "subtle" : "ghost"}
+            >
+              <Plus className="size-4" />
+              Add task
+            </Button>
+          ) : null}
         </div>
 
-        {isTaskComposerOpen ? (
+        {!selectedProjectTask && isTaskComposerOpen ? (
           <div className="mt-4 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
             <Input
               autoFocus
@@ -514,41 +611,45 @@ function ProjectDetailContent({
           </div>
         ) : null}
 
-        {childTasks.length === 0 ? (
+        {selectedProjectTask ? (
+          <TaskDrillDown
+            activeProviderLabel={activeProviderLabel}
+            activeProviderModel={activeProviderModel}
+            allTags={allTaskTags}
+            backLabel="Back to project tasks"
+            editDetails={editDetails}
+            editingTaskId={editingTaskId}
+            editProject={editProject}
+            editTags={editTags}
+            editTitle={editTitle}
+            onCancelEdit={onCancelEdit}
+            onDeleteTask={onDeleteTask}
+            onDeleteThreadMessage={onDeleteTaskThreadMessage}
+            onReturnToOverview={onReturnToOverview}
+            onSaveEdit={onSaveEdit}
+            onSendThreadMessage={onSendTaskThreadMessage}
+            onSetEditDetails={onSetEditDetails}
+            onSetEditProject={onSetEditProject}
+            onSetEditTags={onSetEditTags}
+            onSetEditTitle={onSetEditTitle}
+            onStartEdit={onStartEdit}
+            onThreadDraftChange={onTaskThreadDraftChange}
+            pendingTaskId={pendingTaskId}
+            projects={visibleProjects}
+            task={selectedProjectTask}
+            threadDraft={selectedThreadDraft}
+          />
+        ) : childTasks.length === 0 ? (
           <p className="mt-4 text-sm text-[color:var(--muted)]">No tasks yet for this project.</p>
         ) : (
           <div className="mt-4">
             {childTasks.map((task, index) => (
-              <div key={task.id}>
-                {index > 0 ? <Separator /> : null}
-                <article className="py-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-medium text-[color:var(--foreground)]">
-                        {task.title}
-                      </h3>
-                      {task.details ? (
-                        <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-                          {task.details}
-                        </p>
-                      ) : (
-                        <p className="mt-2 text-sm text-[color:var(--muted)]">No details yet.</p>
-                      )}
-                    </div>
-                    <div className="shrink-0 text-sm text-[color:var(--muted)]">
-                      {task.tags.length > 0 ? (
-                        <div className="flex flex-wrap justify-start gap-x-3 gap-y-1 lg:justify-end">
-                          {task.tags.map((tag) => (
-                            <span key={tag}>#{tag}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span>No tags</span>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              </div>
+              <ProjectTaskRow
+                key={task.id}
+                onOpenTask={onOpenTask}
+                showsSeparator={index > 0}
+                task={task}
+              />
             ))}
           </div>
         )}
@@ -596,6 +697,59 @@ function ProjectDetailContent({
           ) : null}
         </section>
       ) : null}
+    </div>
+  );
+}
+
+interface ProjectTaskRowProps {
+  onOpenTask: (taskId: string) => void;
+  showsSeparator: boolean;
+  task: Task;
+}
+
+/**
+ * Keeps project detail task entries lightweight while making it obvious they open a deeper task
+ * drill-down inside the same project page.
+ */
+function ProjectTaskRow({ onOpenTask, showsSeparator, task }: ProjectTaskRowProps) {
+  return (
+    <div>
+      {showsSeparator ? <Separator /> : null}
+      <button
+        aria-label={`Open task ${task.title}`}
+        className="group block w-full py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
+        onClick={() => onOpenTask(task.id)}
+        type="button"
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h3 className="text-sm font-medium text-[color:var(--foreground)]">
+              {task.title}
+            </h3>
+            {task.details ? (
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
+                {task.details}
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-[color:var(--muted)]">No details yet.</p>
+            )}
+          </div>
+
+          <div className="shrink-0 text-sm text-[color:var(--muted)]">
+            {task.tags.length > 0 ? (
+              <div className="flex flex-wrap justify-start gap-x-3 gap-y-1 lg:justify-end">
+                {task.tags.map((tag) => (
+                  <span key={tag}>#{tag}</span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-xs font-medium uppercase tracking-[0.16em] transition-colors group-hover:text-[color:var(--foreground)]">
+                Open
+              </span>
+            )}
+          </div>
+        </div>
+      </button>
     </div>
   );
 }

@@ -8,7 +8,7 @@ This app lives at the repository root (`ai-task-manager/`).
 
 - One compact overview list holding all tasks
 - One quieter inbox composer with inline tag autocomplete plus `Cmd+N` and `Cmd+Enter` keyboard flows
-- One drill-down view for a selected task
+- One shared drill-down view for a selected task across inbox, task lists, and project detail
 - A thin desktop top menu that opens from the current-view label
 - Theme options in Configuration with 6 paired day/night UI directions, including Relay Original
 - Add a task
@@ -72,7 +72,7 @@ The app is the primary project in this repository.
 - `src/features/workspace/agent-configuration-view.tsx`: provider setup view
 - `src/features/workspace/mock-data.ts`: starter tasks and sample agent history
 - `src/features/workspace/core/*`: shared workspace types
-- `src/features/workspace/tasks/*`: task operations, grouping, overview, and confirmation helpers
+- `src/features/workspace/tasks/*`: shared task editor, drill-down, tag-combobox, operations, grouping, overview, and confirmation helpers
 - `src/features/workspace/projects/*`: inbox-system-project helpers, project operations, and selection helpers
 - `src/features/workspace/initiatives/*`: initiative operations
 - `src/features/workspace/providers/*`: provider config and API helpers

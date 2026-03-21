@@ -1,0 +1,168 @@
+"use client";
+
+import { type KeyboardEvent, useEffect, useRef } from "react";
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { type Project } from "@/features/workspace/core";
+import { inboxPickerLabel, readProjectPickerValue } from "@/features/workspace/projects";
+import { cn } from "@/lib/utils";
+
+import {
+  formatTaskTagString,
+  parseTaskTagString,
+  TaskTagCombobox,
+} from "./task-tag-combobox";
+
+interface TaskEditorFieldsProps {
+  allTags: string[];
+  details: string;
+  focusTitleInputSignal?: number;
+  isSubmitDisabled?: boolean;
+  onCancel?: () => void;
+  onDetailsChange: (value: string) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
+  onProjectChange: (value: string) => void;
+  onSubmit?: () => void;
+  onTagsChange: (value: string) => void;
+  onTitleChange: (value: string) => void;
+  projectId: string;
+  projects: Project[];
+  submitHint?: string;
+  submitLabel?: string;
+  tags: string;
+  title: string;
+}
+
+/**
+ * Reuses the issue-24 no-chrome task input language for any task create or edit surface.
+ */
+export function TaskEditorFields({
+  allTags,
+  details,
+  focusTitleInputSignal,
+  isSubmitDisabled = false,
+  onCancel,
+  onDetailsChange,
+  onKeyDown,
+  onProjectChange,
+  onSubmit,
+  onTagsChange,
+  onTitleChange,
+  projectId,
+  projects,
+  submitHint,
+  submitLabel,
+  tags,
+  title,
+}: TaskEditorFieldsProps) {
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const selectedTags = parseTaskTagString(tags);
+
+  /**
+   * Focuses the title input on open and on later explicit refocus requests like Cmd+N.
+   */
+  useEffect(() => {
+    titleInputRef.current?.focus();
+  }, [focusTitleInputSignal]);
+
+  /**
+   * Preserves the shared Cmd/Ctrl+Enter submit gesture while still allowing parent-specific
+   * keyboard behavior like Escape-to-collapse.
+   */
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+
+      if (!isSubmitDisabled) {
+        onSubmit?.();
+      }
+
+      return;
+    }
+
+    onKeyDown?.(event);
+  }
+
+  return (
+    <div
+      className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)]/90 px-3 py-2.5"
+      onKeyDown={handleKeyDown}
+    >
+      <div className="flex items-start gap-3">
+        <input
+          aria-label="Task title"
+          className={cn(
+            "min-w-0 flex-1 border-0 border-b border-[color:var(--border)] bg-transparent px-0 pb-2 pt-0 text-[13px] font-medium text-[color:var(--foreground)] shadow-none outline-none transition-colors",
+            "placeholder:text-[color:var(--muted)] placeholder:opacity-70 focus:border-[color:var(--border-strong)]",
+          )}
+          onChange={(event) => onTitleChange(event.target.value)}
+          placeholder="Task title"
+          ref={titleInputRef}
+          value={title}
+        />
+
+        <TaskTagCombobox
+          allTags={allTags}
+          onChange={(nextTags) => onTagsChange(formatTaskTagString(nextTags))}
+          selectedTags={selectedTags}
+        />
+      </div>
+
+      <Textarea
+        aria-label="Task details"
+        className="mt-2 min-h-20 resize-none rounded-none border-0 bg-transparent px-0 py-0 text-[12px] leading-5 focus-visible:border-0 focus-visible:bg-transparent focus-visible:ring-0"
+        onChange={(event) => onDetailsChange(event.target.value)}
+        placeholder="Add details..."
+        value={details}
+      />
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
+        <Select
+          onValueChange={(value) => onProjectChange(value === "_inbox" ? "" : value)}
+          value={readProjectPickerValue(projectId) || "_inbox"}
+        >
+          <SelectTrigger
+            aria-label="Project"
+            className="h-8 w-auto min-w-[11rem] rounded-none border-0 bg-transparent px-0 py-0 text-xs text-[color:var(--muted)] focus:bg-transparent focus:ring-0"
+          >
+            <SelectValue placeholder={inboxPickerLabel} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_inbox">{inboxPickerLabel}</SelectItem>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.id}>
+                {project.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="flex items-center gap-3">
+          {submitHint ? (
+            <span className="text-[11px] text-[color:var(--muted)]">{submitHint}</span>
+          ) : null}
+          {onCancel ? (
+            <button
+              className="text-[11px] text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+              onClick={onCancel}
+              type="button"
+            >
+              Cancel
+            </button>
+          ) : null}
+          {submitLabel && onSubmit ? (
+            <button
+              className="text-[11px] font-medium text-[color:var(--foreground)] transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={isSubmitDisabled}
+              onClick={onSubmit}
+              type="button"
+            >
+              {submitLabel}
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}

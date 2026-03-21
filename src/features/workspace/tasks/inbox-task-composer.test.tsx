@@ -5,14 +5,13 @@ import { workspaceSeed } from "@/features/workspace/mock-data";
 import { filterVisibleProjects } from "@/features/workspace/projects";
 
 import {
-  collectInboxComposerTags,
   InboxTaskComposer,
-  readInboxTagSuggestions,
 } from "./inbox-task-composer";
+import { collectTaskTags, readTaskTagSuggestions } from "./task-tag-combobox";
 
 function buildComposerProps() {
   return {
-    allTags: collectInboxComposerTags(workspaceSeed.tasks),
+    allTags: collectTaskTags(workspaceSeed.tasks),
     focusTitleInputSignal: 0,
     isExpanded: false,
     newTaskDetails: "",
@@ -36,7 +35,7 @@ describe("inbox task composer helpers", () => {
    * duplicate pills just because a tag was cased differently elsewhere.
    */
   it("collects unique workspace tags case-insensitively", () => {
-    const tags = collectInboxComposerTags([
+    const tags = collectTaskTags([
       ...workspaceSeed.tasks,
       {
         ...workspaceSeed.tasks[0],
@@ -53,7 +52,7 @@ describe("inbox task composer helpers", () => {
    */
   it("filters tag suggestions case-insensitively and removes already selected tags", () => {
     expect(
-      readInboxTagSuggestions(
+      readTaskTagSuggestions(
         ["planning", "design", "high-priority", "review"],
         "ig",
         ["planning"],
@@ -61,7 +60,7 @@ describe("inbox task composer helpers", () => {
     ).toEqual(["design", "high-priority"]);
 
     expect(
-      readInboxTagSuggestions(
+      readTaskTagSuggestions(
         ["planning", "design", "high-priority", "review"],
         "",
         ["design", "review"],

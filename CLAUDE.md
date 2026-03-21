@@ -60,6 +60,7 @@ Current focus:
 - Let the user compare six paired day/night visual directions from Configuration, including the original starter theme
 - Preserve add, edit, delete, task-level agent calls, and deletion of saved agent contributions
 - Keep the main overview compact and move agent history into task drill-down
+- Keep the selected-task drill-down and editing language consistent across inbox, task lists, and project detail
 - Keep configuration separate from the task workflow
 - Keep the agent model to one built-in path, not multiple agent types
 - Support local OpenAI configuration for real task-level agent calls first

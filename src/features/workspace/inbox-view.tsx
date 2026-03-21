@@ -1,27 +1,16 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import {
   filterVisibleProjects,
-  inboxPickerLabel,
-  inboxProjectName,
-  isHiddenInboxProjectId,
   isTaskInInbox,
-  readProjectPickerValue,
 } from "@/features/workspace/projects";
 import {
-  collectInboxComposerTags,
+  collectTaskTags,
   InboxTaskComposer,
-  TaskDetailActionsMenu,
+  TaskDrillDown,
   TaskOverviewActionsMenu,
 } from "@/features/workspace/tasks";
-import { AgentThreadPanel, readThreadComposerPlaceholder } from "@/features/workspace/threads";
 import { type Project, type Task, type ThreadDraft } from "@/features/workspace/core";
 
 interface InboxViewProps {
@@ -110,7 +99,7 @@ export function InboxView({
 }: InboxViewProps) {
   const visibleProjects = filterVisibleProjects(projects);
   const inboxTasks = tasks.filter((task) => isTaskInInbox(task));
-  const allTags = collectInboxComposerTags(tasks);
+  const allTags = collectTaskTags(tasks);
 
   function handleExpandComposer() {
     onSetNewTaskProject("");
@@ -174,9 +163,10 @@ export function InboxView({
 
       <section className="mt-6">
         {selectedTask ? (
-          <InboxTaskDrillDown
+          <TaskDrillDown
             activeProviderLabel={activeProviderLabel}
             activeProviderModel={activeProviderModel}
+            allTags={allTags}
             threadDraft={selectedThreadDraft}
             editDetails={editDetails}
             editingTaskId={editingTaskId}
@@ -292,162 +282,5 @@ function InboxTaskRow({
 
       {showsSeparator ? <Separator className="mt-2" /> : null}
     </li>
-  );
-}
-
-interface InboxTaskDrillDownProps {
-  task: Task;
-  projects: Project[];
-  editingTaskId: string | null;
-  editTitle: string;
-  editDetails: string;
-  editProject: string;
-  editTags: string;
-  pendingTaskId: string | null;
-  activeProviderLabel: string;
-  activeProviderModel: string;
-  threadDraft: ThreadDraft;
-  onReturnToOverview: () => void;
-  onStartEdit: (taskId: string) => void;
-  onSaveEdit: (taskId: string) => void;
-  onCancelEdit: () => void;
-  onDeleteThreadMessage: (taskId: string, messageId: string) => void;
-  onDeleteTask: (taskId: string) => void;
-  onSetEditTitle: (value: string) => void;
-  onSetEditDetails: (value: string) => void;
-  onSetEditProject: (value: string) => void;
-  onSetEditTags: (value: string) => void;
-  onThreadDraftChange: (taskId: string, message: string) => void;
-  onSendThreadMessage: (taskId: string) => void;
-}
-
-/**
- * Renders the drill-down view for a selected inbox task.
- */
-function InboxTaskDrillDown({
-  task,
-  projects,
-  editingTaskId,
-  editTitle,
-  editDetails,
-  editProject,
-  editTags,
-  pendingTaskId,
-  activeProviderLabel,
-  activeProviderModel,
-  threadDraft,
-  onReturnToOverview,
-  onStartEdit,
-  onSaveEdit,
-  onCancelEdit,
-  onDeleteThreadMessage,
-  onDeleteTask,
-  onSetEditTitle,
-  onSetEditDetails,
-  onSetEditProject,
-  onSetEditTags,
-  onThreadDraftChange,
-  onSendThreadMessage,
-}: InboxTaskDrillDownProps) {
-  const isEditing = editingTaskId === task.id;
-  const isCallingTask = pendingTaskId === task.id;
-  const projectName = isHiddenInboxProjectId(task.projectId)
-    ? inboxProjectName
-    : projects.find((project) => project.id === task.projectId)?.name ?? null;
-
-  return (
-    <article className="mt-2 space-y-4">
-      <Button onClick={onReturnToOverview} size="sm" variant="ghost">
-        <ArrowLeft className="size-4" />
-        Back
-      </Button>
-
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-xl font-semibold">{task.title}</h2>
-          {projectName ? (
-            <p className="text-xs text-[color:var(--muted)]">{projectName}</p>
-          ) : null}
-          {task.tags.length > 0 ? (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {task.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-[#9ca3af] px-2.5 py-1 text-xs font-medium text-white">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
-        <TaskDetailActionsMenu
-          isEditing={isEditing}
-          onDeleteTask={() => onDeleteTask(task.id)}
-          onStartEdit={() => onStartEdit(task.id)}
-        />
-      </div>
-
-      {isEditing ? (
-        <div className="space-y-3">
-          <Input
-            className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
-            onChange={(event) => onSetEditTitle(event.target.value)}
-            placeholder="Task title"
-            value={editTitle}
-          />
-          <Select
-            onValueChange={(value) => onSetEditProject(value === "_inbox" ? "" : value)}
-            value={readProjectPickerValue(editProject) || "_inbox"}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={inboxPickerLabel} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_inbox">{inboxPickerLabel}</SelectItem>
-              {projects.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
-            onChange={(event) => onSetEditTags(event.target.value)}
-            placeholder="Tags (optional, comma-separated)"
-            value={editTags}
-          />
-          <Textarea
-            className="rounded-none border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
-            onChange={(event) => onSetEditDetails(event.target.value)}
-            placeholder="Task details"
-            value={editDetails}
-          />
-          <div className="flex justify-end gap-2">
-            <Button onClick={onCancelEdit} size="sm" variant="ghost">
-              Cancel
-            </Button>
-            <Button onClick={() => onSaveEdit(task.id)} size="sm">
-              Save
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-[color:var(--muted)]">{task.details || "No details yet."}</p>
-      )}
-
-      <AgentThreadPanel
-        activeProviderLabel={activeProviderLabel}
-        activeProviderModel={activeProviderModel}
-        composerPlaceholder={readThreadComposerPlaceholder({
-          ownerType: "task",
-          ownerId: task.id,
-        })}
-        draft={threadDraft}
-        isPending={isCallingTask}
-        onDeleteMessage={(messageId) => onDeleteThreadMessage(task.id, messageId)}
-        onDraftChange={(message) => onThreadDraftChange(task.id, message)}
-        onSend={() => onSendThreadMessage(task.id)}
-        thread={task.agentThread}
-      />
-    </article>
   );
 }

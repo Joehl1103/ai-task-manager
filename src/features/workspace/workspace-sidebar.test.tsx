@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { featureFlags } from "@/features/feature-flags";
+
 import { workspaceSeed } from "./mock-data";
 import { WorkspaceSidebar } from "@/features/workspace/navigation";
 
@@ -30,11 +32,16 @@ describe("workspace sidebar", () => {
     expect(markup).toContain("workspace-sidebar-shell");
     expect(markup).toContain("Inbox");
     expect(markup).toContain("Projects");
-    expect(markup).toContain("Initiatives");
     expect(markup).toContain("Configuration");
     expect(markup).toContain("Relay MVP");
-    expect(markup).toContain("Q2 Product Launch");
-    expect(markup.indexOf("Configuration")).toBeGreaterThan(markup.indexOf("Initiatives"));
+    if (featureFlags.initiatives) {
+      expect(markup).toContain("Initiatives");
+      expect(markup).toContain("Q2 Product Launch");
+      expect(markup.indexOf("Configuration")).toBeGreaterThan(markup.indexOf("Initiatives"));
+    } else {
+      expect(markup).not.toContain("Initiatives");
+      expect(markup).not.toContain("Q2 Product Launch");
+    }
     expect(markup).not.toContain("size-1.5 shrink-0 rounded-full");
     expect(markup).not.toContain(">Relay<");
     expect(markup).not.toContain(">Workspace<");
