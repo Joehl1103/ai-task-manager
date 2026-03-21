@@ -12,11 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   filterVisibleProjects,
   isPermanentProjectId,
+  supportsProjectThread,
 } from "@/features/workspace/projects";
 import {
   type Initiative,
@@ -93,18 +95,22 @@ export function ProjectView({
             placeholder="Project name"
             value={newName}
           />
-          <select
-            className="w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
-            onChange={(event) => setNewInitiativeId(event.target.value)}
-            value={newInitiativeId}
+          <Select
+            onValueChange={(value) => setNewInitiativeId(value === "_none" ? "" : value)}
+            value={newInitiativeId || "_none"}
           >
-            <option value="">No initiative</option>
-            {initiatives.map((initiative) => (
-              <option key={initiative.id} value={initiative.id}>
-                {initiative.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="No initiative" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_none">No initiative</SelectItem>
+              {initiatives.map((initiative) => (
+                <SelectItem key={initiative.id} value={initiative.id}>
+                  {initiative.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             onChange={(event) => setNewDeadline(event.target.value)}
             placeholder="Deadline"
@@ -141,6 +147,7 @@ export function ProjectView({
               ? initiatives.find((initiative) => initiative.id === project.initiativeId) ?? null
               : null;
             const projectTasks = tasks.filter((task) => task.projectId === project.id);
+            const canUseProjectThread = supportsProjectThread(project.id);
 
             return (
               <div key={project.id}>
@@ -167,9 +174,11 @@ export function ProjectView({
                             ? `Due ${formatDeadline(project.deadline)}`
                             : "No deadline"}
                         </p>
-                        <p className="text-xs text-[color:var(--muted)]">
-                          {project.agentThread.messages.length} messages
-                        </p>
+                        {canUseProjectThread ? (
+                          <p className="text-xs text-[color:var(--muted)]">
+                            {project.agentThread.messages.length} messages
+                          </p>
+                        ) : null}
                       </div>
 
                       {projectTasks.length > 0 ? (
@@ -307,6 +316,7 @@ function ProjectDetailContent({
     ? initiatives.find((initiative) => initiative.id === activeProject.initiativeId) ?? null
     : null;
   const childTasks = tasks.filter((task) => task.projectId === activeProject.id);
+  const canUseProjectThread = supportsProjectThread(activeProject.id);
 
   function handleSaveProject() {
     if (!editName.trim()) {
@@ -366,7 +376,9 @@ function ProjectDetailContent({
             <span>
               {linkedInitiative ? `Initiative: ${linkedInitiative.name}` : "No initiative"}
             </span>
-            <span>{activeProject.agentThread.messages.length} saved messages</span>
+            {canUseProjectThread ? (
+              <span>{activeProject.agentThread.messages.length} saved messages</span>
+            ) : null}
           </div>
           {linkedInitiative ? (
             <div className="mt-4">
@@ -398,18 +410,22 @@ function ProjectDetailContent({
             placeholder="Project name"
             value={editName}
           />
-          <select
-            className="w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
-            onChange={(event) => setEditInitiativeId(event.target.value)}
-            value={editInitiativeId}
+          <Select
+            onValueChange={(value) => setEditInitiativeId(value === "_none" ? "" : value)}
+            value={editInitiativeId || "_none"}
           >
-            <option value="">No initiative</option>
-            {initiatives.map((initiative) => (
-              <option key={initiative.id} value={initiative.id}>
-                {initiative.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="No initiative" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_none">No initiative</SelectItem>
+              {initiatives.map((initiative) => (
+                <SelectItem key={initiative.id} value={initiative.id}>
+                  {initiative.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             onChange={(event) => setEditDeadline(event.target.value)}
             type="date"
@@ -529,46 +545,48 @@ function ProjectDetailContent({
         )}
       </section>
 
-      <section className="pt-6">
-        <Separator className="mb-6" />
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold">Project thread</h2>
-            <p className="mt-1 text-sm text-[color:var(--muted)]">
-              Keep agent context nearby without turning it into another dashboard panel.
-            </p>
+      {canUseProjectThread ? (
+        <section className="pt-6">
+          <Separator className="mb-6" />
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold">Project thread</h2>
+              <p className="mt-1 text-sm text-[color:var(--muted)]">
+                Keep agent context nearby without turning it into another dashboard panel.
+              </p>
+            </div>
+            <Button
+              onClick={() => setIsThreadOpen((currentValue) => !currentValue)}
+              variant="ghost"
+            >
+              {isThreadOpen
+                ? "Hide thread"
+                : `Show thread (${activeProject.agentThread.messages.length})`}
+            </Button>
           </div>
-          <Button
-            onClick={() => setIsThreadOpen((currentValue) => !currentValue)}
-            variant="ghost"
-          >
-            {isThreadOpen
-              ? "Hide thread"
-              : `Show thread (${activeProject.agentThread.messages.length})`}
-          </Button>
-        </div>
 
-        {isThreadOpen ? (
-          <div className="mt-4">
-            <AgentThreadPanel
-              activeProviderLabel={activeProviderLabel}
-              activeProviderModel={activeProviderModel}
-              composerPlaceholder={readThreadComposerPlaceholder({
-                ownerType: "project",
-                ownerId: activeProject.id,
-              })}
-              draft={readThreadDraft(activeProject.id)}
-              isPending={pendingThreadId === activeProject.id}
-              onDeleteMessage={(messageId) =>
-                onDeleteThreadMessage(activeProject.id, messageId)
-              }
-              onDraftChange={(message) => onThreadDraftChange(activeProject.id, message)}
-              onSend={() => onSendThreadMessage(activeProject.id)}
-              thread={activeProject.agentThread}
-            />
-          </div>
-        ) : null}
-      </section>
+          {isThreadOpen ? (
+            <div className="mt-4">
+              <AgentThreadPanel
+                activeProviderLabel={activeProviderLabel}
+                activeProviderModel={activeProviderModel}
+                composerPlaceholder={readThreadComposerPlaceholder({
+                  ownerType: "project",
+                  ownerId: activeProject.id,
+                })}
+                draft={readThreadDraft(activeProject.id)}
+                isPending={pendingThreadId === activeProject.id}
+                onDeleteMessage={(messageId) =>
+                  onDeleteThreadMessage(activeProject.id, messageId)
+                }
+                onDraftChange={(message) => onThreadDraftChange(activeProject.id, message)}
+                onSend={() => onSendThreadMessage(activeProject.id)}
+                thread={activeProject.agentThread}
+              />
+            </div>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -182,18 +183,22 @@ export function TaskManagementView({
               placeholder="Task title"
               value={newTaskTitle}
             />
-            <select
-              className="w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
-              onChange={(e) => onSetNewTaskProject(e.target.value)}
-              value={newTaskProject}
+            <Select
+              onValueChange={(value) => onSetNewTaskProject(value === "_inbox" ? "" : value)}
+              value={newTaskProject || "_inbox"}
             >
-              <option value="">{inboxPickerLabel}</option>
-              {visibleProjects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder={inboxPickerLabel} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_inbox">{inboxPickerLabel}</SelectItem>
+                {visibleProjects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input
               onChange={(event) => onSetNewTaskTags(event.target.value)}
               placeholder="Tags (optional, comma-separated)"
@@ -525,18 +530,22 @@ function TaskDrillDown({
             placeholder="Task title"
             value={editTitle}
           />
-          <select
-            className="w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
-            onChange={(e) => onSetEditProject(e.target.value)}
-            value={readProjectPickerValue(editProject)}
+          <Select
+            onValueChange={(value) => onSetEditProject(value === "_inbox" ? "" : value)}
+            value={readProjectPickerValue(editProject) || "_inbox"}
           >
-            <option value="">{inboxPickerLabel}</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder={inboxPickerLabel} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_inbox">{inboxPickerLabel}</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             className="border-x-0 border-t-0 bg-transparent px-0 focus:ring-0"
             onChange={(event) => onSetEditTags(event.target.value)}

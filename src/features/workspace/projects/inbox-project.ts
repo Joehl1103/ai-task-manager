@@ -52,6 +52,13 @@ export function isPermanentProjectId(projectId: string | null | undefined) {
 }
 
 /**
+ * Limits project-level threads to user-created projects so built-in buckets stay lightweight.
+ */
+export function supportsProjectThread(projectId: string | null | undefined) {
+  return !isPermanentProjectId(projectId);
+}
+
+/**
  * Normalizes blank task assignments into the hidden inbox project id.
  */
 export function normalizeTaskProjectId(projectId: string | null | undefined): string {

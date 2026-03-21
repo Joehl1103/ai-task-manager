@@ -37,6 +37,14 @@ function buildProjectDetailViewProps() {
   } as const;
 }
 
+function buildNoProjectDetailViewProps() {
+  return {
+    ...buildProjectDetailViewProps(),
+    project:
+      workspaceSeed.projects.find((project) => project.id === "project-no-project") ?? null,
+  } as const;
+}
+
 describe("project view", () => {
   /**
    * Keeps the overview centered on compact cards while still previewing child task context.
@@ -79,5 +87,19 @@ describe("project view", () => {
     expect(markup).toContain('data-slot="separator"');
     expect(markup).toContain('class="mt-2 text-2xl font-semibold tracking-tight">Relay MVP</h1>');
     expect(markup).not.toContain("text-3xl");
+  });
+
+  /**
+   * Keeps the built-in No Project bucket lightweight by omitting the project thread UI.
+   */
+  it("does not render a project thread for the no-project bucket", () => {
+    const markup = renderToStaticMarkup(
+      <ProjectDetailView {...buildNoProjectDetailViewProps()} />,
+    );
+
+    expect(markup).toContain("No Project");
+    expect(markup).not.toContain("Project thread");
+    expect(markup).not.toContain("Show thread");
+    expect(markup).not.toContain("saved messages");
   });
 });
