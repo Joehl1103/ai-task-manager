@@ -792,7 +792,7 @@ function renderInlineNodes(nodes: InlineNode[], keyPrefix: string): ReactNode {
     if (node.type === "code") {
       return (
         <code
-          className="rounded bg-[color:var(--surface-muted)] px-1 py-0.5 font-mono text-[0.92em] text-[color:var(--foreground)]"
+          className="rounded bg-[color:var(--surface-muted)] px-1 py-0.5 font-mono text-xs text-[color:var(--foreground)]"
           key={key}
         >
           {node.value}

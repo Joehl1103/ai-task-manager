@@ -27,6 +27,9 @@ describe("workspace theme selector", () => {
     expect(markup).toContain("Citrus Press");
     expect(markup.match(/aria-label="[^"]+ day theme"/g)).toHaveLength(6);
     expect(markup.match(/aria-label="[^"]+ night theme"/g)).toHaveLength(6);
+    expect(markup).toContain('class="text-xs font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]"');
+    expect(markup).not.toContain("text-[11px]");
+    expect(markup).not.toContain("text-[10px]");
   });
 
   /**

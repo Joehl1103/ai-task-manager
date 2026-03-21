@@ -65,7 +65,7 @@ export function ProjectView({
     <div className="space-y-8">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
         </div>
         <Button
           aria-expanded={isComposerExpanded}
@@ -343,7 +343,7 @@ function ProjectDetailContent({
           <p className="mt-5 text-xs font-medium uppercase tracking-[0.24em] text-[color:var(--muted)]">
             Project detail
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">{activeProject.name}</h1>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">{activeProject.name}</h1>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[color:var(--muted)]">
             <span>{readTaskCountLabel(childTasks.length)}</span>
             <span>

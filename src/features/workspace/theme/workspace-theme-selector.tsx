@@ -38,7 +38,7 @@ export function WorkspaceThemeSelector({
       {showHeader ? (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
+            <p className="text-xs font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
               Theme Options
             </p>
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-[color:var(--foreground)]">
@@ -51,7 +51,7 @@ export function WorkspaceThemeSelector({
           </div>
 
           <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] px-4 py-3 shadow-[0_16px_40px_-28px_var(--shadow-color)]">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
               Current Theme
             </p>
             <p className="mt-2 text-sm font-medium text-[color:var(--foreground)]">
@@ -78,7 +78,7 @@ export function WorkspaceThemeSelector({
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
                     Option {String(index + 1).padStart(2, "0")}
                   </p>
                   <h3 className="mt-2 text-sm font-semibold text-[color:var(--foreground)]">
@@ -87,7 +87,7 @@ export function WorkspaceThemeSelector({
                 </div>
 
                 {isActiveTheme ? (
-                  <span className="rounded-full bg-[color:var(--surface-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--muted-strong)]">
+                  <span className="rounded-full bg-[color:var(--surface-muted)] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted-strong)]">
                     Active
                   </span>
                 ) : null}
@@ -187,13 +187,13 @@ function ThemePalettePreview({ label, palette }: ThemePalettePreviewProps) {
     >
       <div className="flex items-center justify-between gap-2">
         <span
-          className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+          className="text-xs font-semibold uppercase tracking-[0.16em]"
           style={{ color: palette.muted }}
         >
           {label}
         </span>
         <span
-          className="text-[10px] font-medium uppercase tracking-[0.12em]"
+          className="text-xs font-medium uppercase tracking-[0.12em]"
           style={{ color: palette.mutedStrong }}
         >
           {label === "Day" ? "Sun" : "Moon"}

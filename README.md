@@ -25,7 +25,7 @@ This app lives at the repository root (`ai-task-manager/`).
 - Next.js 16
 - TypeScript
 - Tailwind CSS v4
-- Small component primitives
+- Small component primitives with a shadcn/ui-compatible foundation (`components.json` + shared design tokens)
 - Vitest
 
 ## Commands
@@ -60,7 +60,9 @@ The app is the primary project in this repository.
 ## File Map
 
 - `src/app/page.tsx`: page entry
+- `src/app/globals.css`: global theme tokens and Tailwind token mappings
 - `src/app/api/agent-call/route.ts`: provider proxy route for live agent calls
+- `components.json`: shadcn/ui configuration aligned with the existing alias and Tailwind setup
 - `src/features/workspace/workspace-app.tsx`: app shell and state wiring for top-level views
 - `src/features/workspace/task-management-view.tsx`: task-only workspace view
 - `src/features/workspace/inbox-view.tsx`: inbox-focused task view

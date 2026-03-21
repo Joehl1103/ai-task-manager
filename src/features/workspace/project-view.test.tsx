@@ -52,10 +52,12 @@ describe("project view", () => {
     expect(markup).toContain("Define the smallest possible task manager");
     expect(markup).toContain("List the next three product decisions");
     expect(markup).toContain("0 messages");
+    expect(markup).toContain('class="text-2xl font-semibold tracking-tight">Projects</h1>');
     expect(markup).not.toContain("Workspace view");
     expect(markup).not.toContain(
       "Scan projects as a quiet list, then open one focused page in the center workspace.",
     );
+    expect(markup).not.toContain("text-3xl");
   });
 
   /**
@@ -72,5 +74,7 @@ describe("project view", () => {
     expect(markup).toContain("Tasks in this project");
     expect(markup).toContain("Project thread");
     expect(markup).toContain("Show thread (0)");
+    expect(markup).toContain('class="mt-2 text-2xl font-semibold tracking-tight">Relay MVP</h1>');
+    expect(markup).not.toContain("text-3xl");
   });
 });

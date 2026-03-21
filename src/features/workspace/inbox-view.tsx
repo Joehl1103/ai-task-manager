@@ -282,7 +282,7 @@ function InboxTaskRow({ task, onOpenTask, onDeleteTask }: InboxTaskRowProps) {
               {task.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-[11px] font-medium leading-none text-white"
+                  className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-xs font-medium leading-none text-white"
                 >
                   {tag}
                 </span>

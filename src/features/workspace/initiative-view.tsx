@@ -57,7 +57,7 @@ export function InitiativeView({
     <div className="space-y-8">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Initiatives</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Initiatives</h1>
         </div>
         <Button
           aria-expanded={isComposerExpanded}
@@ -313,7 +313,7 @@ function InitiativeDetailContent({
           <p className="mt-5 text-xs font-medium uppercase tracking-[0.24em] text-[color:var(--muted)]">
             Initiative detail
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
             {activeInitiative.name}
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--muted)]">

@@ -77,7 +77,7 @@ export function WorkspaceSidebar({
 
       <nav aria-label="Workspace destinations" className="flex flex-1 flex-col gap-6">
         <section className="space-y-1">
-          <p className="px-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
+          <p className="px-2 text-xs font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
             Views
           </p>
           <SidebarMenuButton

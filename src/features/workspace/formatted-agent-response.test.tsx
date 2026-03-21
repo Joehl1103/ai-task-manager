@@ -28,6 +28,8 @@ describe("formatted agent response", () => {
     expect(html).toContain("<strong>recent reviews</strong>");
     expect(html).toContain("<code");
     expect(html).toContain("photos");
+    expect(html).toContain("font-mono text-xs");
+    expect(html).not.toContain("text-[0.92em]");
   });
 
   /**

@@ -126,7 +126,7 @@ export function GlobalSearchDialog({
                           {result.contextLabel}
                         </p>
                       </div>
-                      <span className="rounded-full border border-[color:var(--border)] px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
+                      <span className="rounded-full border border-[color:var(--border)] px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
                         {readGlobalSearchEntityLabel(result.entityType)}
                       </span>
                     </div>

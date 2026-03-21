@@ -67,7 +67,7 @@ export function AgentConfigurationView({
   return (
     <>
       <header className="border-b border-[color:var(--border)] pb-6">
-        <h1 className="text-3xl font-semibold">Configuration</h1>
+        <h1 className="text-2xl font-semibold">Configuration</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
           Keep provider setup away from task editing. Values saved here stay in this
           browser and power live task, project, and initiative threads when you

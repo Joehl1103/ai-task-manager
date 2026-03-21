@@ -50,10 +50,12 @@ describe("initiative view", () => {
     expect(markup).not.toContain("Define the smallest possible task manager");
     expect(markup).toContain("1 project");
     expect(markup).not.toContain("1 projects");
+    expect(markup).toContain('class="text-2xl font-semibold tracking-tight">Initiatives</h1>');
     expect(markup).not.toContain("Workspace view");
     expect(markup).not.toContain(
       "Open the strategic layer as a quiet list, then drill into one initiative at a time.",
     );
+    expect(markup).not.toContain("text-3xl");
   });
 
   /**
@@ -95,5 +97,7 @@ describe("initiative view", () => {
     expect(markup).toContain("Open project");
     expect(markup).toContain("Initiative thread");
     expect(markup).toContain("Show thread (2)");
+    expect(markup).toContain('class="mt-2 text-2xl font-semibold tracking-tight">Q2 Product Launch</h1>');
+    expect(markup).not.toContain("text-3xl");
   });
 });
