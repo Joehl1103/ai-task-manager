@@ -46,7 +46,8 @@ describe("workspace sidebar", () => {
     expect(markup).not.toContain(">Relay<");
     expect(markup).not.toContain(">Workspace<");
     expect(markup).not.toContain("Quiet navigation, focused work.");
-    expect(markup).toContain('class="truncate text-sm font-medium">Relay MVP</span>');
+    expect(markup).toContain('class="block text-sm font-medium">Projects</span>');
+    expect(markup).toContain('class="truncate text-xs font-medium">Relay MVP</span>');
     expect(markup).toContain('data-slot="tooltip-trigger"');
     expect(markup).toContain('data-slot="separator"');
   });

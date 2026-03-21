@@ -307,7 +307,7 @@ function SidebarChildButton({ active, label, onClick }: SidebarChildButtonProps)
       onClick={onClick}
       type="button"
     >
-      <span className="truncate text-sm font-medium">{label}</span>
+      <span className="truncate text-xs font-medium">{label}</span>
     </button>
   );
 }
