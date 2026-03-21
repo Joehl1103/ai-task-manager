@@ -1,3 +1,4 @@
+import { featureFlags } from "@/features/feature-flags";
 import {
   filterVisibleProjects,
   inboxProjectName,
@@ -76,9 +77,9 @@ export function buildGlobalSearchResults(
       entityType: "project" as const,
       title: project.name,
       description: "",
-      contextLabel: initiativeName
-        ? `Initiative: ${initiativeName}`
-        : "No initiative",
+      contextLabel: featureFlags.initiatives
+        ? (initiativeName ? `Initiative: ${initiativeName}` : "No initiative")
+        : "",
       projectId: project.id,
       initiativeId: readOptionalValue(project.initiativeId),
       normalizedSearchText: normalizeSearchText([
@@ -88,19 +89,21 @@ export function buildGlobalSearchResults(
     };
   });
 
-  const initiativeResults = workspace.initiatives.map((initiative) => ({
-    id: initiative.id,
-    entityType: "initiative" as const,
-    title: initiative.name,
-    description: initiative.description,
-    contextLabel: initiative.description || "No description",
-    projectId: null,
-    initiativeId: initiative.id,
-    normalizedSearchText: normalizeSearchText([
-      initiative.name,
-      initiative.description,
-    ]),
-  }));
+  const initiativeResults = featureFlags.initiatives
+    ? workspace.initiatives.map((initiative) => ({
+        id: initiative.id,
+        entityType: "initiative" as const,
+        title: initiative.name,
+        description: initiative.description,
+        contextLabel: initiative.description || "No description",
+        projectId: null,
+        initiativeId: initiative.id,
+        normalizedSearchText: normalizeSearchText([
+          initiative.name,
+          initiative.description,
+        ]),
+      }))
+    : [];
 
   return [...taskResults, ...projectResults, ...initiativeResults];
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowLeft, MoreHorizontal, Plus } from "lucide-react";
 
+import { featureFlags } from "@/features/feature-flags";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -95,22 +96,24 @@ export function ProjectView({
             placeholder="Project name"
             value={newName}
           />
-          <Select
-            onValueChange={(value) => setNewInitiativeId(value === "_none" ? "" : value)}
-            value={newInitiativeId || "_none"}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="No initiative" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_none">No initiative</SelectItem>
-              {initiatives.map((initiative) => (
-                <SelectItem key={initiative.id} value={initiative.id}>
-                  {initiative.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {featureFlags.initiatives ? (
+            <Select
+              onValueChange={(value) => setNewInitiativeId(value === "_none" ? "" : value)}
+              value={newInitiativeId || "_none"}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="No initiative" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">No initiative</SelectItem>
+                {initiatives.map((initiative) => (
+                  <SelectItem key={initiative.id} value={initiative.id}>
+                    {initiative.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           <Input
             onChange={(event) => setNewDeadline(event.target.value)}
             placeholder="Deadline"
@@ -163,9 +166,11 @@ export function ProjectView({
                         <p className="text-sm font-medium text-[color:var(--foreground)]">
                           {project.name}
                         </p>
-                        <p className="text-xs text-[color:var(--muted)]">
-                          {projectInitiative ? projectInitiative.name : "No initiative"}
-                        </p>
+                        {featureFlags.initiatives ? (
+                          <p className="text-xs text-[color:var(--muted)]">
+                            {projectInitiative ? projectInitiative.name : "No initiative"}
+                          </p>
+                        ) : null}
                         <p className="text-xs text-[color:var(--muted)]">
                           {readTaskCountLabel(projectTasks.length)}
                         </p>
@@ -373,14 +378,16 @@ function ProjectDetailContent({
                 ? `Due ${formatDeadline(activeProject.deadline)}`
                 : "No deadline"}
             </span>
-            <span>
-              {linkedInitiative ? `Initiative: ${linkedInitiative.name}` : "No initiative"}
-            </span>
+            {featureFlags.initiatives ? (
+              <span>
+                {linkedInitiative ? `Initiative: ${linkedInitiative.name}` : "No initiative"}
+              </span>
+            ) : null}
             {canUseProjectThread ? (
               <span>{activeProject.agentThread.messages.length} saved messages</span>
             ) : null}
           </div>
-          {linkedInitiative ? (
+          {featureFlags.initiatives && linkedInitiative ? (
             <div className="mt-4">
               <Button onClick={() => onOpenInitiative(linkedInitiative.id)} variant="ghost">
                 Open initiative
@@ -410,22 +417,24 @@ function ProjectDetailContent({
             placeholder="Project name"
             value={editName}
           />
-          <Select
-            onValueChange={(value) => setEditInitiativeId(value === "_none" ? "" : value)}
-            value={editInitiativeId || "_none"}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="No initiative" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_none">No initiative</SelectItem>
-              {initiatives.map((initiative) => (
-                <SelectItem key={initiative.id} value={initiative.id}>
-                  {initiative.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {featureFlags.initiatives ? (
+            <Select
+              onValueChange={(value) => setEditInitiativeId(value === "_none" ? "" : value)}
+              value={editInitiativeId || "_none"}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="No initiative" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">No initiative</SelectItem>
+                {initiatives.map((initiative) => (
+                  <SelectItem key={initiative.id} value={initiative.id}>
+                    {initiative.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           <Input
             onChange={(event) => setEditDeadline(event.target.value)}
             type="date"

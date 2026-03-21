@@ -1,6 +1,13 @@
+import { featureFlags } from "@/features/feature-flags";
+
 export type WorkspaceMenu = "inbox" | "projects" | "initiatives" | "configuration";
 
-export const workspaceMenus: WorkspaceMenu[] = ["inbox", "projects", "initiatives", "configuration"];
+const allMenus: WorkspaceMenu[] = ["inbox", "projects", "initiatives", "configuration"];
+
+/** Menus visible to the user, filtered by active feature flags. */
+export const workspaceMenus: WorkspaceMenu[] = allMenus.filter(
+  (menu) => menu !== "initiatives" || featureFlags.initiatives,
+);
 
 /**
  * Keeps inbox as the default landing menu for the app shell.

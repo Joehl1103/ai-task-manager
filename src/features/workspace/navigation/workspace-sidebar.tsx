@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { featureFlags } from "@/features/feature-flags";
 import { type Initiative, type Project } from "@/features/workspace/core";
 import { filterVisibleProjects } from "@/features/workspace/projects";
 import { cn } from "@/lib/utils";
@@ -124,25 +125,27 @@ export function WorkspaceSidebar({
             ))}
           </SidebarSection>
 
-          <SidebarSection
-            active={activeMenu === "initiatives" && selectedInitiativeId === null}
-            icon={<Sparkles className="size-4" />}
-            isExpanded={isInitiativesExpanded}
-            itemCount={initiatives.length}
-            onSelect={() => onSelectMenu("initiatives")}
-            onToggle={onToggleInitiatives}
-            title="Initiatives"
-            toggleLabel={initiativesToggleLabel}
-          >
-            {initiatives.map((initiative) => (
-              <SidebarChildButton
-                active={selectedInitiativeId === initiative.id}
-                key={initiative.id}
-                label={initiative.name}
-                onClick={() => onSelectInitiative(initiative.id)}
-              />
-            ))}
-          </SidebarSection>
+          {featureFlags.initiatives ? (
+            <SidebarSection
+              active={activeMenu === "initiatives" && selectedInitiativeId === null}
+              icon={<Sparkles className="size-4" />}
+              isExpanded={isInitiativesExpanded}
+              itemCount={initiatives.length}
+              onSelect={() => onSelectMenu("initiatives")}
+              onToggle={onToggleInitiatives}
+              title="Initiatives"
+              toggleLabel={initiativesToggleLabel}
+            >
+              {initiatives.map((initiative) => (
+                <SidebarChildButton
+                  active={selectedInitiativeId === initiative.id}
+                  key={initiative.id}
+                  label={initiative.name}
+                  onClick={() => onSelectInitiative(initiative.id)}
+                />
+              ))}
+            </SidebarSection>
+          ) : null}
 
           <div className="mt-auto pt-4">
             <Separator className="mb-4" />

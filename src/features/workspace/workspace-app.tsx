@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { featureFlags } from "@/features/feature-flags";
 import { AgentConfigurationView } from "@/features/workspace/agent-configuration-view";
 import {
   type AgentConfigState,
@@ -1159,7 +1160,7 @@ export function WorkspaceApp() {
       );
     }
 
-    if (activeMenu === "initiatives") {
+    if (activeMenu === "initiatives" && featureFlags.initiatives) {
       if (selectedInitiative) {
         return (
           <InitiativeDetailView
