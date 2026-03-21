@@ -21,8 +21,8 @@ export interface GlobalSearchResult {
 
 export interface SearchNavigationIntent {
   activeMenu: WorkspaceMenu;
-  filterProjectId: string | null;
-  filterInitiativeId: string | null;
+  selectedProjectId: string | null;
+  selectedInitiativeId: string | null;
   selectedTaskId: string | null;
 }
 
@@ -151,29 +151,28 @@ export function cycleGlobalSearchIndex(
  */
 export function resolveGlobalSearchSelection(
   result: GlobalSearchResult,
-  workspace: WorkspaceSnapshot,
+  _workspace: WorkspaceSnapshot,
 ): SearchNavigationIntent {
   switch (result.entityType) {
     case "task":
       return {
         activeMenu: "inbox",
-        filterProjectId: null,
-        filterInitiativeId: null,
+        selectedProjectId: null,
+        selectedInitiativeId: null,
         selectedTaskId: result.id,
       };
     case "project":
       return {
         activeMenu: "projects",
-        filterProjectId: result.id,
-        filterInitiativeId: null,
-        selectedTaskId:
-          workspace.tasks.find((task) => task.projectId === result.id)?.id ?? null,
+        selectedProjectId: result.id,
+        selectedInitiativeId: null,
+        selectedTaskId: null,
       };
     case "initiative":
       return {
         activeMenu: "initiatives",
-        filterProjectId: null,
-        filterInitiativeId: result.id,
+        selectedProjectId: null,
+        selectedInitiativeId: result.id,
         selectedTaskId: null,
       };
   }

@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 import { AgentConfigurationView } from "@/features/workspace/agent-configuration-view";
 import {
   type AgentConfigState,
+  type Initiative,
   type ProviderId,
+  type Project,
   type ThreadDraft,
   type ThreadOwnerRef,
 } from "@/features/workspace/core";
@@ -15,11 +17,15 @@ import {
   deleteInitiative,
   updateInitiative,
 } from "@/features/workspace/initiatives";
-import { InitiativeView } from "@/features/workspace/initiative-view";
+import {
+  InitiativeDetailView,
+  InitiativeView,
+} from "@/features/workspace/initiative-view";
 import {
   createDefaultWorkspaceMenu,
   type WorkspaceMenu,
-  WorkspaceTopMenu,
+  WorkspaceCollapsedRail,
+  WorkspaceSidebar,
 } from "@/features/workspace/navigation";
 import {
   filterVisibleProjects,
@@ -27,10 +33,11 @@ import {
   addProject,
   deleteProject,
   updateProject,
-  buildProjectTaskSelection,
-  filterTasksByProject,
 } from "@/features/workspace/projects";
-import { ProjectView } from "@/features/workspace/project-view";
+import {
+  ProjectDetailView,
+  ProjectView,
+} from "@/features/workspace/project-view";
 import {
   agentConfigStorageKey,
   createApiKeyId,
@@ -79,6 +86,7 @@ import {
   workspaceThemeSelectionStorageKey,
   type WorkspaceThemeSelection,
 } from "@/features/workspace/theme";
+import { cn } from "@/lib/utils";
 
 /**
  * Hosts the app shell, view switching, and task/configuration state wiring.
@@ -91,7 +99,11 @@ export function WorkspaceApp() {
   const [hasLoadedGroupingMode, setHasLoadedGroupingMode] = useState(false);
   const [hasLoadedThemeSelection, setHasLoadedThemeSelection] = useState(false);
   const [activeMenu, setActiveMenu] = useState(createDefaultWorkspaceMenu);
-  const [isTopMenuExpanded, setIsTopMenuExpanded] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isProjectsExpanded, setIsProjectsExpanded] = useState(true);
+  const [isInitiativesExpanded, setIsInitiativesExpanded] = useState(true);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedInitiativeId, setSelectedInitiativeId] = useState<string | null>(null);
   const [taskGroupingMode, setTaskGroupingMode] = useState<TaskGroupingMode>(
     defaultTaskGroupingMode,
   );
@@ -113,8 +125,6 @@ export function WorkspaceApp() {
   const [editTags, setEditTags] = useState("");
   const [threadDrafts, setThreadDrafts] = useState<Record<string, ThreadDraft>>({});
   const [pendingThreadOwnerKey, setPendingThreadOwnerKey] = useState<string | null>(null);
-  const [filterInitiativeId, setFilterInitiativeId] = useState<string | null>(null);
-  const [filterProjectId, setFilterProjectId] = useState<string | null>(null);
   const [fetchingModelsKeyId, setFetchingModelsKeyId] = useState<string | null>(null);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [modelErrorKeyId, setModelErrorKeyId] = useState<string | null>(null);
@@ -127,8 +137,9 @@ export function WorkspaceApp() {
     activeProviderSettings.apiKey.trim() && activeProviderSettings.model.trim(),
   );
   const visibleProjects = filterVisibleProjects(workspace.projects);
-  const visibleTasks = filterTasksByProject(workspace.tasks, filterProjectId);
-  const selectedTask = readSelectedTask(visibleTasks, selectedTaskId);
+  const selectedTask = readSelectedTask(workspace.tasks, selectedTaskId);
+  const selectedProject = readProjectById(workspace.projects, selectedProjectId);
+  const selectedInitiative = readInitiativeById(workspace.initiatives, selectedInitiativeId);
   const selectedThreadDraft = selectedTask
     ? readThreadDraft(threadDrafts, {
         ownerType: "task",
@@ -317,18 +328,35 @@ export function WorkspaceApp() {
     );
   }, [globalSearchResults.length]);
 
-  /**
-   * Opens or closes the slim top menu without changing the active workspace view.
-   */
-  function handleToggleTopMenu() {
-    setIsTopMenuExpanded((currentValue) => !currentValue);
+  function handleToggleSidebar() {
+    setIsSidebarVisible((currentValue) => !currentValue);
   }
 
   /**
-   * Switches between the task and configuration menus while keeping the menu open.
+   * Switches top-level destinations and resets entity-specific detail pages when the parent row
+   * itself is clicked from the sidebar.
    */
   function handleSelectMenu(nextMenu: WorkspaceMenu) {
     setActiveMenu(nextMenu);
+    setIsSidebarVisible(true);
+
+    if (nextMenu === "projects") {
+      clearTaskFocus();
+      setSelectedProjectId(null);
+      setSelectedInitiativeId(null);
+      return;
+    }
+
+    if (nextMenu === "initiatives") {
+      clearTaskFocus();
+      setSelectedProjectId(null);
+      setSelectedInitiativeId(null);
+      return;
+    }
+
+    setSelectedProjectId(null);
+    setSelectedInitiativeId(null);
+    clearTaskFocus();
   }
 
   /**
@@ -355,13 +383,19 @@ export function WorkspaceApp() {
 
   function handleDeleteInitiative(id: string) {
     setWorkspace((current) => deleteInitiative(current, id));
+
+    if (selectedInitiativeId === id) {
+      setSelectedInitiativeId(null);
+    }
   }
 
   function handleSelectInitiative(initiativeId: string) {
     clearTaskFocus();
-    setFilterProjectId(null);
-    setFilterInitiativeId(initiativeId);
-    setActiveMenu("projects");
+    setActiveMenu("initiatives");
+    setSelectedProjectId(null);
+    setSelectedInitiativeId(initiativeId);
+    setIsInitiativesExpanded(true);
+    setIsSidebarVisible(true);
   }
 
   function handleAddProject(data: { name: string; initiativeId: string; deadline: string }) {
@@ -382,8 +416,8 @@ export function WorkspaceApp() {
   function handleDeleteProject(id: string) {
     setWorkspace((current) => deleteProject(current, id));
 
-    if (filterProjectId === id) {
-      setFilterProjectId(null);
+    if (selectedProjectId === id) {
+      setSelectedProjectId(null);
     }
   }
 
@@ -392,20 +426,13 @@ export function WorkspaceApp() {
   }
 
   function handleSelectProject(projectId: string) {
-    const selection = buildProjectTaskSelection(workspace.tasks, projectId);
-
-    if (editingTaskId && editingTaskId !== selection.selectedTaskId) {
-      handleCancelEdit();
-    }
-
-    setActiveMenu(selection.activeMenu);
-    setFilterProjectId(selection.filterProjectId);
-    setSelectedTaskId(selection.selectedTaskId);
+    clearTaskFocus();
+    setActiveMenu("projects");
+    setSelectedInitiativeId(null);
+    setSelectedProjectId(projectId);
+    setIsProjectsExpanded(true);
+    setIsSidebarVisible(true);
     setNewTaskProject(projectId);
-  }
-
-  function handleClearInitiativeFilter() {
-    setFilterInitiativeId(null);
   }
 
   /**
@@ -1036,15 +1063,24 @@ export function WorkspaceApp() {
   }
 
   /**
-   * Applies one selected search result to the app shell by reusing the existing menu and filter
-   * state wherever possible.
+   * Applies one selected search result to the app shell by switching both the top-level menu and
+   * the focused center-pane destination when needed.
    */
   function handleSelectGlobalSearchResult(result: GlobalSearchResult) {
     const selection = resolveGlobalSearchSelection(result, workspace);
 
-    setFilterProjectId(selection.filterProjectId);
-    setFilterInitiativeId(selection.filterInitiativeId);
     setActiveMenu(selection.activeMenu);
+    setSelectedProjectId(selection.selectedProjectId);
+    setSelectedInitiativeId(selection.selectedInitiativeId);
+    setIsSidebarVisible(true);
+
+    if (selection.selectedProjectId) {
+      setIsProjectsExpanded(true);
+    }
+
+    if (selection.selectedInitiativeId) {
+      setIsInitiativesExpanded(true);
+    }
 
     if (selection.selectedTaskId) {
       handleOpenTask(selection.selectedTaskId);
@@ -1053,6 +1089,222 @@ export function WorkspaceApp() {
     }
 
     handleCloseGlobalSearch();
+  }
+
+  function renderActiveCenterContent() {
+    if (activeMenu === "inbox") {
+      return (
+        <InboxView
+          activeProviderLabel={activeProviderLabel}
+          activeProviderModel={activeProviderSettings.model}
+          editDetails={editDetails}
+          editingTaskId={editingTaskId}
+          editProject={editProject}
+          editTags={editTags}
+          editTitle={editTitle}
+          isActiveProviderReady={isActiveProviderReady}
+          newTaskDetails={newTaskDetails}
+          newTaskProject={newTaskProject}
+          newTaskTags={newTaskTags}
+          newTaskTitle={newTaskTitle}
+          onAddTask={handleAddTask}
+          onCancelEdit={handleCancelEdit}
+          onDeleteThreadMessage={(taskId, messageId) =>
+            handleDeleteThreadMessage(
+              {
+                ownerType: "task",
+                ownerId: taskId,
+              },
+              messageId,
+            )
+          }
+          onDeleteTask={handleDeleteTask}
+          onOpenTask={handleOpenTask}
+          onReturnToOverview={handleReturnToOverview}
+          onSaveEdit={handleSaveEdit}
+          onSetEditDetails={setEditDetails}
+          onSetEditProject={setEditProject}
+          onSetEditTags={setEditTags}
+          onSetEditTitle={setEditTitle}
+          onSetNewTaskDetails={setNewTaskDetails}
+          onSetNewTaskProject={setNewTaskProject}
+          onSetNewTaskTags={setNewTaskTags}
+          onSetNewTaskTitle={setNewTaskTitle}
+          onStartEdit={handleStartEdit}
+          onSendThreadMessage={(taskId) =>
+            handleSendThreadMessage({
+              ownerType: "task",
+              ownerId: taskId,
+            })
+          }
+          onThreadDraftChange={(taskId, message) =>
+            handleThreadDraftChange(
+              {
+                ownerType: "task",
+                ownerId: taskId,
+              },
+              message,
+            )
+          }
+          pendingTaskId={
+            pendingThreadOwnerKey?.startsWith("task:")
+              ? pendingThreadOwnerKey.slice("task:".length)
+              : null
+          }
+          projects={visibleProjects}
+          selectedThreadDraft={selectedThreadDraft}
+          selectedTask={selectedTask}
+          tasks={workspace.tasks}
+        />
+      );
+    }
+
+    if (activeMenu === "initiatives") {
+      if (selectedInitiative) {
+        return (
+          <InitiativeDetailView
+            activeProviderLabel={activeProviderLabel}
+            activeProviderModel={activeProviderSettings.model}
+            initiative={selectedInitiative}
+            onAddProject={handleAddProject}
+            onBack={() => setSelectedInitiativeId(null)}
+            onDeleteInitiative={handleDeleteInitiative}
+            onDeleteThreadMessage={(initiativeId, messageId) =>
+              handleDeleteThreadMessage(
+                {
+                  ownerType: "initiative",
+                  ownerId: initiativeId,
+                },
+                messageId,
+              )
+            }
+            onSelectProject={handleSelectProject}
+            onSendThreadMessage={(initiativeId) =>
+              handleSendThreadMessage({
+                ownerType: "initiative",
+                ownerId: initiativeId,
+              })
+            }
+            onThreadDraftChange={(initiativeId, message) =>
+              handleThreadDraftChange(
+                {
+                  ownerType: "initiative",
+                  ownerId: initiativeId,
+                },
+                message,
+              )
+            }
+            onUpdateInitiative={handleUpdateInitiative}
+            pendingThreadId={
+              pendingThreadOwnerKey?.startsWith("initiative:")
+                ? pendingThreadOwnerKey.slice("initiative:".length)
+                : null
+            }
+            projects={visibleProjects}
+            readThreadDraft={(initiativeId) =>
+              readThreadDraft(threadDrafts, {
+                ownerType: "initiative",
+                ownerId: initiativeId,
+              })
+            }
+          />
+        );
+      }
+
+      return (
+        <InitiativeView
+          initiatives={workspace.initiatives}
+          onAddInitiative={handleAddInitiative}
+          onSelectInitiative={handleSelectInitiative}
+          projects={visibleProjects}
+        />
+      );
+    }
+
+    if (activeMenu === "projects") {
+      if (selectedProject) {
+        return (
+          <ProjectDetailView
+            activeProviderLabel={activeProviderLabel}
+            activeProviderModel={activeProviderSettings.model}
+            initiatives={workspace.initiatives}
+            onAddTask={handleAddTaskFromProject}
+            onBack={() => setSelectedProjectId(null)}
+            onDeleteProject={handleDeleteProject}
+            onDeleteThreadMessage={(projectId, messageId) =>
+              handleDeleteThreadMessage(
+                {
+                  ownerType: "project",
+                  ownerId: projectId,
+                },
+                messageId,
+              )
+            }
+            onOpenInitiative={handleSelectInitiative}
+            onSendThreadMessage={(projectId) =>
+              handleSendThreadMessage({
+                ownerType: "project",
+                ownerId: projectId,
+              })
+            }
+            onThreadDraftChange={(projectId, message) =>
+              handleThreadDraftChange(
+                {
+                  ownerType: "project",
+                  ownerId: projectId,
+                },
+                message,
+              )
+            }
+            onUpdateProject={handleUpdateProject}
+            pendingThreadId={
+              pendingThreadOwnerKey?.startsWith("project:")
+                ? pendingThreadOwnerKey.slice("project:".length)
+                : null
+            }
+            project={selectedProject}
+            readThreadDraft={(projectId) =>
+              readThreadDraft(threadDrafts, {
+                ownerType: "project",
+                ownerId: projectId,
+              })
+            }
+            tasks={workspace.tasks}
+          />
+        );
+      }
+
+      return (
+        <ProjectView
+          initiatives={workspace.initiatives}
+          onAddProject={handleAddProject}
+          onSelectProject={handleSelectProject}
+          projects={visibleProjects}
+          tasks={workspace.tasks}
+        />
+      );
+    }
+
+    return (
+      <AgentConfigurationView
+        activeProvider={activeProvider}
+        activeProviderLabel={activeProviderLabel}
+        activeProviderSettings={activeProviderSettings}
+        fetchingModelsKeyId={fetchingModelsKeyId}
+        isActiveProviderReady={isActiveProviderReady}
+        isFetchingModels={isFetchingModels}
+        modelErrorKeyId={modelErrorKeyId}
+        modelFetchError={modelFetchError}
+        onDeleteSavedKey={handleDeleteSavedKey}
+        onFetchModels={handleFetchModels}
+        onSaveApiKey={handleSaveApiKey}
+        onSavedKeyModelChange={handleSavedKeyModelChange}
+        onSetActiveKey={handleSetActiveKey}
+        onUpdateSavedKey={handleUpdateSavedKey}
+        onThemeSelectionChange={handleSelectTheme}
+        themeSelection={themeSelection}
+      />
+    );
   }
 
   return (
@@ -1072,203 +1324,72 @@ export function WorkspaceApp() {
         query={globalSearchQuery}
         results={globalSearchResults}
       />
-      <div className="mx-auto max-w-4xl">
-        <WorkspaceTopMenu
-          activeMenu={activeMenu}
-          isExpanded={isTopMenuExpanded}
-          onSelectMenu={handleSelectMenu}
-          onToggleMenu={handleToggleTopMenu}
-        />
+      <div className="mx-auto max-w-7xl">
+        <div
+          className={cn(
+            "flex min-h-[calc(100vh-3rem)]",
+            isSidebarVisible ? "gap-8" : "gap-0",
+          )}
+        >
+          <div
+            className={cn(
+              "shrink-0 transition-all duration-200 ease-out",
+              isSidebarVisible ? "w-[272px] opacity-100" : "w-8 opacity-100",
+            )}
+          >
+            {isSidebarVisible ? (
+              <WorkspaceSidebar
+                activeMenu={activeMenu}
+                initiatives={workspace.initiatives}
+                isInitiativesExpanded={isInitiativesExpanded}
+                isProjectsExpanded={isProjectsExpanded}
+                onSelectInitiative={handleSelectInitiative}
+                onSelectMenu={handleSelectMenu}
+                onSelectProject={handleSelectProject}
+                onToggleInitiatives={() =>
+                  setIsInitiativesExpanded((currentValue) => !currentValue)
+                }
+                onToggleProjects={() =>
+                  setIsProjectsExpanded((currentValue) => !currentValue)
+                }
+                onToggleSidebar={handleToggleSidebar}
+                projects={workspace.projects}
+                selectedInitiativeId={selectedInitiativeId}
+                selectedProjectId={selectedProjectId}
+              />
+            ) : (
+              <WorkspaceCollapsedRail onExpand={handleToggleSidebar} />
+            )}
+          </div>
 
-        <section className="mt-3">
-          {activeMenu === "inbox" && (
-            <InboxView
-              activeProviderLabel={activeProviderLabel}
-              activeProviderModel={activeProviderSettings.model}
-              editDetails={editDetails}
-              editingTaskId={editingTaskId}
-              editProject={editProject}
-              editTags={editTags}
-              editTitle={editTitle}
-              isActiveProviderReady={isActiveProviderReady}
-              newTaskDetails={newTaskDetails}
-              newTaskProject={newTaskProject}
-              newTaskTags={newTaskTags}
-              newTaskTitle={newTaskTitle}
-              onAddTask={handleAddTask}
-              onCancelEdit={handleCancelEdit}
-              onDeleteThreadMessage={(taskId, messageId) =>
-                handleDeleteThreadMessage(
-                  {
-                    ownerType: "task",
-                    ownerId: taskId,
-                  },
-                  messageId,
-                )
-              }
-              onDeleteTask={handleDeleteTask}
-              onOpenTask={handleOpenTask}
-              onReturnToOverview={handleReturnToOverview}
-              onSaveEdit={handleSaveEdit}
-              onSetEditDetails={setEditDetails}
-              onSetEditProject={setEditProject}
-              onSetEditTags={setEditTags}
-              onSetEditTitle={setEditTitle}
-              onSetNewTaskDetails={setNewTaskDetails}
-              onSetNewTaskProject={setNewTaskProject}
-              onSetNewTaskTags={setNewTaskTags}
-              onSetNewTaskTitle={setNewTaskTitle}
-              onStartEdit={handleStartEdit}
-              onSendThreadMessage={(taskId) =>
-                handleSendThreadMessage({
-                  ownerType: "task",
-                  ownerId: taskId,
-                })
-              }
-              onThreadDraftChange={(taskId, message) =>
-                handleThreadDraftChange(
-                  {
-                    ownerType: "task",
-                    ownerId: taskId,
-                  },
-                  message,
-                )
-              }
-              pendingTaskId={
-                pendingThreadOwnerKey?.startsWith("task:")
-                  ? pendingThreadOwnerKey.slice("task:".length)
-                  : null
-              }
-              projects={visibleProjects}
-              selectedThreadDraft={selectedThreadDraft}
-              selectedTask={selectedTask}
-              tasks={workspace.tasks}
-            />
-          )}
-          {activeMenu === "initiatives" && (
-            <InitiativeView
-              activeProviderLabel={activeProviderLabel}
-              activeProviderModel={activeProviderSettings.model}
-              initiatives={workspace.initiatives}
-              onAddInitiative={handleAddInitiative}
-              onAddProject={handleAddProject}
-              onDeleteInitiative={handleDeleteInitiative}
-              onDeleteThreadMessage={(initiativeId, messageId) =>
-                handleDeleteThreadMessage(
-                  {
-                    ownerType: "initiative",
-                    ownerId: initiativeId,
-                  },
-                  messageId,
-                )
-              }
-              onSelectInitiative={handleSelectInitiative}
-              onSendThreadMessage={(initiativeId) =>
-                handleSendThreadMessage({
-                  ownerType: "initiative",
-                  ownerId: initiativeId,
-                })
-              }
-              onThreadDraftChange={(initiativeId, message) =>
-                handleThreadDraftChange(
-                  {
-                    ownerType: "initiative",
-                    ownerId: initiativeId,
-                  },
-                  message,
-                )
-              }
-              onUpdateInitiative={handleUpdateInitiative}
-              pendingThreadId={
-                pendingThreadOwnerKey?.startsWith("initiative:")
-                  ? pendingThreadOwnerKey.slice("initiative:".length)
-                  : null
-              }
-              projects={visibleProjects}
-              readThreadDraft={(initiativeId) =>
-                readThreadDraft(threadDrafts, {
-                  ownerType: "initiative",
-                  ownerId: initiativeId,
-                })
-              }
-            />
-          )}
-          {activeMenu === "projects" && (
-            <ProjectView
-              activeProviderLabel={activeProviderLabel}
-              activeProviderModel={activeProviderSettings.model}
-              filterInitiativeId={filterInitiativeId}
-              filterProjectId={filterProjectId}
-              initiatives={workspace.initiatives}
-              onAddProject={handleAddProject}
-              onAddTask={handleAddTaskFromProject}
-              onClearFilter={handleClearInitiativeFilter}
-              onDeleteProject={handleDeleteProject}
-              onDeleteThreadMessage={(projectId, messageId) =>
-                handleDeleteThreadMessage(
-                  {
-                    ownerType: "project",
-                    ownerId: projectId,
-                  },
-                  messageId,
-                )
-              }
-              onSelectProject={handleSelectProject}
-              onSendThreadMessage={(projectId) =>
-                handleSendThreadMessage({
-                  ownerType: "project",
-                  ownerId: projectId,
-                })
-              }
-              onThreadDraftChange={(projectId, message) =>
-                handleThreadDraftChange(
-                  {
-                    ownerType: "project",
-                    ownerId: projectId,
-                  },
-                  message,
-                )
-              }
-              onUpdateProject={handleUpdateProject}
-              pendingThreadId={
-                pendingThreadOwnerKey?.startsWith("project:")
-                  ? pendingThreadOwnerKey.slice("project:".length)
-                  : null
-              }
-              projects={visibleProjects}
-              readThreadDraft={(projectId) =>
-                readThreadDraft(threadDrafts, {
-                  ownerType: "project",
-                  ownerId: projectId,
-                })
-              }
-              tasks={workspace.tasks}
-            />
-          )}
-          {activeMenu === "configuration" && (
-            <AgentConfigurationView
-              activeProvider={activeProvider}
-              activeProviderLabel={activeProviderLabel}
-              activeProviderSettings={activeProviderSettings}
-              fetchingModelsKeyId={fetchingModelsKeyId}
-              isActiveProviderReady={isActiveProviderReady}
-              isFetchingModels={isFetchingModels}
-              modelErrorKeyId={modelErrorKeyId}
-              modelFetchError={modelFetchError}
-              onDeleteSavedKey={handleDeleteSavedKey}
-              onFetchModels={handleFetchModels}
-              onSaveApiKey={handleSaveApiKey}
-              onSavedKeyModelChange={handleSavedKeyModelChange}
-              onSetActiveKey={handleSetActiveKey}
-              onUpdateSavedKey={handleUpdateSavedKey}
-              onThemeSelectionChange={handleSelectTheme}
-              themeSelection={themeSelection}
-            />
-          )}
-        </section>
+          <section className="min-w-0 flex-1">
+            <div className="min-h-full px-1 py-2 sm:px-3">
+              {renderActiveCenterContent()}
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );
+}
+
+function readProjectById(projects: Project[], projectId: string | null): Project | null {
+  if (!projectId) {
+    return null;
+  }
+
+  return projects.find((project) => project.id === projectId) ?? null;
+}
+
+function readInitiativeById(
+  initiatives: Initiative[],
+  initiativeId: string | null,
+): Initiative | null {
+  if (!initiativeId) {
+    return null;
+  }
+
+  return initiatives.find((initiative) => initiative.id === initiativeId) ?? null;
 }
 
 /**

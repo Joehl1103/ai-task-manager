@@ -2,46 +2,75 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { workspaceSeed } from "./mock-data";
-import { ProjectView } from "./project-view";
+import { ProjectDetailView, ProjectView } from "./project-view";
 
 function buildProjectViewProps() {
   return {
+    initiatives: workspaceSeed.initiatives,
+    onAddProject: vi.fn(),
+    onSelectProject: vi.fn(),
+    projects: workspaceSeed.projects,
+    tasks: workspaceSeed.tasks,
+  };
+}
+
+function buildProjectDetailViewProps() {
+  return {
     activeProviderLabel: "OpenAI",
     activeProviderModel: "gpt-5",
-    projects: workspaceSeed.projects,
     initiatives: workspaceSeed.initiatives,
-    tasks: workspaceSeed.tasks,
-    filterInitiativeId: null,
+    onAddTask: vi.fn(),
+    onBack: vi.fn(),
+    onDeleteProject: vi.fn(),
+    onDeleteThreadMessage: vi.fn(),
+    onOpenInitiative: vi.fn(),
+    onSendThreadMessage: vi.fn(),
+    onThreadDraftChange: vi.fn(),
+    onUpdateProject: vi.fn(),
     pendingThreadId: null,
+    project: workspaceSeed.projects.find((project) => project.id === "project-1") ?? null,
     readThreadDraft: vi.fn(() => ({
       message: "",
       error: null,
     })),
-    onAddProject: vi.fn(),
-    onUpdateProject: vi.fn(),
-    onDeleteProject: vi.fn(),
-    onSelectProject: vi.fn(),
-    onClearFilter: vi.fn(),
-    onDeleteThreadMessage: vi.fn(),
-    onThreadDraftChange: vi.fn(),
-    onSendThreadMessage: vi.fn(),
-    onAddTask: vi.fn(),
-  };
+    tasks: workspaceSeed.tasks,
+  } as const;
 }
 
 describe("project view", () => {
   /**
-   * Keeps the rebased project cards focused on child task titles and thread access.
+   * Keeps the overview centered on compact cards while still previewing child task context.
    */
-  it("renders child task titles and thread toggle", () => {
+  it("renders clickable overview cards with task previews", () => {
     const markup = renderToStaticMarkup(<ProjectView {...buildProjectViewProps()} />);
 
+    expect(markup).toContain("Projects");
     expect(markup).toContain("No Project");
-    expect(markup).toContain("Relay MVP");
     expect(markup).not.toContain("project-inbox");
     expect(markup).not.toContain(">Inbox<");
+    expect(markup).toContain("Relay MVP");
     expect(markup).toContain("Define the smallest possible task manager");
     expect(markup).toContain("List the next three product decisions");
+    expect(markup).toContain("0 messages");
+    expect(markup).not.toContain("Workspace view");
+    expect(markup).not.toContain(
+      "Scan projects as a quiet list, then open one focused page in the center workspace.",
+    );
+  });
+
+  /**
+   * Ensures the focused project page keeps task and thread sections in the center pane.
+   */
+  it("renders a focused project detail page", () => {
+    const markup = renderToStaticMarkup(
+      <ProjectDetailView {...buildProjectDetailViewProps()} />,
+    );
+
+    expect(markup).toContain("Back to projects");
+    expect(markup).toContain("Project detail");
+    expect(markup).toContain("Open initiative");
+    expect(markup).toContain("Tasks in this project");
+    expect(markup).toContain("Project thread");
     expect(markup).toContain("Show thread (0)");
   });
 });

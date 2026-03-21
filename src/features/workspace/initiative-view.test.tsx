@@ -1,48 +1,59 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { type Initiative, type Project } from "@/features/workspace/core";
+import { workspaceSeed } from "./mock-data";
+import { InitiativeDetailView, InitiativeView } from "./initiative-view";
 import { createAgentThread } from "@/features/workspace/threads";
 
-import { workspaceSeed } from "./mock-data";
-import { InitiativeView } from "./initiative-view";
-
 function buildInitiativeViewProps(overrides?: {
-  initiatives?: Initiative[];
-  projects?: Project[];
+  projects?: typeof workspaceSeed.projects;
 }) {
+  return {
+    initiatives: workspaceSeed.initiatives,
+    onAddInitiative: vi.fn(),
+    onSelectInitiative: vi.fn(),
+    projects: overrides?.projects ?? workspaceSeed.projects,
+  };
+}
+
+function buildInitiativeDetailViewProps() {
   return {
     activeProviderLabel: "OpenAI",
     activeProviderModel: "gpt-5",
-    initiatives: overrides?.initiatives ?? workspaceSeed.initiatives,
+    initiative: workspaceSeed.initiatives[0],
+    onAddProject: vi.fn(),
+    onBack: vi.fn(),
+    onDeleteInitiative: vi.fn(),
+    onDeleteThreadMessage: vi.fn(),
+    onSelectProject: vi.fn(),
+    onSendThreadMessage: vi.fn(),
+    onThreadDraftChange: vi.fn(),
+    onUpdateInitiative: vi.fn(),
     pendingThreadId: null,
-    projects: overrides?.projects ?? workspaceSeed.projects,
+    projects: workspaceSeed.projects,
     readThreadDraft: vi.fn(() => ({
       message: "",
       error: null,
     })),
-    onAddInitiative: vi.fn(),
-    onUpdateInitiative: vi.fn(),
-    onDeleteInitiative: vi.fn(),
-    onSelectInitiative: vi.fn(),
-    onAddProject: vi.fn(),
-    onDeleteThreadMessage: vi.fn(),
-    onThreadDraftChange: vi.fn(),
-    onSendThreadMessage: vi.fn(),
   } as const;
 }
 
 describe("initiative view", () => {
   /**
-   * Shows projects only in initiative cards, without nested task details.
+   * Shows linked project names inside the compact initiative overview cards.
    */
   it("renders a singular project count for one project", () => {
     const markup = renderToStaticMarkup(<InitiativeView {...buildInitiativeViewProps()} />);
 
+    expect(markup).toContain("Q2 Product Launch");
     expect(markup).toContain("Relay MVP");
     expect(markup).not.toContain("Define the smallest possible task manager");
     expect(markup).toContain("1 project");
     expect(markup).not.toContain("1 projects");
+    expect(markup).not.toContain("Workspace view");
+    expect(markup).not.toContain(
+      "Open the strategic layer as a quiet list, then drill into one initiative at a time.",
+    );
   });
 
   /**
@@ -67,5 +78,22 @@ describe("initiative view", () => {
     );
 
     expect(markup).toContain("2 projects");
+    expect(markup).toContain("Launch support docs");
+  });
+
+  /**
+   * Keeps the focused initiative page centered on projects and thread context.
+   */
+  it("renders the initiative detail page", () => {
+    const markup = renderToStaticMarkup(
+      <InitiativeDetailView {...buildInitiativeDetailViewProps()} />,
+    );
+
+    expect(markup).toContain("Back to initiatives");
+    expect(markup).toContain("Initiative detail");
+    expect(markup).toContain("Projects inside this initiative");
+    expect(markup).toContain("Open project");
+    expect(markup).toContain("Initiative thread");
+    expect(markup).toContain("Show thread (2)");
   });
 });

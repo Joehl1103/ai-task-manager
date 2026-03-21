@@ -41,6 +41,8 @@ The current goal is to keep the product as small as possible before layering on 
 
 ## Design Guidelines
 
+- The no-chrome aesthetic is a hard design constraint for workspace UI changes.
+- Before changing the shell or any workspace-facing view, read [`docs/no-chrome-design-rules.md`](docs/no-chrome-design-rules.md).
 - Keep the UI minimalist and text-first. Extra chrome, borders, and decoration should earn their place.
 - Clickable controls should feel clickable: visible hover states, pointer cursors where appropriate, and immediate active feedback.
 - Important actions should be obvious; secondary and destructive actions can be quieter but still discoverable.
@@ -53,7 +55,8 @@ The current goal is to keep the product as small as possible before layering on 
 Current focus:
 
 - Keep the app very small
-- Keep the top-level shell thin and desktop-oriented
+- Preserve the no-chrome UI language even as the shell evolves
+- Keep the top-level shell thin, desktop-oriented, and visually quiet
 - Let the user compare six paired day/night visual directions from Configuration, including the original starter theme
 - Preserve add, edit, delete, task-level agent calls, and deletion of saved agent contributions
 - Keep the main overview compact and move agent history into task drill-down

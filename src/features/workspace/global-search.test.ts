@@ -107,8 +107,8 @@ describe("global search", () => {
     expect(taskResult).toBeDefined();
     expect(resolveGlobalSearchSelection(taskResult!, workspaceSeed)).toEqual({
       activeMenu: "inbox",
-      filterProjectId: null,
-      filterInitiativeId: null,
+      selectedProjectId: null,
+      selectedInitiativeId: null,
       selectedTaskId: "task-1",
     });
   });
@@ -123,9 +123,9 @@ describe("global search", () => {
     expect(projectResult).toBeDefined();
     expect(resolveGlobalSearchSelection(projectResult!, workspaceSeed)).toEqual({
       activeMenu: "projects",
-      filterProjectId: "project-1",
-      filterInitiativeId: null,
-      selectedTaskId: "task-1",
+      selectedProjectId: "project-1",
+      selectedInitiativeId: null,
+      selectedTaskId: null,
     });
   });
 
@@ -139,8 +139,8 @@ describe("global search", () => {
     expect(projectResult).toBeDefined();
     expect(resolveGlobalSearchSelection(projectResult!, workspaceSeed)).toEqual({
       activeMenu: "projects",
-      filterProjectId: "project-2",
-      filterInitiativeId: null,
+      selectedProjectId: "project-2",
+      selectedInitiativeId: null,
       selectedTaskId: null,
     });
   });
@@ -155,8 +155,8 @@ describe("global search", () => {
     expect(initiativeResult).toBeDefined();
     expect(resolveGlobalSearchSelection(initiativeResult!, workspaceSeed)).toEqual({
       activeMenu: "initiatives",
-      filterProjectId: null,
-      filterInitiativeId: "initiative-1",
+      selectedProjectId: null,
+      selectedInitiativeId: "initiative-1",
       selectedTaskId: null,
     });
   });
