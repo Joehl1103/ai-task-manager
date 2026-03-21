@@ -6,7 +6,13 @@ import { Check, ChevronDown, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lu
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   type ProviderId,
   type ProviderSettings,
@@ -336,7 +342,7 @@ function ApiKeyManager({
                         <p className="truncate text-sm font-medium text-[color:var(--foreground)]">
                           {savedKey.label}
                         </p>
-                        {isActive ? <Badge variant="accent">Active key</Badge> : null}
+                        {isActive ? <Badge variant="secondary">Active key</Badge> : null}
                       </div>
                       <p className="mt-0.5 text-xs text-[color:var(--muted)]">
                         {maskApiKey(savedKey.apiKey)}
@@ -345,17 +351,24 @@ function ApiKeyManager({
 
                     <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-center">
                       <Select
-                        className="min-w-0 md:w-56 md:flex-none"
-                        onChange={(event) =>
-                          onSavedKeyModelChange(activeProvider, savedKey.id, event.target.value)
+                        onValueChange={(value) =>
+                          onSavedKeyModelChange(activeProvider, savedKey.id, value)
                         }
                         value={savedKey.model}
                       >
-                        {availableModels.map((modelId) => (
-                          <option key={modelId} value={modelId}>
-                            {modelId}
-                          </option>
-                        ))}
+                        <SelectTrigger
+                          aria-label={`${savedKey.label} model`}
+                          className="min-w-0 md:w-56 md:flex-none"
+                        >
+                          <SelectValue placeholder="Select model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableModels.map((modelId) => (
+                            <SelectItem key={modelId} value={modelId}>
+                              {modelId}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                       </Select>
 
                       {hasFetchedModels ? (

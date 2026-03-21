@@ -4,13 +4,13 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em]",
+  "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] transition-colors",
   {
     variants: {
       variant: {
-        neutral:
+        default:
           "border-[color:var(--border)] bg-[color:var(--surface-muted)] text-[color:var(--muted-strong)]",
-        accent:
+        secondary:
           "border-[color:var(--border-strong)] bg-[color:var(--surface-strong)] text-[color:var(--foreground)]",
         success: "border-emerald-200 bg-emerald-50 text-emerald-800",
         warning: "border-amber-200 bg-amber-50 text-amber-800",
@@ -18,7 +18,7 @@ const badgeVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "neutral",
+      variant: "default",
     },
   },
 );
@@ -28,8 +28,9 @@ export interface BadgeProps
     VariantProps<typeof badgeVariants> {}
 
 /**
- * Renders compact status chips with a shadcn-style API.
+ * Renders compact status chips with shadcn-style variant names while keeping Relay's custom
+ * success and warning states.
  */
 export function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant, className }))} {...props} />;
+  return <div className={cn(badgeVariants({ variant, className }))} data-slot="badge" {...props} />;
 }

@@ -1,15 +1,16 @@
+import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-[0_16px_32px_-24px_var(--shadow-color)] hover:opacity-90",
+          "bg-[color:var(--accent)] text-[color:var(--accent-foreground)] hover:opacity-90",
         outline:
           "border border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--foreground)] hover:border-[color:var(--border-strong)] hover:bg-[color:var(--surface-muted)]",
         ghost:
@@ -32,21 +33,27 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+  extends React.ComponentProps<"button">,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
 
 /**
- * Provides a small shadcn-style button primitive for the MVP interface.
+ * Provides a shadcn-style button primitive while preserving Relay's quieter no-chrome variants.
  */
 export function Button({
+  asChild = false,
   className,
   variant,
   size,
   type = "button",
   ...props
 }: ButtonProps) {
+  const Comp = asChild ? Slot : "button";
+
   return (
-    <button
+    <Comp
+      data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       type={type}
       {...props}

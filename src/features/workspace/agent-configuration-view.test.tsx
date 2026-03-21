@@ -118,7 +118,8 @@ describe("agent configuration view", () => {
     expect(markup).toContain("lucide-check");
     expect(markup).toContain(">Live provider ready</span>");
     expect(markup).toContain("Only one saved OpenAI key can be active at a time.");
-    expect(markup).toContain("gpt-5-mini");
+    expect(markup).toContain('role="combobox"');
+    expect(markup).not.toContain("<option");
     expect(markup).toContain("Saved OpenAI keys");
     expect(markup).toContain("space-y-1.5");
     expect(markup).toContain("md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_auto]");
