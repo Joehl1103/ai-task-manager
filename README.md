@@ -7,6 +7,7 @@ This app lives at the repository root (`ai-task-manager/`).
 ## Current Scope
 
 - One compact overview list holding all tasks
+- One quieter inbox composer with inline tag autocomplete plus `Cmd+N` and `Cmd+Enter` keyboard flows
 - One drill-down view for a selected task
 - A thin desktop top menu that opens from the current-view label
 - Theme options in Configuration with 6 paired day/night UI directions, including Relay Original

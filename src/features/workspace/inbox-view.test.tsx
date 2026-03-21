@@ -8,6 +8,8 @@ function buildInboxViewProps() {
   return {
     tasks: workspaceSeed.tasks,
     projects: workspaceSeed.projects,
+    focusTitleInputSignal: 0,
+    isComposerExpanded: false,
     selectedTask: null,
     selectedThreadDraft: {
       message: "",
@@ -42,6 +44,7 @@ function buildInboxViewProps() {
     onSetEditDetails: vi.fn(),
     onSetEditProject: vi.fn(),
     onSetEditTags: vi.fn(),
+    onSetComposerExpanded: vi.fn(),
     onThreadDraftChange: vi.fn(),
     onSendThreadMessage: vi.fn(),
   };
@@ -54,7 +57,7 @@ describe("inbox view", () => {
   it("renders a line-first add-task trigger when the composer is collapsed", () => {
     const markup = renderToStaticMarkup(<InboxView {...buildInboxViewProps()} />);
 
-    expect(markup).toContain("Add task");
+    expect(markup).toContain("+ Add task");
     expect(markup).not.toContain("Click to open the full task composer.");
     expect(markup).not.toContain("border-b border-[color:var(--border)]");
     expect(markup).not.toContain("rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3");
@@ -75,7 +78,8 @@ describe("inbox view", () => {
   });
 
   /**
-   * Hides the internal inbox project id from the task reassignment picker.
+   * Keeps the hidden inbox project out of the visible reassignment picker even after the native
+   * select was replaced with the shared Radix-backed primitive.
    */
   it("keeps the inbox project out of the project picker", () => {
     const selectedTask = workspaceSeed.tasks.find((task) => task.id === "task-3") ?? null;
@@ -91,11 +95,9 @@ describe("inbox view", () => {
       />,
     );
 
-    expect(markup).toContain('value="project-1"');
-    expect(markup).toContain('value="project-2"');
-    expect(markup).toContain('value="project-no-project"');
+    expect(markup).toContain('data-slot="select-trigger"');
     expect(markup).not.toContain('value="project-inbox"');
-    expect(markup).toContain(">Keep in Inbox</option>");
-    expect(markup).toContain(">No Project</option>");
+    expect(markup).not.toContain(">Inbox</option>");
+    expect(markup).not.toContain("<option");
   });
 });

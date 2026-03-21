@@ -118,6 +118,8 @@ export function WorkspaceApp() {
   const [newTaskDetails, setNewTaskDetails] = useState("");
   const [newTaskProject, setNewTaskProject] = useState("");
   const [newTaskTags, setNewTaskTags] = useState("");
+  const [isInboxComposerOpen, setIsInboxComposerOpen] = useState(false);
+  const [inboxComposerFocusSignal, setInboxComposerFocusSignal] = useState(0);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -304,6 +306,50 @@ export function WorkspaceApp() {
       window.removeEventListener("keydown", handleWindowKeyDown);
     };
   }, [isGlobalSearchOpen]);
+
+  /**
+   * Opens the inbox composer from the platform-standard new-item shortcut only when the inbox
+   * overview is active and the drill-down is closed.
+   */
+  useEffect(() => {
+    function handleWindowKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
+        if (activeMenu !== "inbox" || selectedTaskId !== null) {
+          return;
+        }
+
+        event.preventDefault();
+        if (!isInboxComposerOpen) {
+          setNewTaskProject("");
+          setIsInboxComposerOpen(true);
+        }
+
+        setInboxComposerFocusSignal((currentSignal) => currentSignal + 1);
+      }
+    }
+
+    window.addEventListener("keydown", handleWindowKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleWindowKeyDown);
+    };
+  }, [activeMenu, isInboxComposerOpen, selectedTaskId]);
+
+  /**
+   * Clears inbox-only draft state when the user leaves the inbox view so stale composer state does
+   * not leak into later visits.
+   */
+  useEffect(() => {
+    if (activeMenu === "inbox") {
+      return;
+    }
+
+    setIsInboxComposerOpen(false);
+    setNewTaskTitle("");
+    setNewTaskDetails("");
+    setNewTaskProject("");
+    setNewTaskTags("");
+  }, [activeMenu]);
 
   /**
    * Resets the highlighted search row whenever the query changes so Enter always targets the
@@ -1100,16 +1146,19 @@ export function WorkspaceApp() {
           activeProviderModel={activeProviderSettings.model}
           editDetails={editDetails}
           editingTaskId={editingTaskId}
+          focusTitleInputSignal={inboxComposerFocusSignal}
           editProject={editProject}
           editTags={editTags}
           editTitle={editTitle}
           isActiveProviderReady={isActiveProviderReady}
+          isComposerExpanded={isInboxComposerOpen}
           newTaskDetails={newTaskDetails}
           newTaskProject={newTaskProject}
           newTaskTags={newTaskTags}
           newTaskTitle={newTaskTitle}
           onAddTask={handleAddTask}
           onCancelEdit={handleCancelEdit}
+          onSetComposerExpanded={setIsInboxComposerOpen}
           onDeleteThreadMessage={(taskId, messageId) =>
             handleDeleteThreadMessage(
               {

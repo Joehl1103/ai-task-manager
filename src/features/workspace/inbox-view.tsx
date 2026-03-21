@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,13 +15,20 @@ import {
   isTaskInInbox,
   readProjectPickerValue,
 } from "@/features/workspace/projects";
-import { TaskDetailActionsMenu, TaskOverviewActionsMenu } from "@/features/workspace/tasks";
+import {
+  collectInboxComposerTags,
+  InboxTaskComposer,
+  TaskDetailActionsMenu,
+  TaskOverviewActionsMenu,
+} from "@/features/workspace/tasks";
 import { AgentThreadPanel, readThreadComposerPlaceholder } from "@/features/workspace/threads";
 import { type Project, type Task, type ThreadDraft } from "@/features/workspace/core";
 
 interface InboxViewProps {
   tasks: Task[];
   projects: Project[];
+  focusTitleInputSignal: number;
+  isComposerExpanded: boolean;
   selectedTask: Task | null;
   selectedThreadDraft: ThreadDraft;
   newTaskTitle: string;
@@ -55,6 +60,7 @@ interface InboxViewProps {
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
   onSetEditTags: (value: string) => void;
+  onSetComposerExpanded: (value: boolean) => void;
   onThreadDraftChange: (taskId: string, message: string) => void;
   onSendThreadMessage: (taskId: string) => void;
 }
@@ -65,6 +71,8 @@ interface InboxViewProps {
 export function InboxView({
   tasks,
   projects,
+  focusTitleInputSignal,
+  isComposerExpanded,
   selectedTask,
   selectedThreadDraft,
   newTaskTitle,
@@ -96,16 +104,17 @@ export function InboxView({
   onSetEditDetails,
   onSetEditProject,
   onSetEditTags,
+  onSetComposerExpanded,
   onThreadDraftChange,
   onSendThreadMessage,
 }: InboxViewProps) {
-  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const visibleProjects = filterVisibleProjects(projects);
   const inboxTasks = tasks.filter((task) => isTaskInInbox(task));
+  const allTags = collectInboxComposerTags(tasks);
 
   function handleExpandComposer() {
     onSetNewTaskProject("");
-    setIsComposerExpanded(true);
+    onSetComposerExpanded(true);
   }
 
   function handleAddTaskAndCollapse() {
@@ -114,11 +123,11 @@ export function InboxView({
     }
 
     onAddTask();
-    setIsComposerExpanded(false);
+    onSetComposerExpanded(false);
   }
 
   function handleCollapseComposer() {
-    setIsComposerExpanded(false);
+    onSetComposerExpanded(false);
     onSetNewTaskTitle("");
     onSetNewTaskDetails("");
     onSetNewTaskProject("");
@@ -140,63 +149,28 @@ export function InboxView({
         </p>
       ) : null}
 
-      <section className="mt-4">
-        <button
-          aria-expanded={isComposerExpanded}
-          className="flex w-full items-center gap-2 text-left text-sm font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
-          onClick={handleExpandComposer}
-          type="button"
-        >
-          <Plus className="size-4 shrink-0" />
-          <span>Add task</span>
-        </button>
-
-        {isComposerExpanded ? (
-          <div className="mt-3 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
-            <Input
-              autoFocus
-              onChange={(event) => onSetNewTaskTitle(event.target.value)}
-              placeholder="Task title"
-              value={newTaskTitle}
-            />
-            <Select
-              onValueChange={(value) => onSetNewTaskProject(value === "_inbox" ? "" : value)}
-              value={newTaskProject || "_inbox"}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={inboxPickerLabel} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_inbox">{inboxPickerLabel}</SelectItem>
-                {visibleProjects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              onChange={(event) => onSetNewTaskTags(event.target.value)}
-              placeholder="Tags (optional, comma-separated)"
-              value={newTaskTags}
-            />
-            <Textarea
-              onChange={(event) => onSetNewTaskDetails(event.target.value)}
-              placeholder="Optional task details"
-              value={newTaskDetails}
-            />
-            <div className="flex justify-end gap-2">
-              <Button onClick={handleCollapseComposer} variant="ghost">
-                Cancel
-              </Button>
-              <Button disabled={!newTaskTitle.trim()} onClick={handleAddTaskAndCollapse}>
-                <Plus className="size-4" />
-                Add
-              </Button>
-            </div>
-          </div>
-        ) : null}
-      </section>
+      {!selectedTask ? (
+        <section className="mt-4">
+          <InboxTaskComposer
+            allTags={allTags}
+            focusTitleInputSignal={focusTitleInputSignal}
+            isExpanded={isComposerExpanded}
+            key={isComposerExpanded ? "expanded" : "collapsed"}
+            newTaskDetails={newTaskDetails}
+            newTaskProject={newTaskProject}
+            newTaskTags={newTaskTags}
+            newTaskTitle={newTaskTitle}
+            onCollapse={handleCollapseComposer}
+            onExpand={handleExpandComposer}
+            onSetNewTaskDetails={onSetNewTaskDetails}
+            onSetNewTaskProject={onSetNewTaskProject}
+            onSetNewTaskTags={onSetNewTaskTags}
+            onSetNewTaskTitle={onSetNewTaskTitle}
+            onSubmit={handleAddTaskAndCollapse}
+            projects={visibleProjects}
+          />
+        </section>
+      ) : null}
 
       <section className="mt-6">
         {selectedTask ? (
