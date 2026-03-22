@@ -5,9 +5,10 @@ import { AgentConfigurationView } from "./agent-configuration-view";
 
 describe("agent configuration view", () => {
   /**
-   * Keeps workspace theme and provider controls tucked into a clickable configuration list.
+   * Keeps workspace theme and provider controls tucked into stock accordion sections instead of
+   * custom native details markup.
    */
-  it("renders collapsible configuration sections for theme and agent settings", () => {
+  it("renders accordion sections for theme and agent settings", () => {
     const markup = renderToStaticMarkup(
       <AgentConfigurationView
         activeProvider="openai"
@@ -41,20 +42,24 @@ describe("agent configuration view", () => {
     expect(markup).toContain("Workspace theme");
     expect(markup).toContain("Agent settings");
     expect(markup).toContain('class="text-2xl font-semibold">Configuration</h1>');
-    expect(markup).toContain('class="configuration-disclosure-status">Relay Original / Day</p>');
-    expect(markup).toContain('class="configuration-disclosure-status">API key needed</p>');
-    expect(markup).toContain("configuration-disclosure-meta");
+    expect(markup).toContain("Relay Original / Day");
+    expect(markup).toContain("API key needed");
+    expect(markup).toContain('data-slot="accordion"');
+    expect(markup.match(/data-slot="accordion-item"/g)).toHaveLength(2);
+    expect(markup.match(/data-slot="accordion-trigger"/g)).toHaveLength(2);
+    expect(markup.match(/data-slot="accordion-content"/g)).toHaveLength(2);
     expect(markup).not.toContain("lucide-check");
     expect(markup).not.toContain("text-3xl");
-    expect(markup.match(/<details/g)).toHaveLength(2);
-    expect(markup).not.toContain("<details open");
+    expect(markup).not.toContain("<details");
+    expect(markup).not.toContain("<summary");
+    expect(markup).not.toContain("configuration-disclosure");
     expect(markup).not.toContain("Separate workspace view");
     expect(markup).not.toContain("How this connects to the workspace");
-    expect(markup).not.toContain(
-      'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.16em]">Relay Original / Day</div>',
-    );
     expect(markup.match(/aria-label="[^"]+ day theme"/g)).toHaveLength(6);
     expect(markup.match(/aria-label="[^"]+ night theme"/g)).toHaveLength(6);
+    expect(markup).not.toContain("Option 01");
+    expect(markup).not.toContain(">Sun<");
+    expect(markup).not.toContain(">Moon<");
   });
 
   /**
@@ -112,9 +117,7 @@ describe("agent configuration view", () => {
     expect(markup).toContain("Refresh models for Work");
     expect(markup).toContain("Fetch models");
     expect(markup).toContain("Add API key");
-    expect(markup).toContain(
-      'class="configuration-disclosure-status flex items-center justify-end gap-1"',
-    );
+    expect(markup).toContain('data-slot="accordion-content"');
     expect(markup).toContain("lucide-check");
     expect(markup).toContain(">Live provider ready</span>");
     expect(markup).toContain("Only one saved OpenAI key can be active at a time.");
@@ -127,5 +130,6 @@ describe("agent configuration view", () => {
     expect(markup).toContain('data-slot="tooltip-trigger"');
     expect(markup).not.toContain("Save this key");
     expect(markup).not.toContain("lg:grid-cols-[minmax(0,1fr)_minmax(15rem,1.2fr)_auto]");
+    expect(markup).not.toContain("configuration-disclosure-status");
   });
 });

@@ -1,8 +1,21 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "./accordion";
 import { Badge } from "./badge";
 import { Button } from "./button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./card";
 import {
   Dialog,
   DialogContent,
@@ -129,5 +142,38 @@ describe("workspace ui primitives", () => {
     expect(markup).toContain('data-slot="popover-trigger"');
     expect(markup).toContain('data-slot="label"');
     expect(markup).toContain('data-slot="separator"');
+  });
+
+  /**
+   * Confirms the configuration-specific stock shadcn surfaces stay available in the shared layer
+   * instead of being rebuilt ad hoc inside workspace views.
+   */
+  it("renders accordion and card with named slots", () => {
+    const markup = renderToStaticMarkup(
+      <Accordion collapsible defaultValue="theme" type="single">
+        <AccordionItem value="theme">
+          <AccordionTrigger>Workspace theme</AccordionTrigger>
+          <AccordionContent forceMount>
+            <Card>
+              <CardHeader>
+                <CardTitle>Relay Original</CardTitle>
+                <CardDescription>Neutral starter palette.</CardDescription>
+              </CardHeader>
+              <CardContent>Day and night choices</CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    expect(markup).toContain('data-slot="accordion"');
+    expect(markup).toContain('data-slot="accordion-item"');
+    expect(markup).toContain('data-slot="accordion-trigger"');
+    expect(markup).toContain('data-slot="accordion-content"');
+    expect(markup).toContain('data-slot="card"');
+    expect(markup).toContain('data-slot="card-header"');
+    expect(markup).toContain('data-slot="card-title"');
+    expect(markup).toContain('data-slot="card-description"');
+    expect(markup).toContain('data-slot="card-content"');
   });
 });

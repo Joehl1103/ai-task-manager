@@ -11,6 +11,7 @@ This app lives at the repository root (`ai-task-manager/`).
 - One shared inline task editor that expands beneath the selected row across inbox, task lists, and project detail
 - A thin desktop top menu that opens from the current-view label
 - Theme options in Configuration with 6 paired day/night UI directions, including Relay Original
+- Configuration sections built on shadcn-style accordion and card surfaces instead of custom disclosure markup
 - Add a task
 - Edit a task inline without leaving the list
 - Delete a task
@@ -24,7 +25,7 @@ This app lives at the repository root (`ai-task-manager/`).
 - Next.js 16
 - TypeScript
 - Tailwind CSS v4
-- shadcn-style primitives with shared design tokens and Radix-backed Select, Dialog, DropdownMenu, Tooltip, Label, and Separator behavior
+- shadcn-style primitives with shared design tokens and Radix-backed Select, Dialog, DropdownMenu, Tooltip, Label, Separator, and Accordion behavior
 - Vitest
 
 ## Commands
@@ -80,7 +81,7 @@ The app is the primary project in this repository.
 - `src/features/workspace/theme/*`: theme registry and selector
 - `src/features/workspace/navigation/*`: top-menu UI and menu metadata
 - `config/next/*`: Next dev-server config helpers and tests
-- `src/components/ui/*`: reusable shadcn-style UI primitives, with Radix used where accessibility or composition needs it across Select, Dialog, DropdownMenu, Tooltip, Label, and Separator
+- `src/components/ui/*`: reusable shadcn-style UI primitives, with Radix used where accessibility or composition needs it across Select, Dialog, DropdownMenu, Tooltip, Label, Separator, and Accordion
 
 ## Product Assumptions
 

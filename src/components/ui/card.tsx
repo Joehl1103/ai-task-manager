@@ -13,7 +13,7 @@ const Card = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(funct
   return (
     <div
       className={cn(
-        "rounded-xl border border-[color:var(--border)] bg-[color:var(--card)] text-[color:var(--card-foreground)] shadow-none",
+        "rounded-xl border border-[color:var(--border)] bg-[color:var(--card)] text-[color:var(--card-foreground)] shadow-sm",
         className,
       )}
       data-slot="card"
@@ -23,16 +23,13 @@ const Card = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(funct
   );
 });
 
-/**
- * Keeps card headers aligned with the shadcn registry structure so sections read consistently.
- */
 const CardHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(function CardHeader(
   { className, ...props },
   ref,
 ) {
   return (
     <div
-      className={cn("flex flex-col gap-1.5 px-4 py-4", className)}
+      className={cn("flex flex-col gap-1.5 p-6", className)}
       data-slot="card-header"
       ref={ref}
       {...props}
@@ -40,16 +37,13 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>
   );
 });
 
-/**
- * Renders the primary title for a card section.
- */
 const CardTitle = React.forwardRef<HTMLParagraphElement, React.ComponentProps<"p">>(function CardTitle(
   { className, ...props },
   ref,
 ) {
   return (
-    <p
-      className={cn("text-sm font-semibold text-[color:var(--foreground)]", className)}
+      <p
+      className={cn("font-semibold leading-none tracking-tight text-[color:var(--foreground)]", className)}
       data-slot="card-title"
       ref={ref}
       {...props}
@@ -57,14 +51,11 @@ const CardTitle = React.forwardRef<HTMLParagraphElement, React.ComponentProps<"p
   );
 });
 
-/**
- * Renders supporting helper copy beneath a card title.
- */
 const CardDescription = React.forwardRef<HTMLParagraphElement, React.ComponentProps<"p">>(
   function CardDescription({ className, ...props }, ref) {
     return (
       <p
-        className={cn("text-sm leading-6 text-[color:var(--muted)]", className)}
+        className={cn("text-sm text-[color:var(--muted)]", className)}
         data-slot="card-description"
         ref={ref}
         {...props}
@@ -73,16 +64,13 @@ const CardDescription = React.forwardRef<HTMLParagraphElement, React.ComponentPr
   },
 );
 
-/**
- * Holds the main body content for a card.
- */
 const CardContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(function CardContent(
   { className, ...props },
   ref,
 ) {
   return (
     <div
-      className={cn("px-4 pb-4", className)}
+      className={cn("p-6 pt-0", className)}
       data-slot="card-content"
       ref={ref}
       {...props}
@@ -90,16 +78,13 @@ const CardContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">
   );
 });
 
-/**
- * Keeps footer actions aligned at the bottom of a card.
- */
 const CardFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(function CardFooter(
   { className, ...props },
   ref,
 ) {
   return (
     <div
-      className={cn("flex items-center px-4 pb-4", className)}
+      className={cn("flex items-center p-6 pt-0", className)}
       data-slot="card-footer"
       ref={ref}
       {...props}

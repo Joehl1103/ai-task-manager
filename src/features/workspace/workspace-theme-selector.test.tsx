@@ -5,7 +5,7 @@ import { WorkspaceThemeSelector } from "@/features/workspace/theme";
 
 describe("workspace theme selector", () => {
   /**
-   * Verifies the selector exposes all theme options with explicit day and night toggles.
+   * Verifies the selector exposes all theme options as simpler stock card and button surfaces.
    */
   it("renders every theme option and both mode toggles", () => {
     const markup = renderToStaticMarkup(
@@ -19,15 +19,22 @@ describe("workspace theme selector", () => {
     );
 
     expect(markup).toContain("Theme Options");
+    expect(markup).toContain("Current Theme");
     expect(markup).toContain("Relay Original");
     expect(markup).toContain("Linen Ledger");
     expect(markup).toContain("Sage Study");
     expect(markup).toContain("Coastal Signal");
     expect(markup).toContain("Clay Ember");
     expect(markup).toContain("Citrus Press");
+    expect(markup.match(/data-slot="card"/g)).toHaveLength(7);
+    expect(markup.match(/data-slot="button"/g)).toHaveLength(12);
     expect(markup.match(/aria-label="[^"]+ day theme"/g)).toHaveLength(6);
     expect(markup.match(/aria-label="[^"]+ night theme"/g)).toHaveLength(6);
     expect(markup).toContain('class="text-xs font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]"');
+    expect(markup).not.toContain("Option 01");
+    expect(markup).not.toContain(">Sun<");
+    expect(markup).not.toContain(">Moon<");
+    expect(markup).not.toContain("workspace-theme-panel");
     expect(markup).not.toContain("text-[11px]");
     expect(markup).not.toContain("text-[10px]");
   });

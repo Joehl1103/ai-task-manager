@@ -100,63 +100,6 @@ body {
     color 180ms ease;
 }
 
-.workspace-theme-panel {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-strong) 92%, white 8%),
-      color-mix(in srgb, var(--surface) 95%, var(--background) 5%)
-    );
-  box-shadow: 0 24px 60px -36px var(--shadow-color);
-  backdrop-filter: blur(14px);
-}
-
-.configuration-disclosure-summary::-webkit-details-marker {
-  display: none;
-}
-
-.configuration-disclosure-summary::marker {
-  content: "";
-}
-
-.configuration-disclosure-summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0.75rem;
-}
-
-.configuration-disclosure-copy {
-  min-width: 0;
-}
-
-.configuration-disclosure-meta {
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding-left: 0.5rem;
-}
-
-.configuration-disclosure-status {
-  max-width: 10rem;
-  overflow: hidden;
-  color: var(--muted-strong);
-  font-size: var(--font-size-xs);
-  line-height: 1rem;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.configuration-disclosure-chevron {
-  transition: transform 180ms ease;
-}
-
-.configuration-disclosure[open] .configuration-disclosure-chevron {
-  transform: rotate(180deg);
-}
-
 button,
 input,
 textarea,

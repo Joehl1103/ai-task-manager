@@ -1,12 +1,20 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 import {
   readWorkspaceThemeFlag,
   readWorkspaceThemeLabel,
   type WorkspaceThemeMode,
-  type WorkspaceThemePalette,
   type WorkspaceThemeSelection,
   workspaceThemeFlags,
 } from "./workspace-theme";
@@ -28,15 +36,9 @@ export function WorkspaceThemeSelector({
   const activeThemeFlag = readWorkspaceThemeFlag(selection.themeId);
 
   return (
-    <section
-      aria-label="Theme options"
-      className={cn(
-        "workspace-theme-panel rounded-[28px] border border-[color:var(--border)] px-4 py-4 sm:px-5 sm:py-5",
-        !showHeader && "border-none bg-transparent px-0 py-0 shadow-none backdrop-blur-none",
-      )}
-    >
+    <section aria-label="Theme options" className="space-y-4">
       {showHeader ? (
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
           <div className="max-w-3xl">
             <p className="text-xs font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
               Theme Options
@@ -50,79 +52,111 @@ export function WorkspaceThemeSelector({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-strong)] px-4 py-3 shadow-[0_16px_40px_-28px_var(--shadow-color)]">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
-              Current Theme
-            </p>
-            <p className="mt-2 text-sm font-medium text-[color:var(--foreground)]">
-              {readWorkspaceThemeLabel(selection)}
-            </p>
-            <p className="mt-1 text-xs text-[color:var(--muted)]">{activeThemeFlag.summary}</p>
-          </div>
+          <CurrentThemeCard
+            activeThemeFlag={activeThemeFlag}
+            selection={selection}
+          />
         </div>
       ) : null}
 
-      <div className={cn("grid gap-3 xl:grid-cols-3 md:grid-cols-2", showHeader && "mt-5")}>
-        {workspaceThemeFlags.map((themeFlag, index) => {
+      <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-3", showHeader && "pt-1")}>
+        {workspaceThemeFlags.map((themeFlag) => {
           const isActiveTheme = selection.themeId === themeFlag.id;
 
           return (
-            <article
-              className={cn(
-                "rounded-[24px] border px-4 py-4 transition-all duration-200",
-                isActiveTheme
-                  ? "border-[color:var(--border-strong)] bg-[color:var(--surface)] shadow-[0_24px_50px_-32px_var(--shadow-color)]"
-                  : "border-[color:var(--border)] bg-[color:var(--surface-strong)]",
-              )}
+            <ThemeOptionCard
+              isActiveTheme={isActiveTheme}
               key={themeFlag.id}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
-                    Option {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <h3 className="mt-2 text-sm font-semibold text-[color:var(--foreground)]">
-                    {themeFlag.name}
-                  </h3>
-                </div>
-
-                {isActiveTheme ? (
-                  <span className="rounded-full bg-[color:var(--surface-muted)] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted-strong)]">
-                    Active
-                  </span>
-                ) : null}
-              </div>
-
-              <p className="mt-3 min-h-[4.5rem] text-sm leading-6 text-[color:var(--muted)]">
-                {themeFlag.summary}
-              </p>
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <ThemeModeButton
-                  isActive={isActiveTheme && selection.mode === "day"}
-                  label="Day"
-                  mode="day"
-                  onSelectTheme={onSelectTheme}
-                  themeId={themeFlag.id}
-                />
-                <ThemeModeButton
-                  isActive={isActiveTheme && selection.mode === "night"}
-                  label="Night"
-                  mode="night"
-                  onSelectTheme={onSelectTheme}
-                  themeId={themeFlag.id}
-                />
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <ThemePalettePreview label="Day" palette={themeFlag.day} />
-                <ThemePalettePreview label="Night" palette={themeFlag.night} />
-              </div>
-            </article>
+              onSelectTheme={onSelectTheme}
+              selection={selection}
+              themeFlag={themeFlag}
+            />
           );
         })}
       </div>
     </section>
+  );
+}
+
+interface CurrentThemeCardProps {
+  activeThemeFlag: ReturnType<typeof readWorkspaceThemeFlag>;
+  selection: WorkspaceThemeSelection;
+}
+
+/**
+ * Keeps the active theme visible without depending on the larger custom showcase panel.
+ */
+function CurrentThemeCard({ activeThemeFlag, selection }: CurrentThemeCardProps) {
+  return (
+    <Card className="bg-[color:var(--surface-strong)] shadow-none">
+      <CardHeader className="gap-2 p-4">
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--muted)]">
+          Current Theme
+        </p>
+        <CardTitle>{readWorkspaceThemeLabel(selection)}</CardTitle>
+        <CardDescription>{activeThemeFlag.summary}</CardDescription>
+      </CardHeader>
+    </Card>
+  );
+}
+
+interface ThemeOptionCardProps {
+  isActiveTheme: boolean;
+  onSelectTheme: (selection: WorkspaceThemeSelection) => void;
+  selection: WorkspaceThemeSelection;
+  themeFlag: typeof workspaceThemeFlags[number];
+}
+
+/**
+ * Uses a stock card layout so each theme reads as a simple selectable option instead of a custom
+ * preview block.
+ */
+function ThemeOptionCard({
+  isActiveTheme,
+  onSelectTheme,
+  selection,
+  themeFlag,
+}: ThemeOptionCardProps) {
+  return (
+    <Card
+      className={cn(
+        "h-full bg-[color:var(--surface-strong)] shadow-none transition-colors",
+        isActiveTheme && "border-[color:var(--border-strong)] bg-[color:var(--surface)]",
+      )}
+    >
+      <CardHeader className="gap-3 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <CardTitle className="min-w-0">{themeFlag.name}</CardTitle>
+
+          {isActiveTheme ? <Badge variant="secondary">Active</Badge> : null}
+        </div>
+
+        <CardDescription>{themeFlag.summary}</CardDescription>
+      </CardHeader>
+
+      <CardContent className="space-y-3 px-4 pb-4 pt-0">
+        <div className="flex flex-wrap gap-2">
+          <ThemeModeButton
+            isActive={isActiveTheme && selection.mode === "day"}
+            label="Day"
+            mode="day"
+            onSelectTheme={onSelectTheme}
+            themeId={themeFlag.id}
+          />
+          <ThemeModeButton
+            isActive={isActiveTheme && selection.mode === "night"}
+            label="Night"
+            mode="night"
+            onSelectTheme={onSelectTheme}
+            themeId={themeFlag.id}
+          />
+        </div>
+
+        <p className="text-xs leading-5 text-[color:var(--muted)]">
+          {readThemeSupportText(isActiveTheme, selection.mode)}
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -145,80 +179,31 @@ function ThemeModeButton({
   onSelectTheme,
 }: ThemeModeButtonProps) {
   return (
-    <button
+    <Button
       aria-label={`${readWorkspaceThemeFlag(themeId).name} ${label.toLowerCase()} theme`}
       aria-pressed={isActive}
-      className={cn(
-        "cursor-pointer rounded-2xl border px-3 py-2 text-sm font-medium transition-all duration-150",
-        isActive
-          ? "border-[color:var(--border-strong)] bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-[0_16px_32px_-22px_var(--shadow-color)]"
-          : "border-[color:var(--border)] bg-[color:var(--surface-muted)] text-[color:var(--foreground)] hover:border-[color:var(--border-strong)] hover:bg-[color:var(--surface)]",
-      )}
+      className="min-w-20"
       onClick={() =>
         onSelectTheme({
           themeId,
           mode,
         })
       }
-      type="button"
+      size="sm"
+      variant={isActive ? "default" : "outline"}
     >
       {label}
-    </button>
+    </Button>
   );
-}
-
-interface ThemePalettePreviewProps {
-  label: string;
-  palette: WorkspaceThemePalette;
 }
 
 /**
- * Shows a compact visual swatch so unselected theme options can still be compared at a glance.
+ * Keeps the helper copy short while still confirming the currently selected mode when relevant.
  */
-function ThemePalettePreview({ label, palette }: ThemePalettePreviewProps) {
-  return (
-    <div
-      className="rounded-[18px] border p-2"
-      style={{
-        background: palette.surface,
-        borderColor: palette.border,
-        boxShadow: `0 10px 26px -24px ${palette.shadowColor}`,
-      }}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span
-          className="text-xs font-semibold uppercase tracking-[0.16em]"
-          style={{ color: palette.muted }}
-        >
-          {label}
-        </span>
-        <span
-          className="text-xs font-medium uppercase tracking-[0.12em]"
-          style={{ color: palette.mutedStrong }}
-        >
-          {label === "Day" ? "Sun" : "Moon"}
-        </span>
-      </div>
+function readThemeSupportText(isActiveTheme: boolean, mode: WorkspaceThemeMode) {
+  if (isActiveTheme) {
+    return `Currently using the ${mode} pair for this workspace palette.`;
+  }
 
-      <div className="mt-2 grid grid-cols-[1.2fr_1fr] gap-2">
-        <div
-          className="h-9 rounded-xl"
-          style={{
-            background: `linear-gradient(135deg, ${palette.accent}, ${palette.surfaceMuted})`,
-          }}
-        />
-
-        <div className="space-y-1">
-          <div className="h-4 rounded-lg" style={{ background: palette.background }} />
-          <div
-            className="h-4 rounded-lg border"
-            style={{
-              background: palette.surfaceStrong,
-              borderColor: palette.border,
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
+  return "Choose Day or Night to switch the workspace onto this palette.";
 }

@@ -1,8 +1,14 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Check, ChevronDown, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Check, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,35 +101,49 @@ export function AgentConfigurationView({
           until you click into each section.
         </p>
 
-        <ul className="mt-4 space-y-4">
-          <li>
-            <details className="configuration-disclosure rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)]">
-              <ConfigurationDisclosureSummary
+        <Accordion className="mt-4 space-y-4" type="multiple">
+          <AccordionItem
+            className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)]"
+            value="workspace-theme"
+          >
+            <AccordionTrigger className="px-4 py-4 hover:no-underline">
+              <ConfigurationSectionTrigger
                 description="Choose between six paired day and night themes, including Relay Original."
                 statusText={themeSummary}
                 title="Workspace theme"
               />
+            </AccordionTrigger>
 
-              <div className="border-t border-[color:var(--border)] px-4 py-4">
-                <WorkspaceThemeSelector
-                  onSelectTheme={onThemeSelectionChange}
-                  selection={themeSelection}
-                  showHeader={false}
-                />
-              </div>
-            </details>
-          </li>
+            <AccordionContent
+              className="border-t border-[color:var(--border)] px-4 py-4"
+              forceMount
+            >
+              <WorkspaceThemeSelector
+                onSelectTheme={onThemeSelectionChange}
+                selection={themeSelection}
+                showHeader={false}
+              />
+            </AccordionContent>
+          </AccordionItem>
 
-          <li>
-            <details className="configuration-disclosure rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)]">
-              <ConfigurationDisclosureSummary
+          <AccordionItem
+            className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)]"
+            value="agent-settings"
+          >
+            <AccordionTrigger className="px-4 py-4 hover:no-underline">
+              <ConfigurationSectionTrigger
                 description="Add your OpenAI API key and adjust the model used for live thread replies."
                 showsStatusCheckmark={providerSummary.showsCheckmark}
                 statusText={providerSummary.text}
                 title="Agent settings"
               />
+            </AccordionTrigger>
 
-              <div className="space-y-4 border-t border-[color:var(--border)] px-4 py-4">
+            <AccordionContent
+              className="border-t border-[color:var(--border)] px-4 py-4"
+              forceMount
+            >
+              <div className="space-y-4">
                 <ApiKeyManager
                   activeKeyId={activeProviderSettings.activeKeyId}
                   activeProvider={activeProvider}
@@ -148,15 +168,15 @@ export function AgentConfigurationView({
                   storage.
                 </p>
               </div>
-            </details>
-          </li>
-        </ul>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </section>
     </>
   );
 }
 
-interface ConfigurationDisclosureSummaryProps {
+interface ConfigurationSectionTriggerProps {
   description: string;
   showsStatusCheckmark?: boolean;
   statusText: string;
@@ -164,24 +184,24 @@ interface ConfigurationDisclosureSummaryProps {
 }
 
 /**
- * Keeps the disclosure headers readable by using a compact text status instead of summary badges.
+ * Keeps each accordion trigger readable with a compact text summary rather than a heavier preview.
  */
-function ConfigurationDisclosureSummary({
+function ConfigurationSectionTrigger({
   description,
   showsStatusCheckmark = false,
   statusText,
   title,
-}: ConfigurationDisclosureSummaryProps) {
+}: ConfigurationSectionTriggerProps) {
   return (
-    <summary className="configuration-disclosure-summary cursor-pointer list-none px-4 py-4">
-      <div className="configuration-disclosure-copy">
+    <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+      <div className="min-w-0">
         <p className="text-sm font-medium">{title}</p>
         <p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">{description}</p>
       </div>
 
-      <div className="configuration-disclosure-meta">
+      <div className="flex min-w-0 items-start gap-2 sm:pl-4">
         {showsStatusCheckmark ? (
-          <p className="configuration-disclosure-status flex items-center justify-end gap-1">
+          <p className="flex max-w-40 items-center justify-end gap-1 text-right text-xs leading-4 text-[color:var(--muted-strong)]">
             <Check
               aria-hidden="true"
               className="size-3 shrink-0 text-[color:var(--muted-strong)]"
@@ -189,14 +209,12 @@ function ConfigurationDisclosureSummary({
             <span className="min-w-0 truncate">{statusText}</span>
           </p>
         ) : (
-          <p className="configuration-disclosure-status">{statusText}</p>
+          <p className="max-w-40 truncate text-right text-xs leading-4 text-[color:var(--muted-strong)]">
+            {statusText}
+          </p>
         )}
-        <ChevronDown
-          aria-hidden="true"
-          className="configuration-disclosure-chevron size-4 shrink-0 text-[color:var(--muted)]"
-        />
       </div>
-    </summary>
+    </div>
   );
 }
 
