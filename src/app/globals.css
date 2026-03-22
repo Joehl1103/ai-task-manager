@@ -21,6 +21,8 @@
   --primary-foreground: #fafafa;
   --secondary: #f4f4f5;
   --secondary-foreground: #3f3f46;
+  --destructive: #dc2626;
+  --destructive-foreground: #fafafa;
   --popover: #ffffff;
   --popover-foreground: #18181b;
   --input: #d4d4d8;
@@ -51,6 +53,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-muted: var(--surface-muted);
@@ -99,7 +103,6 @@ body {
     background 180ms ease,
     color 180ms ease;
 }
-
 button,
 input,
 textarea,

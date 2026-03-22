@@ -1,7 +1,9 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { featureFlags } from "@/features/feature-flags";
 import { AgentConfigurationView } from "@/features/workspace/agent-configuration-view";
 import { ArchiveView } from "@/features/workspace/archive-view";
@@ -28,6 +30,7 @@ import {
   type WorkspaceMenu,
   WorkspaceCollapsedRail,
   WorkspaceSidebar,
+  WorkspaceTopMenu,
 } from "@/features/workspace/navigation";
 import {
   filterVisibleProjects,
@@ -102,6 +105,7 @@ export function WorkspaceApp() {
   const [hasLoadedGroupingMode, setHasLoadedGroupingMode] = useState(false);
   const [hasLoadedThemeSelection, setHasLoadedThemeSelection] = useState(false);
   const [activeMenu, setActiveMenu] = useState(createDefaultWorkspaceMenu);
+  const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(true);
   const [isInitiativesExpanded, setIsInitiativesExpanded] = useState(true);
@@ -407,11 +411,21 @@ export function WorkspaceApp() {
   }
 
   /**
+   * Opens search from either the keyboard shortcut or the shell search trigger with a fresh query.
+   */
+  function handleOpenGlobalSearch() {
+    setGlobalSearchQuery("");
+    setActiveGlobalSearchIndex(0);
+    setIsGlobalSearchOpen(true);
+  }
+
+  /**
    * Switches top-level destinations and resets entity-specific detail pages when the parent row
    * itself is clicked from the sidebar.
    */
   function handleSelectMenu(nextMenu: WorkspaceMenu) {
     setActiveMenu(nextMenu);
+    setIsWorkspaceMenuOpen(false);
     setIsSidebarVisible(true);
 
     if (nextMenu === "projects") {
@@ -1122,6 +1136,7 @@ export function WorkspaceApp() {
     setActiveMenu(selection.activeMenu);
     setSelectedProjectId(selection.selectedProjectId);
     setSelectedInitiativeId(selection.selectedInitiativeId);
+    setIsWorkspaceMenuOpen(false);
     setIsSidebarVisible(true);
 
     if (selection.selectedProjectId) {
@@ -1351,7 +1366,7 @@ export function WorkspaceApp() {
 
   return (
     <main
-      className="workspace-theme-stage min-h-screen px-4 py-6 text-[color:var(--foreground)]"
+      className="min-h-screen bg-background px-4 py-6 text-[color:var(--foreground)]"
       data-theme-mode={themeSelection.mode}
       data-theme-pair={themeSelection.themeId}
       style={buildWorkspaceThemeStyle(themeSelection)}
@@ -1406,6 +1421,29 @@ export function WorkspaceApp() {
 
           <section className="min-w-0 flex-1">
             <div className="min-h-full px-1 py-2 sm:px-3">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--row-divider)] pb-4">
+                <WorkspaceTopMenu
+                  activeMenu={activeMenu}
+                  isOpen={isWorkspaceMenuOpen}
+                  onOpenChange={setIsWorkspaceMenuOpen}
+                  onSelectMenu={handleSelectMenu}
+                />
+
+                <Button
+                  aria-label="Open global search"
+                  className="gap-3"
+                  onClick={handleOpenGlobalSearch}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Search className="size-4" />
+                  <span>Search</span>
+                  <span className="text-[0.7rem] tracking-[0.16em] text-[color:var(--muted)]">
+                    Ctrl/⌘ K
+                  </span>
+                </Button>
+              </div>
+
               {renderActiveCenterContent()}
             </div>
           </section>

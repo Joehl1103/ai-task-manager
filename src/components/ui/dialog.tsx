@@ -25,7 +25,7 @@ const DialogOverlay = React.forwardRef<
   return (
     <DialogPrimitive.Overlay
       className={cn(
-        "fixed inset-0 z-50 bg-black/35",
+        "fixed inset-0 z-50 bg-black/50",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         className,
@@ -47,7 +47,7 @@ const DialogContent = React.forwardRef<
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-12 z-50 grid w-[min(calc(100%-2rem),42rem)] -translate-x-1/2 gap-4 border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-md outline-none sm:rounded-xl",
+          "fixed left-1/2 top-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg outline-none duration-200 sm:max-w-lg sm:rounded-lg",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
@@ -71,7 +71,7 @@ function DialogHeader({
 }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("flex flex-col gap-1.5 text-left", className)}
+      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
       data-slot="dialog-header"
       {...props}
     />
@@ -97,7 +97,7 @@ const DialogTitle = React.forwardRef<
 >(function DialogTitle({ className, ...props }, ref) {
   return (
     <DialogPrimitive.Title
-      className={cn("text-sm font-medium text-[color:var(--foreground)]", className)}
+      className={cn("text-lg leading-none font-semibold", className)}
       data-slot="dialog-title"
       ref={ref}
       {...props}
@@ -111,7 +111,7 @@ const DialogDescription = React.forwardRef<
 >(function DialogDescription({ className, ...props }, ref) {
   return (
     <DialogPrimitive.Description
-      className={cn("text-sm leading-6 text-[color:var(--muted)]", className)}
+      className={cn("text-muted-foreground text-sm", className)}
       data-slot="dialog-description"
       ref={ref}
       {...props}

@@ -25,7 +25,7 @@ This app lives at the repository root (`ai-task-manager/`).
 - Next.js 16
 - TypeScript
 - Tailwind CSS v4
-- shadcn-style primitives with shared design tokens and Radix-backed Select, Dialog, DropdownMenu, Tooltip, Label, Separator, and Accordion behavior
+- shadcn-style primitives with shared design tokens, plus sidebar, command-palette, and configuration-surface patterns built on Select, Dialog, DropdownMenu, Tooltip, Label, Separator, Accordion, and Card components
 - Vitest
 
 ## Commands
@@ -76,12 +76,12 @@ The app is the primary project in this repository.
 - `src/features/workspace/initiatives/*`: initiative operations
 - `src/features/workspace/providers/*`: provider config and API helpers
 - `src/features/workspace/threads/*`: thread UI plus owner/context helpers
-- `src/features/workspace/search/*`: global search helpers and dialog
+- `src/features/workspace/search/*`: global search helpers and the command-palette dialog
 - `src/features/workspace/storage/*`: workspace local storage helpers and normalization
 - `src/features/workspace/theme/*`: theme registry and selector
-- `src/features/workspace/navigation/*`: top-menu UI and menu metadata
+- `src/features/workspace/navigation/*`: sidebar and top-navigation shell UI plus menu metadata
 - `config/next/*`: Next dev-server config helpers and tests
-- `src/components/ui/*`: reusable shadcn-style UI primitives, with Radix used where accessibility or composition needs it across Select, Dialog, DropdownMenu, Tooltip, Label, Separator, and Accordion
+- `src/components/ui/*`: reusable shadcn-style UI primitives, including sidebar, command, accordion, card, dialog, dropdown, tooltip, and form building blocks used across the workspace shell
 
 ## Product Assumptions
 

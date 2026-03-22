@@ -1,82 +1,91 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 import {
   type WorkspaceMenu,
+  readWorkspaceMenuHint,
   readWorkspaceMenuLabel,
   workspaceMenus,
 } from "./workspace-navigation";
 
 interface WorkspaceTopMenuProps {
   activeMenu: WorkspaceMenu;
-  isExpanded: boolean;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
   onSelectMenu: (menu: WorkspaceMenu) => void;
-  onToggleMenu: () => void;
 }
 
 /**
- * Renders a slim desktop top menu that opens from the current-view label.
+ * Uses a stock shadcn dropdown-menu pattern for top-level workspace navigation.
  */
 export function WorkspaceTopMenu({
   activeMenu,
-  isExpanded,
+  isOpen,
+  onOpenChange,
   onSelectMenu,
-  onToggleMenu,
 }: WorkspaceTopMenuProps) {
   return (
-    <section className="workspace-top-menu-shell pb-2">
-      <div className="flex items-center gap-3 text-sm">
-        <Button
-          aria-controls="workspace-top-menu"
-          aria-expanded={isExpanded}
-          aria-haspopup="true"
-          className="shrink-0 -ml-3 transition-all duration-150 hover:opacity-80 active:scale-95"
-          onClick={onToggleMenu}
-          size="sm"
-          variant="ghost"
-        >
-          <span className="text-sm">{readWorkspaceMenuLabel(activeMenu)}</span>
-          <ChevronDown
-            className={cn(
-              "size-4 transition-transform duration-150",
-              isExpanded ? "rotate-180" : "",
-            )}
-          />
-        </Button>
-      </div>
+    <section className="workspace-top-menu-shell">
+      <DropdownMenu onOpenChange={onOpenChange} open={isOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            aria-label="Open workspace navigation"
+            className="shrink-0 -ml-3"
+            size="sm"
+            variant="ghost"
+          >
+            <span className="text-sm">{readWorkspaceMenuLabel(activeMenu)}</span>
+            <ChevronDown
+              className={cn(
+                "size-4 transition-transform duration-150",
+                isOpen ? "rotate-180" : "",
+              )}
+            />
+          </Button>
+        </DropdownMenuTrigger>
 
-      {isExpanded ? (
-        <nav
-          aria-label="Workspace menu"
-          className="mt-2 flex flex-wrap gap-3 text-sm"
-          id="workspace-top-menu"
-        >
+        <DropdownMenuContent align="start" className="w-72">
+          <DropdownMenuLabel>Navigate</DropdownMenuLabel>
+          <DropdownMenuSeparator />
           {workspaceMenus.map((menu) => {
             const isActive = activeMenu === menu;
 
             return (
-              <button
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "text-left transition-all duration-150 cursor-pointer active:opacity-70",
-                  isActive
-                    ? "font-medium text-[color:var(--foreground)]"
-                    : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]",
-                )}
+              <DropdownMenuItem
+                className="items-start gap-3 py-2"
                 key={menu}
-                onClick={() => onSelectMenu(menu)}
-                type="button"
+                onSelect={() => onSelectMenu(menu)}
               >
-                {readWorkspaceMenuLabel(menu)}
-              </button>
+                <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+                  {isActive ? <Check className="size-4" /> : null}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium">
+                    {readWorkspaceMenuLabel(menu)}
+                  </span>
+                  <span className="mt-1 block text-xs text-[color:var(--muted)]">
+                    {readWorkspaceMenuHint(menu)}
+                  </span>
+                </span>
+                {isActive ? <DropdownMenuShortcut>Current</DropdownMenuShortcut> : null}
+              </DropdownMenuItem>
             );
           })}
-        </nav>
-      ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </section>
   );
 }

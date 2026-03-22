@@ -13,7 +13,20 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 import {
   Tooltip,
   TooltipContent,
@@ -48,7 +61,8 @@ interface WorkspaceSidebarProps {
 }
 
 /**
- * Renders the left navigation shell as a thin list-first layer instead of a framed panel.
+ * Rebuilds the workspace sidebar with stock shadcn-style sidebar composition while keeping the
+ * existing navigation state and quiet Relay presentation.
  */
 export function WorkspaceSidebar({
   activeMenu,
@@ -71,11 +85,11 @@ export function WorkspaceSidebar({
 
   return (
     <TooltipProvider>
-      <aside
+      <Sidebar
         aria-label="Workspace sidebar"
-        className="workspace-sidebar-shell flex h-full flex-col border-r border-[color:var(--row-divider)] pr-5"
+        className="workspace-sidebar-shell border-r border-[color:var(--row-divider)] pr-5"
       >
-        <div className="flex justify-end pb-4">
+        <SidebarHeader className="justify-end pb-4">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -90,23 +104,27 @@ export function WorkspaceSidebar({
             </TooltipTrigger>
             <TooltipContent side="right">Hide sidebar</TooltipContent>
           </Tooltip>
-        </div>
+        </SidebarHeader>
 
-        <nav aria-label="Workspace destinations" className="flex flex-1 flex-col gap-6">
-          <section className="space-y-1">
-            <p className="px-2 text-xs font-medium uppercase tracking-[0.22em] text-[color:var(--muted)]">
-              Views
-            </p>
-            <SidebarMenuButton
-              active={activeMenu === "inbox"}
-              hint={readWorkspaceMenuHint("inbox")}
-              icon={<Inbox className="size-4" />}
-              label={readWorkspaceMenuLabel("inbox")}
-              onClick={() => onSelectMenu("inbox")}
-            />
-          </section>
+        <SidebarContent className="gap-6">
+          <SidebarGroup>
+            <SidebarGroupLabel>Views</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <WorkspaceSidebarMenuButton
+                    active={activeMenu === "inbox"}
+                    hint={readWorkspaceMenuHint("inbox")}
+                    icon={<Inbox className="size-4" />}
+                    label={readWorkspaceMenuLabel("inbox")}
+                    onClick={() => onSelectMenu("inbox")}
+                  />
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-          <SidebarSection
+          <WorkspaceSidebarSection
             active={activeMenu === "projects" && selectedProjectId === null}
             icon={<FolderKanban className="size-4" />}
             isExpanded={isProjectsExpanded}
@@ -117,17 +135,18 @@ export function WorkspaceSidebar({
             toggleLabel={projectsToggleLabel}
           >
             {visibleProjects.map((project) => (
-              <SidebarChildButton
-                active={selectedProjectId === project.id}
-                key={project.id}
-                label={project.name}
-                onClick={() => onSelectProject(project.id)}
-              />
+              <SidebarMenuItem key={project.id}>
+                <WorkspaceSidebarChildButton
+                  active={selectedProjectId === project.id}
+                  label={project.name}
+                  onClick={() => onSelectProject(project.id)}
+                />
+              </SidebarMenuItem>
             ))}
-          </SidebarSection>
+          </WorkspaceSidebarSection>
 
           {featureFlags.initiatives ? (
-            <SidebarSection
+            <WorkspaceSidebarSection
               active={activeMenu === "initiatives" && selectedInitiativeId === null}
               icon={<Sparkles className="size-4" />}
               isExpanded={isInitiativesExpanded}
@@ -138,43 +157,54 @@ export function WorkspaceSidebar({
               toggleLabel={initiativesToggleLabel}
             >
               {initiatives.map((initiative) => (
-                <SidebarChildButton
-                  active={selectedInitiativeId === initiative.id}
-                  key={initiative.id}
-                  label={initiative.name}
-                  onClick={() => onSelectInitiative(initiative.id)}
-                />
+                <SidebarMenuItem key={initiative.id}>
+                  <WorkspaceSidebarChildButton
+                    active={selectedInitiativeId === initiative.id}
+                    label={initiative.name}
+                    onClick={() => onSelectInitiative(initiative.id)}
+                  />
+                </SidebarMenuItem>
               ))}
-            </SidebarSection>
+            </WorkspaceSidebarSection>
           ) : null}
 
-          <section className="space-y-1">
-            <SidebarMenuButton
-              active={activeMenu === "archive"}
-              hint={readWorkspaceMenuHint("archive")}
-              icon={<Archive className="size-4" />}
-              label={readWorkspaceMenuLabel("archive")}
-              onClick={() => onSelectMenu("archive")}
-            />
-          </section>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <WorkspaceSidebarMenuButton
+                    active={activeMenu === "archive"}
+                    hint={readWorkspaceMenuHint("archive")}
+                    icon={<Archive className="size-4" />}
+                    label={readWorkspaceMenuLabel("archive")}
+                    onClick={() => onSelectMenu("archive")}
+                  />
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
 
-          <div className="mt-auto pt-4">
-            <Separator className="mb-4" />
-            <SidebarMenuButton
-              active={activeMenu === "configuration"}
-              hint={readWorkspaceMenuHint("configuration")}
-              icon={<Settings2 className="size-4" />}
-              label={readWorkspaceMenuLabel("configuration")}
-              onClick={() => onSelectMenu("configuration")}
-            />
-          </div>
-        </nav>
-      </aside>
+        <SidebarFooter className="pt-4">
+          <Separator className="mb-4" />
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <WorkspaceSidebarMenuButton
+                active={activeMenu === "configuration"}
+                hint={readWorkspaceMenuHint("configuration")}
+                icon={<Settings2 className="size-4" />}
+                label={readWorkspaceMenuLabel("configuration")}
+                onClick={() => onSelectMenu("configuration")}
+              />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
     </TooltipProvider>
   );
 }
 
-interface SidebarMenuButtonProps {
+interface WorkspaceSidebarMenuButtonProps {
   active: boolean;
   hint: string;
   icon: ReactNode;
@@ -182,24 +212,19 @@ interface SidebarMenuButtonProps {
   onClick: () => void;
 }
 
-function SidebarMenuButton({
+function WorkspaceSidebarMenuButton({
   active,
   hint,
   icon,
   label,
   onClick,
-}: SidebarMenuButtonProps) {
+}: WorkspaceSidebarMenuButtonProps) {
   return (
-    <button
+    <SidebarMenuButton
       aria-current={active ? "page" : undefined}
-      className={cn(
-        "flex w-full items-start gap-3 rounded-md px-2 py-2 text-left transition-colors",
-        active
-          ? "bg-[color:var(--row-active)] text-[color:var(--foreground)]"
-          : "text-[color:var(--muted-strong)] hover:bg-[color:var(--row-hover)] hover:text-[color:var(--foreground)]",
-      )}
+      className="items-start"
+      isActive={active}
       onClick={onClick}
-      type="button"
     >
       <span
         className={cn(
@@ -213,11 +238,11 @@ function SidebarMenuButton({
         <span className="block text-sm font-medium">{label}</span>
         <span className="mt-1 block text-xs text-[color:var(--muted)]">{hint}</span>
       </span>
-    </button>
+    </SidebarMenuButton>
   );
 }
 
-interface SidebarSectionProps {
+interface WorkspaceSidebarSectionProps {
   active: boolean;
   children: ReactNode;
   icon: ReactNode;
@@ -229,7 +254,7 @@ interface SidebarSectionProps {
   toggleLabel: string;
 }
 
-function SidebarSection({
+function WorkspaceSidebarSection({
   active,
   children,
   icon,
@@ -239,86 +264,81 @@ function SidebarSection({
   onToggle,
   title,
   toggleLabel,
-}: SidebarSectionProps) {
+}: WorkspaceSidebarSectionProps) {
   return (
-    <section className="space-y-2">
-      <div className="flex items-start gap-2">
-        <button
-          aria-current={active ? "page" : undefined}
-          className={cn(
-            "flex min-w-0 flex-1 items-start gap-3 rounded-md px-2 py-2 text-left transition-colors",
-            active
-              ? "bg-[color:var(--row-active)] text-[color:var(--foreground)]"
-              : "text-[color:var(--muted-strong)] hover:bg-[color:var(--row-hover)] hover:text-[color:var(--foreground)]",
-          )}
-          onClick={onSelect}
-          type="button"
-        >
-          <span
-            className={cn(
-              "mt-0.5 shrink-0 text-[color:var(--muted)]",
-              active && "text-[color:var(--foreground)]",
-            )}
+    <Collapsible open={isExpanded}>
+      <SidebarGroup className="space-y-2">
+        <div className="flex items-start gap-2">
+          <SidebarMenuButton
+            aria-current={active ? "page" : undefined}
+            className="min-w-0 flex-1 items-start"
+            isActive={active}
+            onClick={onSelect}
           >
-            {icon}
-          </span>
-          <span className="min-w-0">
-            <span className="block text-sm font-medium">{title}</span>
-            <span className="mt-1 block text-xs text-[color:var(--muted)]">
-              {itemCount} {itemCount === 1 ? title.slice(0, -1).toLowerCase() : title.toLowerCase()}
-            </span>
-          </span>
-        </button>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              aria-expanded={isExpanded}
-              aria-label={toggleLabel}
-              className="mt-0.5 shrink-0"
-              onClick={onToggle}
-              size="icon"
-              variant="ghost"
-            >
-              {isExpanded ? (
-                <ChevronDown className="size-4" />
-              ) : (
-                <ChevronRight className="size-4" />
+            <span
+              className={cn(
+                "mt-0.5 shrink-0 text-[color:var(--muted)]",
+                active && "text-[color:var(--foreground)]",
               )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">{toggleLabel}</TooltipContent>
-        </Tooltip>
-      </div>
+            >
+              {icon}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">{title}</span>
+              <span className="mt-1 block text-xs text-[color:var(--muted)]">
+                {itemCount} {itemCount === 1 ? title.slice(0, -1).toLowerCase() : title.toLowerCase()}
+              </span>
+            </span>
+          </SidebarMenuButton>
 
-      {isExpanded ? (
-        <div className="ml-4 border-l border-[color:var(--row-divider)] pl-4">
-          <div className="space-y-0.5">{children}</div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                aria-expanded={isExpanded}
+                aria-label={toggleLabel}
+                className="mt-0.5 shrink-0"
+                onClick={onToggle}
+                size="icon"
+                variant="ghost"
+              >
+                {isExpanded ? (
+                  <ChevronDown className="size-4" />
+                ) : (
+                  <ChevronRight className="size-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{toggleLabel}</TooltipContent>
+          </Tooltip>
         </div>
-      ) : null}
-    </section>
+
+        <CollapsibleContent className="ml-4 border-l border-[color:var(--row-divider)] pl-4">
+          <SidebarMenu className="space-y-0.5">{children}</SidebarMenu>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
   );
 }
 
-interface SidebarChildButtonProps {
+interface WorkspaceSidebarChildButtonProps {
   active: boolean;
   label: string;
   onClick: () => void;
 }
 
-function SidebarChildButton({ active, label, onClick }: SidebarChildButtonProps) {
+function WorkspaceSidebarChildButton({
+  active,
+  label,
+  onClick,
+}: WorkspaceSidebarChildButtonProps) {
   return (
-    <button
+    <SidebarMenuButton
       aria-current={active ? "page" : undefined}
-      className={cn(
-        "flex w-full items-center rounded-md px-2 py-2 text-left transition-colors",
-        active
-          ? "bg-[color:var(--row-active)] text-[color:var(--foreground)]"
-          : "text-[color:var(--muted-strong)] hover:bg-[color:var(--row-hover)] hover:text-[color:var(--foreground)]",
-      )}
+      className="py-2"
+      isActive={active}
       onClick={onClick}
-      type="button"
     >
       <span className="truncate text-xs font-medium">{label}</span>
-    </button>
+    </SidebarMenuButton>
   );
 }

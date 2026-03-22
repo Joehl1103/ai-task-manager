@@ -10,7 +10,7 @@ const Label = React.forwardRef<
   return (
     <LabelPrimitive.Root
       className={cn(
-        "text-sm font-medium leading-none text-[color:var(--foreground)] peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+        "flex items-center gap-2 text-sm leading-none font-medium select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
         className,
       )}
       data-slot="label"

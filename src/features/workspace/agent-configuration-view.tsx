@@ -542,7 +542,7 @@ function ApiKeyManager({
               </p>
             ) : null}
 
-            <Button className="self-end" onClick={handleStartAdd} variant="subtle">
+            <Button className="self-end" onClick={handleStartAdd} variant="secondary">
               <Plus aria-hidden="true" className="size-3.5" />
               Add API key
             </Button>

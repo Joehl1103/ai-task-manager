@@ -79,7 +79,8 @@ export function InitiativeView({
         <Button
           aria-expanded={isComposerExpanded}
           onClick={() => setIsComposerExpanded((currentValue) => !currentValue)}
-          variant={isComposerExpanded ? "outline" : "ghost"}
+          variant={isComposerExpanded ? "secondary" : "ghost"}
+          variant={isComposerExpanded ? "secondary" : "ghost"}
         >
           <Plus className="size-4" />
           Add initiative
@@ -444,7 +445,8 @@ function InitiativeDetailContent({
           </div>
           <Button
             onClick={() => setIsProjectComposerOpen((currentValue) => !currentValue)}
-            variant={isProjectComposerOpen ? "outline" : "ghost"}
+            variant={isProjectComposerOpen ? "secondary" : "ghost"}
+            variant={isProjectComposerOpen ? "secondary" : "ghost"}
           >
             <Plus className="size-4" />
             Add project

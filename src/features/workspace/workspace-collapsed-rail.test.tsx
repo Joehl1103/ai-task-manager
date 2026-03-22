@@ -13,6 +13,7 @@ describe("workspace collapsed rail", () => {
     );
 
     expect(markup).toContain("workspace-collapsed-rail");
+    expect(markup).toContain('data-slot="sidebar-rail"');
     expect(markup).toContain('aria-label="Collapsed workspace sidebar"');
     expect(markup).toContain('aria-label="Expand sidebar"');
     expect(markup).toContain("w-8");

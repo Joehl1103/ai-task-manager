@@ -2,13 +2,14 @@
 
 import { PanelLeftOpen } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { SidebarRail } from "@/components/ui/sidebar";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 interface WorkspaceCollapsedRailProps {
   onExpand: () => void;
@@ -20,27 +21,25 @@ interface WorkspaceCollapsedRailProps {
 export function WorkspaceCollapsedRail({ onExpand }: WorkspaceCollapsedRailProps) {
   return (
     <TooltipProvider>
-      <aside
+      <SidebarRail
         aria-label="Collapsed workspace sidebar"
-        className="workspace-collapsed-rail flex h-full w-8 shrink-0 border-r border-[color:var(--row-divider)]"
+        className="workspace-collapsed-rail"
       >
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
+            <Button
               aria-label="Expand sidebar"
-              className={cn(
-                "flex h-12 w-full items-center justify-center text-[color:var(--muted)] transition-colors",
-                "hover:bg-[color:var(--row-hover)] hover:text-[color:var(--foreground)]",
-              )}
+              className="h-12 w-full rounded-none text-[color:var(--muted)]"
               onClick={onExpand}
-              type="button"
+              size="icon"
+              variant="ghost"
             >
               <PanelLeftOpen className="size-4" />
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="right">Expand sidebar</TooltipContent>
         </Tooltip>
-      </aside>
+      </SidebarRail>
     </TooltipProvider>
   );
 }

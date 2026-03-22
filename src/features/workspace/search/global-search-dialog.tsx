@@ -3,14 +3,21 @@
 import { type KeyboardEvent } from "react";
 
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from "@/components/ui/command";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 
 import {
   cycleGlobalSearchIndex,
@@ -86,8 +93,8 @@ export function GlobalSearchDialog({
           Search tasks, projects, and initiatives.
         </DialogDescription>
 
-        <div className="p-3">
-          <Input
+        <Command>
+          <CommandInput
             aria-label="Global search"
             autoFocus
             onChange={(event) => onQueryChange(event.target.value)}
@@ -95,31 +102,22 @@ export function GlobalSearchDialog({
             placeholder="Search tasks, projects, and initiatives..."
             value={query}
           />
-        </div>
 
-        <Separator />
-
-        <div className="max-h-[24rem] overflow-y-auto p-2">
-          {results.length === 0 ? (
-            <p className="rounded-md px-3 py-6 text-sm text-[color:var(--muted)]">
-              {query.trim()
-                ? `No matches for "${query.trim()}".`
-                : "No searchable items yet."}
-            </p>
-          ) : (
-            <ul className="space-y-1">
-              {results.map((result, index) => (
-                <li key={`${result.entityType}-${result.id}`}>
-                  <button
-                    className={cn(
-                      "w-full rounded-lg border px-3 py-3 text-left transition",
-                      activeIndex === index
-                        ? "border-[color:var(--foreground)] bg-[color:var(--surface-strong)]"
-                        : "border-transparent hover:border-[color:var(--border)] hover:bg-[color:var(--surface-strong)]",
-                    )}
+          <CommandList>
+            {results.length === 0 ? (
+              <CommandEmpty>
+                {query.trim()
+                  ? `No matches for "${query.trim()}".`
+                  : "No searchable items yet."}
+              </CommandEmpty>
+            ) : (
+              <CommandGroup heading="Results">
+                {results.map((result, index) => (
+                  <CommandItem
+                    key={`${result.entityType}-${result.id}`}
                     onClick={() => onSelectResult(result)}
                     onMouseEnter={() => onActiveIndexChange(index)}
-                    type="button"
+                    selected={activeIndex === index}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -139,19 +137,25 @@ export function GlobalSearchDialog({
                         {readGlobalSearchEntityLabel(result.entityType)}
                       </span>
                     </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
 
-        <Separator />
+          <CommandSeparator />
 
-        <div className="px-3 py-2 text-xs text-[color:var(--muted)]">
-          Use <kbd>↑</kbd> <kbd>↓</kbd> to navigate, <kbd>Enter</kbd> to open, and <kbd>Esc</kbd>{" "}
-          to close.
-        </div>
+          <div className="flex flex-wrap items-center gap-3 px-3 py-2 text-xs text-[color:var(--muted)]">
+            <span>Use</span>
+            <CommandShortcut>↑</CommandShortcut>
+            <CommandShortcut>↓</CommandShortcut>
+            <span>to navigate,</span>
+            <CommandShortcut>Enter</CommandShortcut>
+            <span>to open, and</span>
+            <CommandShortcut>Esc</CommandShortcut>
+            <span>to close.</span>
+          </div>
+        </Command>
       </DialogContent>
     </Dialog>
   );

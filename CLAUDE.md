@@ -11,7 +11,7 @@ Relay is currently a minimal web starter for task management with two primary id
 
 - A compact task overview list
 - A selected-task inline editor that expands inside the current list
-- A thin top-menu shell that separates Tasks from Configuration
+- A thin workspace shell with sidebar navigation, top-level menu switching, and command search
 
 The current goal is to keep the product as small as possible before layering on more capabilities.
 
@@ -31,13 +31,13 @@ The current goal is to keep the product as small as possible before layering on 
 - `src/features/workspace/initiatives/*`: initiative operations
 - `src/features/workspace/providers/*`: provider request and configuration helpers
 - `src/features/workspace/threads/*`: thread rendering, ids, and context helpers
-- `src/features/workspace/search/*`: command search helpers and dialog
+- `src/features/workspace/search/*`: command search helpers and the command-palette dialog
 - `src/features/workspace/storage/*`: workspace local storage helpers
 - `src/features/workspace/theme/*`: theme registry and selector
-- `src/features/workspace/navigation/*`: menu metadata and top-menu UI
+- `src/features/workspace/navigation/*`: sidebar navigation, top-menu UI, and menu metadata
 - `config/next/*`: Next dev-server config helpers
 - `src/app/api/agent-call/route.ts`: live provider-backed agent endpoint
-- `src/components/ui/*`: small shared UI primitives
+- `src/components/ui/*`: small shared UI primitives, including sidebar and command shell building blocks
 
 ## Design Guidelines
 

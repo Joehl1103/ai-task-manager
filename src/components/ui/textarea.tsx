@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Gives multiline composers the same shadcn-style structure as Input without adding extra chrome.
+ * Provides a near-stock shadcn textarea while keeping the existing shared import path.
  */
 export const Textarea = React.forwardRef<
   HTMLTextAreaElement,
@@ -12,9 +12,11 @@ export const Textarea = React.forwardRef<
   return (
     <textarea
       className={cn(
-        "flex min-h-28 w-full rounded-md border border-[color:var(--border)] bg-[color:var(--surface-strong)] px-3 py-2 text-sm text-[color:var(--foreground)] shadow-none outline-none transition-colors",
-        "placeholder:text-[color:var(--muted)] focus-visible:border-[color:var(--border-strong)] focus-visible:bg-[color:var(--surface)] focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring)]",
-        "disabled:cursor-not-allowed disabled:opacity-50",
+        "flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-[color,box-shadow]",
+        "placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "aria-invalid:border-destructive",
         className,
       )}
       data-slot="textarea"

@@ -28,9 +28,12 @@ describe("global search dialog", () => {
     expect(markup).toContain("Initiative");
     expect(markup).toContain("Project: Relay MVP");
     expect(markup).toContain("Q2 Product Launch");
+    expect(markup).toContain('data-slot="command"');
+    expect(markup).toContain('data-slot="command-input"');
+    expect(markup).toContain('data-slot="command-item"');
     expect(markup).toContain('data-slot="dialog-content"');
     expect(markup).toContain('data-slot="dialog-title"');
-    expect(markup).toContain('data-slot="separator"');
+    expect(markup).toContain('data-slot="command-separator"');
   });
 
   /**
@@ -52,5 +55,6 @@ describe("global search dialog", () => {
 
     expect(markup).toContain("No matches for");
     expect(markup).toContain("missing result");
+    expect(markup).toContain('data-slot="command-empty"');
   });
 });

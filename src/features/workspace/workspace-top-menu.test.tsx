@@ -11,31 +11,34 @@ describe("workspace top menu", () => {
     const markup = renderToStaticMarkup(
       <WorkspaceTopMenu
         activeMenu="inbox"
-        isExpanded={false}
+        isOpen={false}
+        onOpenChange={vi.fn()}
         onSelectMenu={vi.fn()}
-        onToggleMenu={vi.fn()}
       />,
     );
 
     expect(markup).toContain("workspace-top-menu-shell");
+    expect(markup).toContain('data-slot="dropdown-menu-trigger"');
   });
 
   /**
-   * Keeps the current destination label as the primary navigation control so switching views does
-   * not require a reach to the far edge of the shell.
+   * Keeps the current destination label as the primary navigation control while moving the menu to
+   * a stock shadcn dropdown pattern.
    */
   it("renders the active menu label as the trigger instead of a separate menu button", () => {
     const markup = renderToStaticMarkup(
       <WorkspaceTopMenu
         activeMenu="projects"
-        isExpanded={false}
+        isOpen
+        onOpenChange={vi.fn()}
         onSelectMenu={vi.fn()}
-        onToggleMenu={vi.fn()}
       />,
     );
 
-    expect(markup).toContain('aria-controls="workspace-top-menu"');
+    expect(markup).toContain('data-slot="dropdown-menu-content"');
+    expect(markup).toContain("Navigate");
     expect(markup).toContain("Projects");
+    expect(markup).toContain("Current");
     expect(markup).not.toContain(">Menu<");
   });
 });

@@ -49,18 +49,18 @@ import {
 
 describe("workspace ui primitives", () => {
   /**
-   * Confirms the shared primitives expose the shadcn-style data slots so later overrides can stay
-   * localized to the component layer instead of leaking through view files.
+   * Confirms the shared primitives expose the shadcn slots while using the stock semantic utility
+   * classes instead of the older Relay-specific surface tokens.
    */
-  it("renders button, input, textarea, and badge with named slots", () => {
+  it("renders button, input, textarea, and badge with stock shadcn utility contracts", () => {
     const markup = renderToStaticMarkup(
       <>
-        <Button size="icon" variant="outline">
+        <Button size="icon" variant="secondary">
           Open
         </Button>
         <Input defaultValue="hello" />
         <Textarea defaultValue="notes" />
-        <Badge variant="secondary">Active</Badge>
+        <Badge variant="outline">Active</Badge>
       </>,
     );
 
@@ -68,6 +68,10 @@ describe("workspace ui primitives", () => {
     expect(markup).toContain('data-slot="input"');
     expect(markup).toContain('data-slot="textarea"');
     expect(markup).toContain('data-slot="badge"');
+    expect(markup).toContain("bg-secondary");
+    expect(markup).toContain("border-input");
+    expect(markup).toContain("placeholder:text-muted-foreground");
+    expect(markup).toContain("text-foreground");
     expect(markup).toContain("Active");
   });
 
@@ -95,8 +99,8 @@ describe("workspace ui primitives", () => {
   });
 
   /**
-   * Confirms the additive overlay and form primitives expose stable slots so their no-chrome
-   * overrides stay encapsulated in the shared component layer.
+   * Confirms the additive primitives now expose stock shadcn surface classes instead of the older
+   * custom popover and overlay styling contract.
    */
   it("renders dialog, dropdown menu, tooltip, popover, label, and separator with named slots", () => {
     const markup = renderToStaticMarkup(
@@ -142,6 +146,10 @@ describe("workspace ui primitives", () => {
     expect(markup).toContain('data-slot="popover-trigger"');
     expect(markup).toContain('data-slot="label"');
     expect(markup).toContain('data-slot="separator"');
+    expect(markup).toContain("bg-background");
+    expect(markup).toContain("bg-popover");
+    expect(markup).toContain("bg-primary");
+    expect(markup).toContain("bg-border");
   });
 
   /**

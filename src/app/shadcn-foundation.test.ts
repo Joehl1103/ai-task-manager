@@ -62,9 +62,13 @@ describe("shadcn foundation", () => {
     expect(globalsCss).toContain("--font-size-base: 1rem;");
     expect(globalsCss).toContain("--font-size-xl: 1.25rem;");
     expect(globalsCss).toContain("--font-size-2xl: 1.5rem;");
+    expect(globalsCss).toContain("--destructive:");
+    expect(globalsCss).toContain("--destructive-foreground:");
     expect(globalsCss).toContain("--radius: 0.375rem;");
     expect(globalsCss).toContain("--shadow-sm:");
     expect(globalsCss).toContain("--shadow-md:");
+    expect(globalsCss).toContain("--color-destructive: var(--destructive);");
+    expect(globalsCss).toContain("--color-destructive-foreground: var(--destructive-foreground);");
     expect(globalsCss).toContain("--text-xs: var(--font-size-xs);");
     expect(globalsCss).toContain("--text-sm: var(--font-size-sm);");
     expect(globalsCss).toContain("--text-base: var(--font-size-base);");
@@ -74,5 +78,8 @@ describe("shadcn foundation", () => {
     expect(globalsCss).toContain("--radius-md: calc(var(--radius) - 2px);");
     expect(globalsCss).toContain("--radius-lg: var(--radius);");
     expect(globalsCss).toContain("--radius-xl: calc(var(--radius) + 4px);");
+    expect(globalsCss).not.toContain(".workspace-theme-stage");
+    expect(globalsCss).not.toContain(".workspace-theme-panel");
+    expect(globalsCss).not.toContain(".configuration-disclosure-summary");
   });
 });
