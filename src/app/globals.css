@@ -95,14 +95,6 @@ body {
   color: var(--foreground);
 }
 
-.workspace-theme-stage {
-  background:
-    radial-gradient(circle at top right, var(--backdrop-spotlight), transparent 34%),
-    linear-gradient(180deg, var(--backdrop-start), var(--background) 24%, var(--backdrop-end));
-  transition:
-    background 180ms ease,
-    color 180ms ease;
-}
 button,
 input,
 textarea,
