@@ -1,12 +1,15 @@
 "use client";
 
-import { type ChangeEvent, type KeyboardEvent, useCallback, useEffect, useRef } from "react";
+import { type KeyboardEvent, useEffect, useId, useRef } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { type Project } from "@/features/workspace/core";
 import { inboxPickerLabel, readProjectPickerValue } from "@/features/workspace/projects";
-import { cn } from "@/lib/utils";
 
 import {
   formatTaskTagString,
@@ -35,7 +38,8 @@ interface TaskEditorFieldsProps {
 }
 
 /**
- * Reuses the issue-24 no-chrome task input language for any task create or edit surface.
+ * Provides one shared labeled task form so create and edit flows all speak the same shadcn-first
+ * design language.
  */
 export function TaskEditorFields({
   allTags,
@@ -56,31 +60,19 @@ export function TaskEditorFields({
   tags,
   title,
 }: TaskEditorFieldsProps) {
-  const titleInputRef = useRef<HTMLTextAreaElement>(null);
+  const titleInputId = useId();
+  const detailsInputId = useId();
+  const projectTriggerId = useId();
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const selectedTags = parseTaskTagString(tags);
-
-  /**
-   * Auto-sizes the title textarea to its content so it grows with long titles but never shows
-   * a scrollbar.
-   */
-  const resizeTitleTextarea = useCallback(() => {
-    const element = titleInputRef.current;
-
-    if (!element) {
-      return;
-    }
-
-    element.style.height = "auto";
-    element.style.height = `${element.scrollHeight}px`;
-  }, []);
+  const hasFooter = Boolean(submitHint || onCancel || (submitLabel && onSubmit));
 
   /**
    * Focuses the title input on open and on later explicit refocus requests like Cmd+N.
    */
   useEffect(() => {
     titleInputRef.current?.focus();
-    resizeTitleTextarea();
-  }, [focusTitleInputSignal, resizeTitleTextarea]);
+  }, [focusTitleInputSignal]);
 
   /**
    * Preserves the shared Cmd/Ctrl+Enter submit gesture while still allowing parent-specific
@@ -102,27 +94,23 @@ export function TaskEditorFields({
 
   return (
     <div
-      className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)]/90 px-3 py-1.5"
+      className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
       onKeyDown={handleKeyDown}
     >
-      <div className="flex items-start gap-3">
-        <textarea
-          aria-label="Task title"
-          className={cn(
-            "min-w-0 basis-3/4 resize-none overflow-hidden border-0 border-b border-[color:var(--border)] bg-transparent px-0 pb-2 pt-0 text-sm text-[color:var(--foreground)] shadow-none outline-none transition-colors",
-            "placeholder:text-[color:var(--muted)] placeholder:opacity-70 focus:border-[color:var(--border-strong)]",
-          )}
-          onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
-            onTitleChange(event.target.value.replace(/\n/g, " "));
-            resizeTitleTextarea();
-          }}
-          placeholder="Task title"
-          ref={titleInputRef}
-          rows={1}
-          value={title}
-        />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(15rem,1fr)]">
+        <div className="space-y-2">
+          <Label htmlFor={titleInputId}>Task title</Label>
+          <Input
+            id={titleInputId}
+            onChange={(event) => onTitleChange(event.target.value)}
+            placeholder="What needs to happen?"
+            ref={titleInputRef}
+            value={title}
+          />
+        </div>
 
-        <div className="basis-1/4">
+        <div className="space-y-2">
+          <Label>Tags</Label>
           <TaskTagCombobox
             allTags={allTags}
             onChange={(nextTags) => onTagsChange(formatTaskTagString(nextTags))}
@@ -131,23 +119,23 @@ export function TaskEditorFields({
         </div>
       </div>
 
-      <Textarea
-        aria-label="Task details"
-        className="mt-2 min-h-20 resize-none rounded-none border-0 bg-transparent px-0 py-0 text-[12px] leading-5 focus-visible:border-0 focus-visible:bg-transparent focus-visible:ring-0"
-        onChange={(event) => onDetailsChange(event.target.value)}
-        placeholder="Add details..."
-        value={details}
-      />
+      <div className="mt-4 space-y-2">
+        <Label htmlFor={detailsInputId}>Details</Label>
+        <Textarea
+          id={detailsInputId}
+          onChange={(event) => onDetailsChange(event.target.value)}
+          placeholder="Add details..."
+          value={details}
+        />
+      </div>
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
+      <div className="mt-4 space-y-2">
+        <Label htmlFor={projectTriggerId}>Project</Label>
         <Select
           onValueChange={(value) => onProjectChange(value === "_inbox" ? "" : value)}
           value={readProjectPickerValue(projectId) || "_inbox"}
         >
-          <SelectTrigger
-            aria-label="Project"
-            className="h-8 w-auto min-w-[11rem] rounded-none border-0 bg-transparent px-0 py-0 text-xs text-[color:var(--muted)] focus:bg-transparent focus:ring-0"
-          >
+          <SelectTrigger aria-label="Project" id={projectTriggerId}>
             <SelectValue placeholder={inboxPickerLabel} />
           </SelectTrigger>
           <SelectContent>
@@ -159,32 +147,29 @@ export function TaskEditorFields({
             ))}
           </SelectContent>
         </Select>
-
-        <div className="flex items-center gap-3">
-          {submitHint ? (
-            <span className="text-[11px] text-[color:var(--muted)]">{submitHint}</span>
-          ) : null}
-          {onCancel ? (
-            <button
-              className="text-[11px] text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
-              onClick={onCancel}
-              type="button"
-            >
-              Cancel
-            </button>
-          ) : null}
-          {submitLabel && onSubmit ? (
-            <button
-              className="text-[11px] font-medium text-[color:var(--foreground)] transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={isSubmitDisabled}
-              onClick={onSubmit}
-              type="button"
-            >
-              {submitLabel}
-            </button>
-          ) : null}
-        </div>
       </div>
+
+      {hasFooter ? (
+        <div className="mt-4 space-y-3">
+          <Separator />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-xs text-[color:var(--muted)]">{submitHint ?? ""}</div>
+
+            <div className="flex items-center gap-2">
+              {onCancel ? (
+                <Button onClick={onCancel} size="sm" variant="ghost">
+                  Cancel
+                </Button>
+              ) : null}
+              {submitLabel && onSubmit ? (
+                <Button disabled={isSubmitDisabled} onClick={onSubmit} size="sm">
+                  {submitLabel}
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

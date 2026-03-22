@@ -103,7 +103,7 @@ describe("global search", () => {
     const taskResult = results.find((candidate) => candidate.id === "task-1");
 
     expect(taskResult).toBeDefined();
-    expect(resolveGlobalSearchSelection(taskResult!, workspaceSeed)).toEqual({
+    expect(resolveGlobalSearchSelection(taskResult!)).toEqual({
       activeMenu: "inbox",
       selectedProjectId: null,
       selectedInitiativeId: null,
@@ -119,7 +119,7 @@ describe("global search", () => {
     const projectResult = results.find((candidate) => candidate.id === "project-1");
 
     expect(projectResult).toBeDefined();
-    expect(resolveGlobalSearchSelection(projectResult!, workspaceSeed)).toEqual({
+    expect(resolveGlobalSearchSelection(projectResult!)).toEqual({
       activeMenu: "projects",
       selectedProjectId: "project-1",
       selectedInitiativeId: null,
@@ -135,7 +135,7 @@ describe("global search", () => {
     const projectResult = results.find((candidate) => candidate.id === "project-2");
 
     expect(projectResult).toBeDefined();
-    expect(resolveGlobalSearchSelection(projectResult!, workspaceSeed)).toEqual({
+    expect(resolveGlobalSearchSelection(projectResult!)).toEqual({
       activeMenu: "projects",
       selectedProjectId: "project-2",
       selectedInitiativeId: null,
@@ -156,7 +156,7 @@ describe("global search", () => {
     }
 
     expect(initiativeResult).toBeDefined();
-    expect(resolveGlobalSearchSelection(initiativeResult!, workspaceSeed)).toEqual({
+    expect(resolveGlobalSearchSelection(initiativeResult!)).toEqual({
       activeMenu: "initiatives",
       selectedProjectId: null,
       selectedInitiativeId: "initiative-1",

@@ -11,6 +11,7 @@ import {
 } from "./dialog";
 import { Input } from "./input";
 import { Label } from "./label";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,10 +82,10 @@ describe("workspace ui primitives", () => {
   });
 
   /**
-   * Confirms the additive phase-3 primitives expose stable slots so their no-chrome overrides stay
-   * encapsulated in the shared component layer.
+   * Confirms the additive overlay and form primitives expose stable slots so their no-chrome
+   * overrides stay encapsulated in the shared component layer.
    */
-  it("renders dialog, dropdown menu, tooltip, label, and separator with named slots", () => {
+  it("renders dialog, dropdown menu, tooltip, popover, label, and separator with named slots", () => {
     const markup = renderToStaticMarkup(
       <TooltipProvider>
         <Dialog open>
@@ -106,6 +107,11 @@ describe("workspace ui primitives", () => {
           <TooltipContent>Helpful context</TooltipContent>
         </Tooltip>
 
+        <Popover open>
+          <PopoverTrigger>Tags</PopoverTrigger>
+          <PopoverContent forceMount>Choose tags</PopoverContent>
+        </Popover>
+
         <Label htmlFor="api-key">API key</Label>
         <Input id="api-key" />
         <Separator />
@@ -120,6 +126,7 @@ describe("workspace ui primitives", () => {
     expect(markup).toContain('data-slot="dropdown-menu-item"');
     expect(markup).toContain('data-slot="tooltip-trigger"');
     expect(markup).toContain('data-slot="tooltip-content"');
+    expect(markup).toContain('data-slot="popover-trigger"');
     expect(markup).toContain('data-slot="label"');
     expect(markup).toContain('data-slot="separator"');
   });

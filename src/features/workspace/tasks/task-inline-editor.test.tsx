@@ -2,6 +2,7 @@ import { Children, isValidElement, type ReactElement, type ReactNode } from "rea
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { Button } from "@/components/ui/button";
 import { workspaceSeed } from "@/features/workspace/mock-data";
 import { filterVisibleProjects } from "@/features/workspace/projects";
 
@@ -95,7 +96,7 @@ describe("task inline editor", () => {
     const deleteButton = findElement(
       tree,
       (element) =>
-        element.type === "button" &&
+        element.type === Button &&
         Children.toArray(element.props.children).join("").includes("Delete"),
     ) as ReactElement<{ onClick?: () => void }> | null;
 

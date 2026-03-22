@@ -5,17 +5,14 @@ import { useState } from "react";
 import { CheckCircle2, Circle, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import {
   filterVisibleProjects,
-  inboxPickerLabel,
 } from "@/features/workspace/projects";
 import { cn } from "@/lib/utils";
 import {
   collectTaskTags,
+  TaskEditorFields,
   groupTasksByProject,
   groupTasksByTag,
   TaskInlineEditor,
@@ -136,65 +133,36 @@ export function TaskManagementView({
         ) : null}
       </header>
 
-      <section className="mt-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
-        <button
-          className="flex w-full items-center gap-2 text-left text-sm text-[color:var(--muted-strong)]"
+      <section className="mt-4 space-y-3">
+        <Button
+          aria-expanded={isComposerExpanded}
           onClick={handleExpandComposer}
-          type="button"
+          size="sm"
+          variant={isComposerExpanded ? "subtle" : "ghost"}
         >
           <Plus className="size-4" />
           Add task
-        </button>
+        </Button>
 
         {isComposerExpanded ? (
-          <div className="mt-3 grid gap-3">
-            <Input
-              autoFocus
-              onChange={(event) => onSetNewTaskTitle(event.target.value)}
-              placeholder="Task title"
-              value={newTaskTitle}
-            />
-            <Select
-              onValueChange={(value) => onSetNewTaskProject(value === "_inbox" ? "" : value)}
-              value={newTaskProject || "_inbox"}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={inboxPickerLabel} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_inbox">{inboxPickerLabel}</SelectItem>
-                {visibleProjects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              onChange={(event) => onSetNewTaskTags(event.target.value)}
-              placeholder="Tags (optional, comma-separated)"
-              value={newTaskTags}
-            />
-            <Textarea
-              onChange={(event) => onSetNewTaskDetails(event.target.value)}
-              placeholder="Optional task details"
-              value={newTaskDetails}
-            />
-            <div className="flex justify-end gap-2">
-              <Button onClick={handleCollapseComposer} variant="ghost">
-                Cancel
-              </Button>
-              <Button disabled={!newTaskTitle.trim()} onClick={handleAddTaskAndCollapse}>
-                <Plus className="size-4" />
-                Add
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="mt-2 text-xs text-[color:var(--muted)]">
-            Click to open the full task composer.
-          </p>
-        )}
+          <TaskEditorFields
+            allTags={allTags}
+            details={newTaskDetails}
+            isSubmitDisabled={!newTaskTitle.trim()}
+            onCancel={handleCollapseComposer}
+            onDetailsChange={onSetNewTaskDetails}
+            onProjectChange={onSetNewTaskProject}
+            onSubmit={handleAddTaskAndCollapse}
+            onTagsChange={onSetNewTaskTags}
+            onTitleChange={onSetNewTaskTitle}
+            projectId={newTaskProject}
+            projects={visibleProjects}
+            submitHint="⌘↵"
+            submitLabel="Add task"
+            tags={newTaskTags}
+            title={newTaskTitle}
+          />
+        ) : null}
       </section>
 
       <section className="mt-6">

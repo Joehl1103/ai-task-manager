@@ -83,8 +83,8 @@ describe("inbox task composer", () => {
   });
 
   /**
-   * Confirms the expanded composer uses the new inline tags, no-chrome details area, and keyboard
-   * submit hint instead of the old full-form controls.
+   * Confirms the expanded composer uses the shared labeled task form, popover-backed tag picker,
+   * and explicit footer actions instead of the old ad hoc controls.
    */
   it("renders the redesigned expanded composer block", () => {
     const markup = renderToStaticMarkup(
@@ -99,9 +99,10 @@ describe("inbox task composer", () => {
     expect(markup).toContain("Task title");
     expect(markup).toContain("Add tag");
     expect(markup).toContain("⌘↵");
+    expect(markup).toContain("Cancel");
+    expect(markup).toContain("Add task");
     expect(markup).toContain('aria-label="Remove planning tag"');
     expect(markup).toContain('data-slot="select-trigger"');
     expect(markup).not.toContain("Tags (optional, comma-separated)");
-    expect(markup).not.toContain(">Cancel<");
   });
 });

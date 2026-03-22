@@ -154,7 +154,6 @@ export function cycleGlobalSearchIndex(
  */
 export function resolveGlobalSearchSelection(
   result: GlobalSearchResult,
-  _workspace: WorkspaceSnapshot,
 ): SearchNavigationIntent {
   switch (result.entityType) {
     case "task":

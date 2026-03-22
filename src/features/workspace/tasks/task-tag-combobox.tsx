@@ -1,9 +1,12 @@
 "use client";
 
-import { type KeyboardEvent, useId, useRef, useState } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
 
-import { X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { type Task } from "@/features/workspace/core";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +17,8 @@ interface TaskTagComboboxProps {
 }
 
 /**
- * Keeps task tag editing lightweight by combining selected pills, free-text entry, and workspace
- * suggestions into one compact inline control.
+ * Uses a stock popover-plus-input composition so task tags behave like the rest of the shadcn
+ * form controls while still supporting quick add and remove flows.
  */
 export function TaskTagCombobox({
   allTags,
@@ -23,37 +26,36 @@ export function TaskTagCombobox({
   onChange,
 }: TaskTagComboboxProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const listboxId = useId();
   const [tagQuery, setTagQuery] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const suggestions = readTaskTagSuggestions(allTags, tagQuery, selectedTags);
-  const highlightedSuggestionIndex =
-    suggestions.length === 0
-      ? 0
-      : Math.min(activeSuggestionIndex, suggestions.length - 1);
-  const isShowingDropdown = isDropdownOpen && suggestions.length > 0;
+  const normalizedQuery = normalizeTaskTag(tagQuery);
+  const hasExistingExactMatch = allTags.some(
+    (tag) => normalizeTaskTag(tag).toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase(),
+  );
+  const isSelectedExactMatch = selectedTags.some(
+    (tag) => normalizeTaskTag(tag).toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase(),
+  );
+  const canCreateTag =
+    normalizedQuery.length > 0 && !hasExistingExactMatch && !isSelectedExactMatch;
 
   /**
-   * Adds the confirmed tag, clears the current query, and keeps focus inside the inline editor.
+   * Adds a confirmed tag, clears the current search state, and keeps focus in the popover search.
    */
   function handleConfirmTag(nextTag: string) {
     const normalizedTag = normalizeTaskTag(nextTag);
 
     if (!normalizedTag) {
-      setIsDropdownOpen(false);
       return;
     }
 
     onChange(appendTaskTag(selectedTags, normalizedTag));
     setTagQuery("");
-    setIsDropdownOpen(false);
-    setActiveSuggestionIndex(0);
     inputRef.current?.focus();
   }
 
   /**
-   * Removes one selected tag while preserving the rest of the draft state.
+   * Removes a tag from the current draft without changing the surrounding editor state.
    */
   function handleRemoveTag(tagToRemove: string) {
     onChange(
@@ -61,83 +63,43 @@ export function TaskTagCombobox({
         (tag) => tag.toLocaleLowerCase() !== tagToRemove.toLocaleLowerCase(),
       ),
     );
-    inputRef.current?.focus();
   }
 
   /**
-   * Handles keyboard selection so Enter and comma confirm tags while Escape closes only the
-   * dropdown first.
+   * Keeps Enter and comma scoped to tag creation so the parent task editor does not submit early.
    */
-  function handleInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "ArrowDown") {
-      if (suggestions.length === 0) {
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter" || event.key === ",") {
+      if (!normalizedQuery) {
         return;
       }
 
       event.preventDefault();
       event.stopPropagation();
-      setIsDropdownOpen(true);
-      setActiveSuggestionIndex((currentIndex) =>
-        currentIndex >= suggestions.length - 1 ? 0 : currentIndex + 1,
-      );
+      handleConfirmTag(suggestions[0] ?? normalizedQuery);
       return;
     }
 
-    if (event.key === "ArrowUp") {
-      if (suggestions.length === 0) {
-        return;
-      }
-
-      event.preventDefault();
+    if (event.key === "Escape") {
       event.stopPropagation();
-      setIsDropdownOpen(true);
-      setActiveSuggestionIndex((currentIndex) =>
-        currentIndex <= 0 ? suggestions.length - 1 : currentIndex - 1,
-      );
-      return;
-    }
-
-    if (event.key === "Enter") {
-      if (!tagQuery.trim()) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      handleConfirmTag(
-        isShowingDropdown
-          ? (suggestions[highlightedSuggestionIndex] ?? tagQuery)
-          : tagQuery,
-      );
-      return;
-    }
-
-    if (event.key === ",") {
-      if (!tagQuery.trim()) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      handleConfirmTag(tagQuery);
-      return;
-    }
-
-    if (event.key === "Escape" && isDropdownOpen) {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsDropdownOpen(false);
-      setActiveSuggestionIndex(0);
+      setIsPopoverOpen(false);
     }
   }
 
   return (
-    <div className="relative min-w-[11rem] flex-1">
-      <div className="flex flex-wrap items-center justify-end gap-1.5">
+    <div className="space-y-2">
+      <div className="flex min-h-10 flex-wrap items-center gap-2 rounded-md border border-[color:var(--border)] bg-[color:var(--surface-strong)] px-3 py-2">
+        {selectedTags.length === 0 ? (
+          <span className="text-sm text-[color:var(--muted)]">No tags selected</span>
+        ) : null}
+
         {selectedTags.map((tag) => (
           <button
             aria-label={`Remove ${tag} tag`}
-            className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-muted)] px-2 py-0.5 text-[11px] text-[color:var(--muted)] transition-colors hover:bg-[color:var(--surface-strong)] hover:text-[color:var(--foreground)]"
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2.5 py-1 text-xs text-[color:var(--muted-strong)] transition-colors",
+              "hover:border-[color:var(--border-strong)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
+            )}
             key={tag}
             onClick={() => handleRemoveTag(tag)}
             type="button"
@@ -147,70 +109,99 @@ export function TaskTagCombobox({
           </button>
         ))}
 
-        <input
-          aria-activedescendant={
-            isShowingDropdown ? `${listboxId}-${highlightedSuggestionIndex}` : undefined
-          }
-          aria-controls={isShowingDropdown ? listboxId : undefined}
-          aria-expanded={isShowingDropdown}
-          aria-label="Task tags"
-          aria-autocomplete="list"
-          className="h-6 min-w-[5rem] flex-1 bg-transparent px-0 text-right text-[11px] text-[color:var(--muted)] outline-none placeholder:text-[color:var(--muted)] placeholder:opacity-70 focus:text-[color:var(--foreground)]"
-          onBlur={() => setIsDropdownOpen(false)}
-          onChange={(event) => {
-            setTagQuery(event.target.value);
-            setIsDropdownOpen(true);
-            setActiveSuggestionIndex(0);
-          }}
-          onFocus={() => {
-            if (suggestions.length > 0) {
-              setIsDropdownOpen(true);
+        <Popover
+          onOpenChange={(nextOpen) => {
+            setIsPopoverOpen(nextOpen);
+
+            if (!nextOpen) {
+              setTagQuery("");
             }
           }}
-          onKeyDown={handleInputKeyDown}
-          placeholder="Add tag"
-          ref={inputRef}
-          role="combobox"
-          value={tagQuery}
-        />
-      </div>
-
-      {isShowingDropdown ? (
-        <div
-          className="absolute right-0 top-full z-10 mt-2 min-w-[11rem] overflow-hidden rounded-md border border-[color:var(--border)] bg-[color:var(--popover)]"
-          id={listboxId}
-          role="listbox"
+          open={isPopoverOpen}
         >
-          <ul className="max-h-36 overflow-y-auto py-1">
-            {suggestions.map((tag, index) => {
-              const isActive = index === highlightedSuggestionIndex;
+          <PopoverTrigger asChild>
+            <Button
+              aria-label="Add tag"
+              className="ml-auto h-7 px-2 text-xs"
+              size="sm"
+              variant="ghost"
+            >
+              Add tag
+            </Button>
+          </PopoverTrigger>
 
-              return (
-                <li key={tag}>
-                  <button
-                    aria-selected={isActive}
-                    className={cn(
-                      "w-full px-3 py-1.5 text-left text-xs transition-colors",
-                      isActive
-                        ? "bg-[color:var(--surface-muted)] text-[color:var(--foreground)]"
-                        : "text-[color:var(--muted)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--foreground)]",
-                    )}
-                    id={`${listboxId}-${index}`}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      handleConfirmTag(tag);
-                    }}
-                    role="option"
-                    type="button"
-                  >
-                    {tag}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
+          <PopoverContent
+            align="end"
+            className="w-80 space-y-3"
+            onEscapeKeyDown={(event) => {
+              event.stopPropagation();
+            }}
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              inputRef.current?.focus();
+            }}
+          >
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-[color:var(--popover-foreground)]">
+                Choose tags
+              </p>
+              <p className="text-xs text-[color:var(--muted)]">
+                Search existing tags or create a new one.
+              </p>
+            </div>
+
+            <Input
+              aria-label="Tag search"
+              onChange={(event) => setTagQuery(event.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search or create tags"
+              ref={inputRef}
+              value={tagQuery}
+            />
+
+            <div className="space-y-1.5">
+              {canCreateTag ? (
+                <button
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
+                    "text-[color:var(--popover-foreground)] hover:bg-[color:var(--surface-muted)]",
+                  )}
+                  onClick={() => handleConfirmTag(normalizedQuery)}
+                  type="button"
+                >
+                  <Plus aria-hidden="true" className="size-4 text-[color:var(--muted)]" />
+                  <span>
+                    Create &quot;
+                    {normalizedQuery}
+                    &quot;
+                  </span>
+                </button>
+              ) : null}
+
+              {suggestions.map((tag) => (
+                <button
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
+                    "text-[color:var(--popover-foreground)] hover:bg-[color:var(--surface-muted)]",
+                  )}
+                  key={tag}
+                  onClick={() => handleConfirmTag(tag)}
+                  type="button"
+                >
+                  <Plus aria-hidden="true" className="size-4 text-[color:var(--muted)]" />
+                  <span>{tag}</span>
+                </button>
+              ))}
+
+              {suggestions.length === 0 && !canCreateTag ? (
+                <p className="rounded-md border border-dashed border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--muted)]">
+                  No matching tags yet.
+                </p>
+              ) : null}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
@@ -246,7 +237,7 @@ export function collectTaskTags(tasks: Pick<Task, "tags">[]) {
 
 /**
  * Filters autocomplete suggestions using a case-insensitive substring match and selected-tag
- * exclusion so the inline picker never offers duplicates back to the user.
+ * exclusion so the tag picker never offers duplicates back to the user.
  */
 export function readTaskTagSuggestions(
   allTags: string[],
@@ -276,7 +267,7 @@ export function readTaskTagSuggestions(
 
 /**
  * Converts the existing comma-separated task tag storage format into the array form used by the
- * inline combobox UI.
+ * shared task editor.
  */
 export function parseTaskTagString(tags: string) {
   return tags

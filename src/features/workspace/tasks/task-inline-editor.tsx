@@ -2,6 +2,7 @@
 
 import { type KeyboardEvent } from "react";
 
+import { Button } from "@/components/ui/button";
 import { type Project, type Task } from "@/features/workspace/core";
 
 import { TaskEditorFields } from "./task-editor-fields";
@@ -77,13 +78,15 @@ export function TaskInlineEditor({
       />
 
       <div className="flex justify-end">
-        <button
-          className="text-[11px] text-rose-600 transition-colors hover:text-rose-700"
+        <Button
+          className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
           onClick={() => onDelete(task.id)}
+          size="sm"
           type="button"
+          variant="ghost"
         >
           Delete
-        </button>
+        </Button>
       </div>
     </div>
   );

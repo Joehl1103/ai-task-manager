@@ -25,7 +25,7 @@ interface InboxTaskComposerProps {
 }
 
 /**
- * Renders the inbox-specific lightweight composer and keeps its tag autocomplete UI self-contained.
+ * Renders the inbox-specific task composer while reusing the shared shadcn task form.
  */
 export function InboxTaskComposer({
   allTags,
@@ -45,7 +45,7 @@ export function InboxTaskComposer({
   projects,
 }: InboxTaskComposerProps) {
   /**
-   * Collapses the composer only after inner controls like the tag combobox have had a chance to
+   * Collapses the composer only after inner controls like the tag popover have had a chance to
    * consume Escape for themselves.
    */
   function handleComposerKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -76,6 +76,7 @@ export function InboxTaskComposer({
       details={newTaskDetails}
       focusTitleInputSignal={focusTitleInputSignal}
       isSubmitDisabled={!newTaskTitle.trim()}
+      onCancel={onCollapse}
       onDetailsChange={onSetNewTaskDetails}
       onKeyDown={handleComposerKeyDown}
       onProjectChange={onSetNewTaskProject}
@@ -85,6 +86,7 @@ export function InboxTaskComposer({
       projectId={newTaskProject}
       projects={projects}
       submitHint="⌘↵"
+      submitLabel="Add task"
       tags={newTaskTags}
       title={newTaskTitle}
     />

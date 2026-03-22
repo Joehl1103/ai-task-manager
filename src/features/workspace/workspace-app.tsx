@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { featureFlags } from "@/features/feature-flags";
 import { AgentConfigurationView } from "@/features/workspace/agent-configuration-view";
@@ -150,6 +150,18 @@ export function WorkspaceApp() {
     buildGlobalSearchResults(workspace),
     globalSearchQuery,
   );
+
+  /**
+   * Clears task-detail-specific UI state without mutating the underlying task data.
+   */
+  const clearTaskFocus = useCallback(() => {
+    setSelectedTaskId(null);
+    setEditingTaskId(null);
+    setEditTitle("");
+    setEditDetails("");
+    setEditProject("");
+    setEditTags("");
+  }, []);
 
   /**
    * Hydrates saved workspace data after mount so task edits survive a browser refresh.
@@ -364,7 +376,7 @@ export function WorkspaceApp() {
     }
 
     clearTaskFocus();
-  }, [activeMenu, selectedProjectId, selectedTaskId, workspace.tasks]);
+  }, [activeMenu, clearTaskFocus, selectedProjectId, selectedTaskId, workspace.tasks]);
 
   /**
    * Resets the highlighted search row whenever the query changes so Enter always targets the
@@ -530,13 +542,6 @@ export function WorkspaceApp() {
   }
 
   /**
-   * Clears task-detail-specific UI state without mutating the underlying task data.
-   */
-  function clearTaskFocus() {
-    handleCancelEdit();
-  }
-
-  /**
    * Opens a task directly into inline edit mode by mirroring its current values into local draft
    * state.
    */
@@ -592,12 +597,7 @@ export function WorkspaceApp() {
    * Cancels row editing and clears the temporary draft values.
    */
   function handleCancelEdit() {
-    setSelectedTaskId(null);
-    setEditingTaskId(null);
-    setEditTitle("");
-    setEditDetails("");
-    setEditProject("");
-    setEditTags("");
+    clearTaskFocus();
   }
 
   /**
@@ -1117,7 +1117,7 @@ export function WorkspaceApp() {
    * the focused center-pane destination when needed.
    */
   function handleSelectGlobalSearchResult(result: GlobalSearchResult) {
-    const selection = resolveGlobalSearchSelection(result, workspace);
+    const selection = resolveGlobalSearchSelection(result);
 
     setActiveMenu(selection.activeMenu);
     setSelectedProjectId(selection.selectedProjectId);
