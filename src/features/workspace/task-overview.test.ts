@@ -40,7 +40,7 @@ describe("task overview helpers", () => {
   });
 
   /**
-   * Returns the selected task when drill-down mode opens a specific task.
+   * Returns the selected task when inline editing targets a specific task.
    */
   it("reads the selected task from the workspace snapshot", () => {
     expect(readSelectedTask(workspaceSeed.tasks, "task-1")?.title).toBe(

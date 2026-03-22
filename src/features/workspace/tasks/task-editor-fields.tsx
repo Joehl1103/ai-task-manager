@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent, useEffect, useRef } from "react";
+import { type ChangeEvent, type KeyboardEvent, useCallback, useEffect, useRef } from "react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,15 +56,31 @@ export function TaskEditorFields({
   tags,
   title,
 }: TaskEditorFieldsProps) {
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const selectedTags = parseTaskTagString(tags);
+
+  /**
+   * Auto-sizes the title textarea to its content so it grows with long titles but never shows
+   * a scrollbar.
+   */
+  const resizeTitleTextarea = useCallback(() => {
+    const element = titleInputRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  }, []);
 
   /**
    * Focuses the title input on open and on later explicit refocus requests like Cmd+N.
    */
   useEffect(() => {
     titleInputRef.current?.focus();
-  }, [focusTitleInputSignal]);
+    resizeTitleTextarea();
+  }, [focusTitleInputSignal, resizeTitleTextarea]);
 
   /**
    * Preserves the shared Cmd/Ctrl+Enter submit gesture while still allowing parent-specific
@@ -86,27 +102,33 @@ export function TaskEditorFields({
 
   return (
     <div
-      className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)]/90 px-3 py-2.5"
+      className="rounded-md border border-[color:var(--border)] bg-[color:var(--surface)]/90 px-3 py-1.5"
       onKeyDown={handleKeyDown}
     >
       <div className="flex items-start gap-3">
-        <input
+        <textarea
           aria-label="Task title"
           className={cn(
-            "min-w-0 flex-1 border-0 border-b border-[color:var(--border)] bg-transparent px-0 pb-2 pt-0 text-[13px] font-medium text-[color:var(--foreground)] shadow-none outline-none transition-colors",
+            "min-w-0 basis-3/4 resize-none overflow-hidden border-0 border-b border-[color:var(--border)] bg-transparent px-0 pb-2 pt-0 text-sm text-[color:var(--foreground)] shadow-none outline-none transition-colors",
             "placeholder:text-[color:var(--muted)] placeholder:opacity-70 focus:border-[color:var(--border-strong)]",
           )}
-          onChange={(event) => onTitleChange(event.target.value)}
+          onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
+            onTitleChange(event.target.value.replace(/\n/g, " "));
+            resizeTitleTextarea();
+          }}
           placeholder="Task title"
           ref={titleInputRef}
+          rows={1}
           value={title}
         />
 
-        <TaskTagCombobox
-          allTags={allTags}
-          onChange={(nextTags) => onTagsChange(formatTaskTagString(nextTags))}
-          selectedTags={selectedTags}
-        />
+        <div className="basis-1/4">
+          <TaskTagCombobox
+            allTags={allTags}
+            onChange={(nextTags) => onTagsChange(formatTaskTagString(nextTags))}
+            selectedTags={selectedTags}
+          />
+        </div>
       </div>
 
       <Textarea

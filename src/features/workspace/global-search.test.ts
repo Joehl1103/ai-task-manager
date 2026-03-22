@@ -128,7 +128,7 @@ describe("global search", () => {
   });
 
   /**
-   * Leaves the task drill-down closed when a searched project has no linked tasks yet.
+   * Leaves the inline task target empty when a searched project has no linked tasks yet.
    */
   it("keeps project selections on the projects view when the project has no tasks", () => {
     const results = buildSeedResults();

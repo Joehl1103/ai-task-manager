@@ -8,18 +8,16 @@ This app lives at the repository root (`ai-task-manager/`).
 
 - One compact overview list holding all tasks
 - One quieter inbox composer with inline tag autocomplete plus `Cmd+N` and `Cmd+Enter` keyboard flows
-- One shared drill-down view for a selected task across inbox, task lists, and project detail
+- One shared inline task editor that expands beneath the selected row across inbox, task lists, and project detail
 - A thin desktop top menu that opens from the current-view label
 - Theme options in Configuration with 6 paired day/night UI directions, including Relay Original
 - Add a task
-- Edit a task inside the drill-down
+- Edit a task inline without leaving the list
 - Delete a task
-- Call one built-in agent from inside a task drill-down
-- Delete one saved agent contribution from a task drill-down
 - Configure OpenAI with named local API keys and key-specific model selection
-- Make live OpenAI-backed agent calls through the app
+- Make live OpenAI-backed agent calls through project and initiative threads
 - Render basic markdown and safe HTML formatting inside saved agent responses
-- Persist tasks and agent history in browser local storage
+- Persist tasks and thread history in browser local storage
 
 ## Stack
 
@@ -72,7 +70,7 @@ The app is the primary project in this repository.
 - `src/features/workspace/agent-configuration-view.tsx`: provider setup view
 - `src/features/workspace/mock-data.ts`: starter tasks and sample agent history
 - `src/features/workspace/core/*`: shared workspace types
-- `src/features/workspace/tasks/*`: shared task editor, drill-down, tag-combobox, operations, grouping, overview, and confirmation helpers
+- `src/features/workspace/tasks/*`: shared task editor, inline editor, tag-combobox, operations, grouping, overview, and confirmation helpers
 - `src/features/workspace/projects/*`: inbox-system-project helpers, project operations, and selection helpers
 - `src/features/workspace/initiatives/*`: initiative operations
 - `src/features/workspace/providers/*`: provider config and API helpers

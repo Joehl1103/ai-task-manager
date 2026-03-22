@@ -21,9 +21,14 @@ function createTask(
     id,
     title,
     details: "",
+    completed: false,
     projectId,
     deadline: "",
     tags,
+    createdAt: "2026-03-20T10:00:00.000Z",
+    completedAt: "",
+    remindOn: "",
+    dueBy: "",
     agentThread: createAgentThread("task", id),
   };
 }

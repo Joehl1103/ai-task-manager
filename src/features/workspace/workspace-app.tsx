@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { featureFlags } from "@/features/feature-flags";
 import { AgentConfigurationView } from "@/features/workspace/agent-configuration-view";
+import { ArchiveView } from "@/features/workspace/archive-view";
 import {
   type AgentConfigState,
   type Initiative,
@@ -73,6 +74,7 @@ import {
   deleteTask,
   deleteThreadMessage,
   readSelectedTask,
+  toggleTaskCompleted,
   updateTask,
 } from "@/features/workspace/tasks";
 import {
@@ -140,15 +142,10 @@ export function WorkspaceApp() {
     activeProviderSettings.apiKey.trim() && activeProviderSettings.model.trim(),
   );
   const visibleProjects = filterVisibleProjects(workspace.projects);
-  const selectedTask = readSelectedTask(workspace.tasks, selectedTaskId);
+  const activeTasks = workspace.tasks.filter((task) => !task.completed);
+  const completedTasks = workspace.tasks.filter((task) => task.completed);
   const selectedProject = readProjectById(workspace.projects, selectedProjectId);
   const selectedInitiative = readInitiativeById(workspace.initiatives, selectedInitiativeId);
-  const selectedThreadDraft = selectedTask
-    ? readThreadDraft(threadDrafts, {
-        ownerType: "task",
-        ownerId: selectedTask.id,
-      })
-    : createEmptyThreadDraft();
   const globalSearchResults = filterGlobalSearchResults(
     buildGlobalSearchResults(workspace),
     globalSearchQuery,
@@ -309,7 +306,7 @@ export function WorkspaceApp() {
 
   /**
    * Opens the inbox composer from the platform-standard new-item shortcut only when the inbox
-   * overview is active and the drill-down is closed.
+   * overview is active and no inline task editor is open.
    */
   useEffect(() => {
     function handleWindowKeyDown(event: KeyboardEvent) {
@@ -352,7 +349,7 @@ export function WorkspaceApp() {
   }, [activeMenu]);
 
   /**
-   * Clears project-detail task drill-down state when the selected task no longer belongs to the
+   * Clears project-detail task editing state when the selected task no longer belongs to the
    * active project, such as after reassignment or cross-project navigation.
    */
   useEffect(() => {
@@ -537,36 +534,25 @@ export function WorkspaceApp() {
    */
   function clearTaskFocus() {
     handleCancelEdit();
-    setSelectedTaskId(null);
   }
 
   /**
-   * Opens a single task so the heavier controls can live in a dedicated drill-down view.
+   * Opens a task directly into inline edit mode by mirroring its current values into local draft
+   * state.
    */
   function handleOpenTask(taskId: string) {
-    if (editingTaskId && editingTaskId !== taskId) {
-      handleCancelEdit();
-    }
-
-    setSelectedTaskId(taskId);
-  }
-
-  /**
-   * Returns from the selected task to the compact overview list.
-   */
-  function handleReturnToOverview() {
-    handleCancelEdit();
-    setSelectedTaskId(null);
-  }
-
-  /**
-   * Loads the selected task into local edit state so the row can switch into edit mode.
-   */
-  function handleStartEdit(taskId: string) {
     const task = workspace.tasks.find((candidate) => candidate.id === taskId);
 
     if (!task) {
       return;
+    }
+
+    if (editingTaskId === task.id && selectedTaskId === task.id) {
+      return;
+    }
+
+    if (activeMenu === "inbox") {
+      setIsInboxComposerOpen(false);
     }
 
     setSelectedTaskId(task.id);
@@ -585,36 +571,28 @@ export function WorkspaceApp() {
       return;
     }
 
+    const nextTitle = editTitle;
+    const nextDetails = editDetails;
+    const nextProject = editProject;
+    const nextTags = parseTagsFromString(editTags);
+
     setWorkspace((currentWorkspace) =>
       updateTask(currentWorkspace, {
         taskId,
-        title: editTitle,
-        details: editDetails,
-        projectId: editProject,
-        tags: parseTagsFromString(editTags),
+        title: nextTitle,
+        details: nextDetails,
+        projectId: nextProject,
+        tags: nextTags,
       }),
     );
-
-    // If in inbox and task was assigned to a project, return to overview
-    if (activeMenu === "inbox" && editProject !== "") {
-      setSelectedTaskId(null);
-    }
-
-    if (activeMenu === "projects" && selectedProjectId !== null && editProject !== selectedProjectId) {
-      setSelectedTaskId(null);
-    }
-
-    setEditingTaskId(null);
-    setEditTitle("");
-    setEditDetails("");
-    setEditProject("");
-    setEditTags("");
+    handleCancelEdit();
   }
 
   /**
    * Cancels row editing and clears the temporary draft values.
    */
   function handleCancelEdit() {
+    setSelectedTaskId(null);
     setEditingTaskId(null);
     setEditTitle("");
     setEditDetails("");
@@ -645,12 +623,8 @@ export function WorkspaceApp() {
 
     setWorkspace((currentWorkspace) => deleteTask(currentWorkspace, taskId));
 
-    if (editingTaskId === taskId) {
+    if (editingTaskId === taskId || selectedTaskId === taskId) {
       handleCancelEdit();
-    }
-
-    if (selectedTaskId === taskId) {
-      setSelectedTaskId(null);
     }
 
     if (
@@ -662,6 +636,13 @@ export function WorkspaceApp() {
     ) {
       setPendingThreadOwnerKey(null);
     }
+  }
+
+  /**
+   * Toggles the completed state of a task.
+   */
+  function handleToggleTaskCompleted(taskId: string) {
+    setWorkspace((currentWorkspace) => toggleTaskCompleted(currentWorkspace, taskId));
   }
 
   /**
@@ -1164,15 +1145,12 @@ export function WorkspaceApp() {
     if (activeMenu === "inbox") {
       return (
         <InboxView
-          activeProviderLabel={activeProviderLabel}
-          activeProviderModel={activeProviderSettings.model}
           editDetails={editDetails}
           editingTaskId={editingTaskId}
           focusTitleInputSignal={inboxComposerFocusSignal}
           editProject={editProject}
           editTags={editTags}
           editTitle={editTitle}
-          isActiveProviderReady={isActiveProviderReady}
           isComposerExpanded={isInboxComposerOpen}
           newTaskDetails={newTaskDetails}
           newTaskProject={newTaskProject}
@@ -1181,18 +1159,8 @@ export function WorkspaceApp() {
           onAddTask={handleAddTask}
           onCancelEdit={handleCancelEdit}
           onSetComposerExpanded={setIsInboxComposerOpen}
-          onDeleteThreadMessage={(taskId, messageId) =>
-            handleDeleteThreadMessage(
-              {
-                ownerType: "task",
-                ownerId: taskId,
-              },
-              messageId,
-            )
-          }
           onDeleteTask={handleDeleteTask}
           onOpenTask={handleOpenTask}
-          onReturnToOverview={handleReturnToOverview}
           onSaveEdit={handleSaveEdit}
           onSetEditDetails={setEditDetails}
           onSetEditProject={setEditProject}
@@ -1202,31 +1170,9 @@ export function WorkspaceApp() {
           onSetNewTaskProject={setNewTaskProject}
           onSetNewTaskTags={setNewTaskTags}
           onSetNewTaskTitle={setNewTaskTitle}
-          onStartEdit={handleStartEdit}
-          onSendThreadMessage={(taskId) =>
-            handleSendThreadMessage({
-              ownerType: "task",
-              ownerId: taskId,
-            })
-          }
-          onThreadDraftChange={(taskId, message) =>
-            handleThreadDraftChange(
-              {
-                ownerType: "task",
-                ownerId: taskId,
-              },
-              message,
-            )
-          }
-          pendingTaskId={
-            pendingThreadOwnerKey?.startsWith("task:")
-              ? pendingThreadOwnerKey.slice("task:".length)
-              : null
-          }
+          onToggleTaskCompleted={handleToggleTaskCompleted}
           projects={visibleProjects}
-          selectedThreadDraft={selectedThreadDraft}
-          selectedTask={selectedTask}
-          tasks={workspace.tasks}
+          tasks={activeTasks}
         />
       );
     }
@@ -1319,18 +1265,8 @@ export function WorkspaceApp() {
               )
             }
             onDeleteTask={handleDeleteTask}
-            onDeleteTaskThreadMessage={(taskId, messageId) =>
-              handleDeleteThreadMessage(
-                {
-                  ownerType: "task",
-                  ownerId: taskId,
-                },
-                messageId,
-              )
-            }
             onOpenInitiative={handleSelectInitiative}
             onOpenTask={handleOpenTask}
-            onReturnToOverview={handleReturnToOverview}
             onSaveEdit={handleSaveEdit}
             onSendThreadMessage={(projectId) =>
               handleSendThreadMessage({
@@ -1338,17 +1274,10 @@ export function WorkspaceApp() {
                 ownerId: projectId,
               })
             }
-            onSendTaskThreadMessage={(taskId) =>
-              handleSendThreadMessage({
-                ownerType: "task",
-                ownerId: taskId,
-              })
-            }
             onSetEditDetails={setEditDetails}
             onSetEditProject={setEditProject}
             onSetEditTags={setEditTags}
             onSetEditTitle={setEditTitle}
-            onStartEdit={handleStartEdit}
             onThreadDraftChange={(projectId, message) =>
               handleThreadDraftChange(
                 {
@@ -1358,21 +1287,7 @@ export function WorkspaceApp() {
                 message,
               )
             }
-            onTaskThreadDraftChange={(taskId, message) =>
-              handleThreadDraftChange(
-                {
-                  ownerType: "task",
-                  ownerId: taskId,
-                },
-                message,
-              )
-            }
             onUpdateProject={handleUpdateProject}
-            pendingTaskId={
-              pendingThreadOwnerKey?.startsWith("task:")
-                ? pendingThreadOwnerKey.slice("task:".length)
-                : null
-            }
             pendingThreadId={
               pendingThreadOwnerKey?.startsWith("project:")
                 ? pendingThreadOwnerKey.slice("project:".length)
@@ -1386,9 +1301,7 @@ export function WorkspaceApp() {
                 ownerId: projectId,
               })
             }
-            selectedTask={selectedTask}
-            selectedThreadDraft={selectedThreadDraft}
-            tasks={workspace.tasks}
+            tasks={activeTasks}
           />
         );
       }
@@ -1399,7 +1312,17 @@ export function WorkspaceApp() {
           onAddProject={handleAddProject}
           onSelectProject={handleSelectProject}
           projects={visibleProjects}
-          tasks={workspace.tasks}
+          tasks={activeTasks}
+        />
+      );
+    }
+
+    if (activeMenu === "archive") {
+      return (
+        <ArchiveView
+          completedTasks={completedTasks}
+          onToggleTaskCompleted={handleToggleTaskCompleted}
+          projects={visibleProjects}
         />
       );
     }

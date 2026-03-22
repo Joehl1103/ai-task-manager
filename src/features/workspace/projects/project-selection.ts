@@ -9,7 +9,7 @@ export interface ProjectTaskSelection {
 
 /**
  * Builds the next workspace state when a project is selected from the project list.
- * The first matching task becomes the drill-down target so the jump feels immediate.
+ * The task selection stays available so project detail can open inline editing when appropriate.
  */
 export function buildProjectTaskSelection(
   tasks: Task[],

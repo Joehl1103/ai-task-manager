@@ -41,38 +41,6 @@ export function TaskOverviewActionsMenu({
   );
 }
 
-interface TaskDetailActionsMenuProps {
-  isEditing: boolean;
-  onDeleteTask: () => void;
-  onStartEdit: () => void;
-}
-
-/**
- * Keeps the task drill-down header quiet by collapsing edit and delete into one compact menu.
- */
-export function TaskDetailActionsMenu({
-  isEditing,
-  onDeleteTask,
-  onStartEdit,
-}: TaskDetailActionsMenuProps) {
-  return (
-    <TaskActionsMenuTrigger label="Task actions" triggerClassName="shrink-0">
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem disabled={isEditing} onSelect={onStartEdit}>
-          {isEditing ? "Editing" : "Edit task"}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-rose-600 focus:text-rose-700"
-          onSelect={onDeleteTask}
-        >
-          Delete task
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </TaskActionsMenuTrigger>
-  );
-}
-
 interface TaskActionsMenuTriggerProps {
   children: ReactNode;
   label: string;

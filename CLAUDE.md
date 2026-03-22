@@ -10,7 +10,7 @@ Run app and git commands from the repository root.
 Relay is currently a minimal web starter for task management with two primary ideas:
 
 - A compact task overview list
-- A selected-task drill-down for editing and agent activity
+- A selected-task inline editor that expands inside the current list
 - A thin top-menu shell that separates Tasks from Configuration
 
 The current goal is to keep the product as small as possible before layering on more capabilities.
@@ -58,14 +58,14 @@ Current focus:
 - Preserve the no-chrome UI language even as the shell evolves
 - Keep the top-level shell thin, desktop-oriented, and visually quiet
 - Let the user compare six paired day/night visual directions from Configuration, including the original starter theme
-- Preserve add, edit, delete, task-level agent calls, and deletion of saved agent contributions
-- Keep the main overview compact and move agent history into task drill-down
-- Keep the selected-task drill-down and editing language consistent across inbox, task lists, and project detail
+- Preserve add, inline edit, delete, and thread access where those threads still exist
+- Keep the main overview compact and keep task editing inline inside the list
+- Keep the selected-task inline editor language consistent across inbox, task lists, and project detail
 - Keep configuration separate from the task workflow
 - Keep the agent model to one built-in path, not multiple agent types
-- Support local OpenAI configuration for real task-level agent calls first
-- Keep task-level agent responses readable with safe basic markdown and HTML formatting
-- Persist tasks and task-scoped agent history locally in the browser
+- Support local OpenAI configuration for real project- and initiative-level agent calls first
+- Keep saved agent responses readable with safe basic markdown and HTML formatting
+- Persist tasks and thread history locally in the browser
 
 Likely next tasks:
 

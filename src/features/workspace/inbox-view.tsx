@@ -1,6 +1,11 @@
 "use client";
 
+import { useState } from "react";
+
+import { CheckCircle2, Circle } from "lucide-react";
+
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   filterVisibleProjects,
   isTaskInInbox,
@@ -8,18 +13,15 @@ import {
 import {
   collectTaskTags,
   InboxTaskComposer,
-  TaskDrillDown,
-  TaskOverviewActionsMenu,
+  TaskInlineEditor,
 } from "@/features/workspace/tasks";
-import { type Project, type Task, type ThreadDraft } from "@/features/workspace/core";
+import { type Project, type Task } from "@/features/workspace/core";
 
 interface InboxViewProps {
   tasks: Task[];
   projects: Project[];
   focusTitleInputSignal: number;
   isComposerExpanded: boolean;
-  selectedTask: Task | null;
-  selectedThreadDraft: ThreadDraft;
   newTaskTitle: string;
   newTaskDetails: string;
   newTaskProject: string;
@@ -29,10 +31,6 @@ interface InboxViewProps {
   editDetails: string;
   editProject: string;
   editTags: string;
-  pendingTaskId: string | null;
-  activeProviderLabel: string;
-  activeProviderModel: string;
-  isActiveProviderReady: boolean;
   onSetNewTaskTitle: (value: string) => void;
   onSetNewTaskDetails: (value: string) => void;
   onSetNewTaskProject: (value: string) => void;
@@ -40,18 +38,14 @@ interface InboxViewProps {
   onAddTask: () => void;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onReturnToOverview: () => void;
-  onStartEdit: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
-  onDeleteThreadMessage: (taskId: string, messageId: string) => void;
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
   onSetEditTags: (value: string) => void;
   onSetComposerExpanded: (value: boolean) => void;
-  onThreadDraftChange: (taskId: string, message: string) => void;
-  onSendThreadMessage: (taskId: string) => void;
+  onToggleTaskCompleted: (taskId: string) => void;
 }
 
 /**
@@ -62,8 +56,6 @@ export function InboxView({
   projects,
   focusTitleInputSignal,
   isComposerExpanded,
-  selectedTask,
-  selectedThreadDraft,
   newTaskTitle,
   newTaskDetails,
   newTaskProject,
@@ -73,10 +65,6 @@ export function InboxView({
   editDetails,
   editProject,
   editTags,
-  pendingTaskId,
-  activeProviderLabel,
-  activeProviderModel,
-  isActiveProviderReady,
   onSetNewTaskTitle,
   onSetNewTaskDetails,
   onSetNewTaskProject,
@@ -84,18 +72,14 @@ export function InboxView({
   onAddTask,
   onOpenTask,
   onDeleteTask,
-  onReturnToOverview,
-  onStartEdit,
   onSaveEdit,
   onCancelEdit,
-  onDeleteThreadMessage,
   onSetEditTitle,
   onSetEditDetails,
   onSetEditProject,
   onSetEditTags,
   onSetComposerExpanded,
-  onThreadDraftChange,
-  onSendThreadMessage,
+  onToggleTaskCompleted,
 }: InboxViewProps) {
   const visibleProjects = filterVisibleProjects(projects);
   const inboxTasks = tasks.filter((task) => isTaskInInbox(task));
@@ -132,71 +116,50 @@ export function InboxView({
         </p>
       </header>
 
-      {!isActiveProviderReady ? (
-        <p className="mt-2 text-sm text-amber-700">
-          Live agent threads stay unavailable until configuration is added.
-        </p>
-      ) : null}
-
-      {!selectedTask ? (
-        <section className="mt-4">
-          <InboxTaskComposer
-            allTags={allTags}
-            focusTitleInputSignal={focusTitleInputSignal}
-            isExpanded={isComposerExpanded}
-            key={isComposerExpanded ? "expanded" : "collapsed"}
-            newTaskDetails={newTaskDetails}
-            newTaskProject={newTaskProject}
-            newTaskTags={newTaskTags}
-            newTaskTitle={newTaskTitle}
-            onCollapse={handleCollapseComposer}
-            onExpand={handleExpandComposer}
-            onSetNewTaskDetails={onSetNewTaskDetails}
-            onSetNewTaskProject={onSetNewTaskProject}
-            onSetNewTaskTags={onSetNewTaskTags}
-            onSetNewTaskTitle={onSetNewTaskTitle}
-            onSubmit={handleAddTaskAndCollapse}
-            projects={visibleProjects}
-          />
-        </section>
-      ) : null}
+      <section className="mt-4">
+        <InboxTaskComposer
+          allTags={allTags}
+          focusTitleInputSignal={focusTitleInputSignal}
+          isExpanded={isComposerExpanded}
+          key={isComposerExpanded ? "expanded" : "collapsed"}
+          newTaskDetails={newTaskDetails}
+          newTaskProject={newTaskProject}
+          newTaskTags={newTaskTags}
+          newTaskTitle={newTaskTitle}
+          onCollapse={handleCollapseComposer}
+          onExpand={handleExpandComposer}
+          onSetNewTaskDetails={onSetNewTaskDetails}
+          onSetNewTaskProject={onSetNewTaskProject}
+          onSetNewTaskTags={onSetNewTaskTags}
+          onSetNewTaskTitle={onSetNewTaskTitle}
+          onSubmit={handleAddTaskAndCollapse}
+          projects={visibleProjects}
+        />
+      </section>
 
       <section className="mt-6">
-        {selectedTask ? (
-          <TaskDrillDown
-            activeProviderLabel={activeProviderLabel}
-            activeProviderModel={activeProviderModel}
+        {inboxTasks.length === 0 ? (
+          <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">
+            No tasks in inbox
+          </p>
+        ) : (
+          <InboxTaskList
             allTags={allTags}
-            threadDraft={selectedThreadDraft}
             editDetails={editDetails}
             editingTaskId={editingTaskId}
             editProject={editProject}
             editTags={editTags}
             editTitle={editTitle}
             onCancelEdit={onCancelEdit}
-            onDeleteThreadMessage={onDeleteThreadMessage}
             onDeleteTask={onDeleteTask}
-            onReturnToOverview={onReturnToOverview}
+            onOpenTask={onOpenTask}
             onSaveEdit={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
             onSetEditProject={onSetEditProject}
             onSetEditTags={onSetEditTags}
             onSetEditTitle={onSetEditTitle}
-            onStartEdit={onStartEdit}
-            onSendThreadMessage={onSendThreadMessage}
-            onThreadDraftChange={onThreadDraftChange}
-            pendingTaskId={pendingTaskId}
+            onToggleTaskCompleted={onToggleTaskCompleted}
             projects={visibleProjects}
-            task={selectedTask}
-          />
-        ) : inboxTasks.length === 0 ? (
-          <p className="task-overview-empty mt-6 text-sm text-[color:var(--muted)]">
-            No tasks in inbox
-          </p>
-        ) : (
-          <InboxTaskList
-            onDeleteTask={onDeleteTask}
-            onOpenTask={onOpenTask}
             tasks={inboxTasks}
           />
         )}
@@ -206,24 +169,70 @@ export function InboxView({
 }
 
 interface InboxTaskListProps {
+  allTags: string[];
+  editDetails: string;
+  editingTaskId: string | null;
+  editProject: string;
+  editTags: string;
+  editTitle: string;
+  onCancelEdit: () => void;
   tasks: Task[];
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  onSaveEdit: (taskId: string) => void;
+  onSetEditDetails: (value: string) => void;
+  onSetEditProject: (value: string) => void;
+  onSetEditTags: (value: string) => void;
+  onSetEditTitle: (value: string) => void;
+  onToggleTaskCompleted: (taskId: string) => void;
+  projects: Project[];
 }
 
 /**
  * Renders inbox tasks as a flat list without grouping.
  */
-function InboxTaskList({ tasks, onOpenTask, onDeleteTask }: InboxTaskListProps) {
+function InboxTaskList({
+  allTags,
+  editDetails,
+  editingTaskId,
+  editProject,
+  editTags,
+  editTitle,
+  onCancelEdit,
+  tasks,
+  onDeleteTask,
+  onOpenTask,
+  onSaveEdit,
+  onSetEditDetails,
+  onSetEditProject,
+  onSetEditTags,
+  onSetEditTitle,
+  onToggleTaskCompleted,
+  projects,
+}: InboxTaskListProps) {
   return (
     <div>
       <Separator className="mb-2" />
       <ul>
         {tasks.map((task, index) => (
           <InboxTaskRow
+            allTags={allTags}
+            editDetails={editDetails}
+            editingTaskId={editingTaskId}
+            editProject={editProject}
+            editTags={editTags}
+            editTitle={editTitle}
+            onCancelEdit={onCancelEdit}
             key={task.id}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
+            onSaveEdit={onSaveEdit}
+            onSetEditDetails={onSetEditDetails}
+            onSetEditProject={onSetEditProject}
+            onSetEditTags={onSetEditTags}
+            onSetEditTitle={onSetEditTitle}
+            onToggleTaskCompleted={onToggleTaskCompleted}
+            projects={projects}
             showsSeparator={index < tasks.length - 1}
             task={task}
           />
@@ -234,51 +243,118 @@ function InboxTaskList({ tasks, onOpenTask, onDeleteTask }: InboxTaskListProps) 
 }
 
 interface InboxTaskRowProps {
+  allTags: string[];
+  editDetails: string;
+  editingTaskId: string | null;
+  editProject: string;
+  editTags: string;
+  editTitle: string;
+  onCancelEdit: () => void;
   task: Task;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  onSaveEdit: (taskId: string) => void;
+  onSetEditDetails: (value: string) => void;
+  onSetEditProject: (value: string) => void;
+  onSetEditTags: (value: string) => void;
+  onSetEditTitle: (value: string) => void;
+  onToggleTaskCompleted: (taskId: string) => void;
+  projects: Project[];
   showsSeparator: boolean;
 }
 
 /**
  * Shows each inbox task as a lightweight line item.
+ * Fades out briefly when marked complete before the task moves to the archive.
  */
 function InboxTaskRow({
+  allTags,
+  editDetails,
+  editingTaskId,
+  editProject,
+  editTags,
+  editTitle,
+  onCancelEdit,
   task,
   onOpenTask,
   onDeleteTask,
+  onSaveEdit,
+  onSetEditDetails,
+  onSetEditProject,
+  onSetEditTags,
+  onSetEditTitle,
+  onToggleTaskCompleted,
+  projects,
   showsSeparator,
 }: InboxTaskRowProps) {
+  const [isChecking, setIsChecking] = useState(false);
+
+  function handleToggleCompleted() {
+    setIsChecking(true);
+    setTimeout(() => onToggleTaskCompleted(task.id), 800);
+  }
+
   return (
     <li className="task-overview-line-item py-2">
-      <div className="flex min-h-8 items-center gap-2">
-        <button
-          className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left hover:text-[color:var(--muted-strong)]"
-          onClick={() => onOpenTask(task.id)}
-          type="button"
-        >
-          <span className="shrink truncate text-sm">{task.title}</span>
-          {task.tags.length > 0 ? (
-            <span className="flex min-w-0 items-center gap-1 overflow-hidden">
-              {task.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-xs font-medium leading-none text-white"
-                >
-                  {tag}
-                </span>
-              ))}
-            </span>
-          ) : null}
-        </button>
-      </div>
-
-      <div className="mt-2 flex justify-end">
-        <TaskOverviewActionsMenu
-          onDeleteTask={() => onDeleteTask(task.id)}
-          onOpenTask={() => onOpenTask(task.id)}
+      {task.id === editingTaskId ? (
+        <TaskInlineEditor
+          allTags={allTags}
+          editDetails={editDetails}
+          editProject={editProject}
+          editTags={editTags}
+          editTitle={editTitle}
+          onCancel={onCancelEdit}
+          onDelete={onDeleteTask}
+          onSave={onSaveEdit}
+          onSetEditDetails={onSetEditDetails}
+          onSetEditProject={onSetEditProject}
+          onSetEditTags={onSetEditTags}
+          onSetEditTitle={onSetEditTitle}
+          projects={projects}
+          task={task}
         />
-      </div>
+      ) : (
+        <div className="pl-[13px]">
+          <div className="flex min-h-8 items-center gap-2">
+            <button
+              aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+              className="shrink-0 transition-colors hover:text-[color:var(--foreground)]"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleToggleCompleted();
+              }}
+              type="button"
+            >
+              {isChecking ? (
+                <CheckCircle2 aria-hidden="true" className="size-4 fill-[color:var(--border)] text-[color:var(--border-strong)] transition-colors duration-300" />
+              ) : task.completed ? (
+                <CheckCircle2 aria-hidden="true" className="size-4 fill-[color:var(--border)] text-[color:var(--border-strong)]" />
+              ) : (
+                <Circle aria-hidden="true" className="size-4 text-[color:var(--border-strong)]" />
+              )}
+            </button>
+            <button
+              className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left hover:text-[color:var(--muted-strong)]"
+              onClick={() => onOpenTask(task.id)}
+              type="button"
+            >
+              <span className="shrink truncate text-sm">{task.title}</span>
+              {task.tags.length > 0 ? (
+                <span className="flex min-w-0 items-center gap-1 overflow-hidden">
+                  {task.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-xs font-medium leading-none text-white"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </span>
+              ) : null}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showsSeparator ? <Separator className="mt-2" /> : null}
     </li>

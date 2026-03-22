@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import {
+  Archive,
   ChevronDown,
   ChevronRight,
   FolderKanban,
@@ -146,6 +147,16 @@ export function WorkspaceSidebar({
               ))}
             </SidebarSection>
           ) : null}
+
+          <section className="space-y-1">
+            <SidebarMenuButton
+              active={activeMenu === "archive"}
+              hint={readWorkspaceMenuHint("archive")}
+              icon={<Archive className="size-4" />}
+              label={readWorkspaceMenuLabel("archive")}
+              onClick={() => onSelectMenu("archive")}
+            />
+          </section>
 
           <div className="mt-auto pt-4">
             <Separator className="mb-4" />

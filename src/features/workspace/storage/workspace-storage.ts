@@ -150,9 +150,14 @@ function migrateFromLegacyFormat(legacyTasks: unknown[]): WorkspaceSnapshot {
         id: taskId,
         title: readString(task.title) || "Untitled task",
         details: readString(task.details),
+        completed: false,
         projectId,
         deadline: readString(task.deadline),
         tags: normalizeTags(task.tags),
+        createdAt: new Date().toISOString(),
+        completedAt: "",
+        remindOn: "",
+        dueBy: "",
         agentThread: normalizeTaskThread(task, taskId),
       },
     ];
@@ -219,13 +224,20 @@ function normalizeTask(value: unknown, index: number): Task | null {
 
   const taskId = readString(value.id) || `task-${index + 1}`;
 
+  const completed = value.completed === true;
+
   return {
     id: taskId,
     title: readString(value.title) || "Untitled task",
     details: readString(value.details),
+    completed,
     projectId: normalizeTaskProjectId(readString(value.projectId)),
     deadline: readString(value.deadline),
     tags: normalizeTags(value.tags),
+    createdAt: readString(value.createdAt) || new Date().toISOString(),
+    completedAt: readString(value.completedAt),
+    remindOn: readString(value.remindOn),
+    dueBy: readString(value.dueBy),
     agentThread: normalizeTaskThread(value, taskId),
   };
 }

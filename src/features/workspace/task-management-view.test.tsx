@@ -8,11 +8,6 @@ function buildTaskManagementViewProps() {
   return {
     tasks: workspaceSeed.tasks,
     projects: workspaceSeed.projects,
-    selectedTask: null,
-    selectedThreadDraft: {
-      message: "",
-      error: null,
-    },
     activeProjectFilterName: null,
     newTaskTitle: "",
     newTaskDetails: "",
@@ -23,10 +18,6 @@ function buildTaskManagementViewProps() {
     editDetails: "",
     editProject: "",
     editTags: "",
-    pendingTaskId: null,
-    activeProviderLabel: "OpenAI",
-    activeProviderModel: "gpt-5",
-    isActiveProviderReady: true,
     taskGroupingMode: "project" as const,
     onSetNewTaskTitle: vi.fn(),
     onSetNewTaskDetails: vi.fn(),
@@ -35,19 +26,15 @@ function buildTaskManagementViewProps() {
     onAddTask: vi.fn(),
     onOpenTask: vi.fn(),
     onDeleteTask: vi.fn(),
-    onReturnToOverview: vi.fn(),
-    onStartEdit: vi.fn(),
     onSaveEdit: vi.fn(),
     onCancelEdit: vi.fn(),
-    onDeleteThreadMessage: vi.fn(),
     onSetEditTitle: vi.fn(),
     onSetEditDetails: vi.fn(),
     onSetEditProject: vi.fn(),
     onSetEditTags: vi.fn(),
     onClearProjectFilter: vi.fn(),
-    onThreadDraftChange: vi.fn(),
-    onSendThreadMessage: vi.fn(),
     onToggleGroupingMode: vi.fn(),
+    onToggleTaskCompleted: vi.fn(),
   };
 }
 
@@ -64,17 +51,36 @@ describe("task management view", () => {
   });
 
   /**
-   * Keeps task row chips compact while moving secondary actions into a quieter menu trigger.
+   * Keeps task row chips compact with thin tag pills and separator dividers.
    */
-  it("renders thin tag chips and task action menu triggers", () => {
+  it("renders thin tag chips and row separators", () => {
     const markup = renderToStaticMarkup(<TaskManagementView {...buildTaskManagementViewProps()} />);
 
     expect(markup).toContain("py-px");
-    expect(markup).toContain('aria-label="Task actions"');
-    expect(markup).toContain('data-slot="dropdown-menu-trigger"');
     expect(markup).toContain('data-slot="separator"');
     expect(markup).toContain("text-[color:var(--muted)]");
     expect(markup).toContain("hover:text-[color:var(--foreground)]");
+  });
+
+  /**
+   * Confirms opening a task now expands the shared editor inline while preserving the grouped list.
+   */
+  it("renders the inline editor beneath the matching task row", () => {
+    const markup = renderToStaticMarkup(
+      <TaskManagementView
+        {...buildTaskManagementViewProps()}
+        editingTaskId="task-1"
+        editTitle="Define the smallest possible task manager"
+        editDetails="Keep only create, edit, delete, and call-agent actions."
+        editProject="project-1"
+        editTags="planning"
+      />,
+    );
+
+    expect(markup).toContain("Task title");
+    expect(markup).toContain("Delete");
+    expect(markup).toContain("List the next three product decisions");
+    expect(markup).not.toContain(">Back<");
   });
 
   /**

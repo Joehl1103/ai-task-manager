@@ -73,9 +73,14 @@ export interface Task {
   id: string;
   title: string;
   details: string;
+  completed: boolean;
   projectId: string;
   deadline: string;
   tags: string[];
+  createdAt: string;
+  completedAt: string;
+  remindOn: string;
+  dueBy: string;
   agentThread: AgentThread;
 }
 

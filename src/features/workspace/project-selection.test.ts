@@ -22,9 +22,9 @@ describe("project selection", () => {
   });
 
   /**
-   * Keeps the projects view scoped to the project even when no task drill-down exists yet.
+   * Keeps the projects view scoped to the project even when there is no inline task target yet.
    */
-  it("leaves the task drill-down empty when the project has no tasks", () => {
+  it("leaves the inline task target empty when the project has no tasks", () => {
     const selection = buildProjectTaskSelection(workspaceSeed.tasks, "project-2");
 
     expect(selection).toEqual({

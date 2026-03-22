@@ -32,22 +32,16 @@ function buildProjectDetailViewProps() {
     onDeleteProject: vi.fn(),
     onDeleteThreadMessage: vi.fn(),
     onDeleteTask: vi.fn(),
-    onDeleteTaskThreadMessage: vi.fn(),
     onOpenInitiative: vi.fn(),
     onOpenTask: vi.fn(),
-    onReturnToOverview: vi.fn(),
     onSaveEdit: vi.fn(),
     onSendThreadMessage: vi.fn(),
-    onSendTaskThreadMessage: vi.fn(),
     onSetEditDetails: vi.fn(),
     onSetEditProject: vi.fn(),
     onSetEditTags: vi.fn(),
     onSetEditTitle: vi.fn(),
-    onStartEdit: vi.fn(),
     onThreadDraftChange: vi.fn(),
-    onTaskThreadDraftChange: vi.fn(),
     onUpdateProject: vi.fn(),
-    pendingTaskId: null,
     pendingThreadId: null,
     project: workspaceSeed.projects.find((project) => project.id === "project-1") ?? null,
     projects: workspaceSeed.projects,
@@ -55,11 +49,6 @@ function buildProjectDetailViewProps() {
       message: "",
       error: null,
     })),
-    selectedTask: null,
-    selectedThreadDraft: {
-      message: "",
-      error: null,
-    },
     tasks: workspaceSeed.tasks,
   } as const;
 }
@@ -117,19 +106,25 @@ describe("project view", () => {
   });
 
   /**
-   * Confirms project tasks can swap into the same shared task drill-down used elsewhere.
+   * Confirms project tasks now expand the shared inline editor without replacing the list.
    */
-  it("renders the shared task drill-down when a project task is selected", () => {
-    const selectedTask = workspaceSeed.tasks.find((task) => task.id === "task-1") ?? null;
+  it("renders the shared inline editor when a project task is opened", () => {
     const markup = renderToStaticMarkup(
-      <ProjectDetailView {...buildProjectDetailViewProps()} selectedTask={selectedTask} />,
+      <ProjectDetailView
+        {...buildProjectDetailViewProps()}
+        editingTaskId="task-1"
+        editTitle="Define the smallest possible task manager"
+        editDetails="Keep only create, edit, delete, and call-agent actions."
+        editProject="project-1"
+        editTags="planning"
+      />,
     );
 
-    expect(markup).toContain("Back to project tasks");
+    expect(markup).toContain("Task title");
+    expect(markup).toContain("Delete");
     expect(markup).toContain("Define the smallest possible task manager");
-    expect(markup).toContain("Keep only create, edit, delete, and call-agent actions.");
-    expect(markup).toContain('aria-label="Task actions"');
-    expect(markup).not.toContain('aria-label="Open task List the next three product decisions"');
+    expect(markup).toContain('aria-label="Open task List the next three product decisions"');
+    expect(markup).not.toContain("Back to project tasks");
   });
 
   /**

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Plus } from "lucide-react";
+import { CheckCircle2, Circle, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,18 +18,15 @@ import {
   collectTaskTags,
   groupTasksByProject,
   groupTasksByTag,
-  TaskDrillDown,
-  TaskOverviewActionsMenu,
+  TaskInlineEditor,
   type TaskGroup,
 } from "@/features/workspace/tasks";
-import { type Project, type Task, type ThreadDraft } from "@/features/workspace/core";
+import { type Project, type Task } from "@/features/workspace/core";
 import { type TaskGroupingMode } from "@/features/workspace/storage";
 
 interface TaskManagementViewProps {
   tasks: Task[];
   projects: Project[];
-  selectedTask: Task | null;
-  selectedThreadDraft: ThreadDraft;
   activeProjectFilterName: string | null;
   newTaskTitle: string;
   newTaskDetails: string;
@@ -40,10 +37,6 @@ interface TaskManagementViewProps {
   editDetails: string;
   editProject: string;
   editTags: string;
-  pendingTaskId: string | null;
-  activeProviderLabel: string;
-  activeProviderModel: string;
-  isActiveProviderReady: boolean;
   taskGroupingMode: TaskGroupingMode;
   onClearProjectFilter: () => void;
   onSetNewTaskTitle: (value: string) => void;
@@ -53,18 +46,14 @@ interface TaskManagementViewProps {
   onAddTask: () => void;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onReturnToOverview: () => void;
-  onStartEdit: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
-  onDeleteThreadMessage: (taskId: string, messageId: string) => void;
   onSetEditTitle: (value: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditProject: (value: string) => void;
   onSetEditTags: (value: string) => void;
-  onThreadDraftChange: (taskId: string, message: string) => void;
-  onSendThreadMessage: (taskId: string) => void;
   onToggleGroupingMode: () => void;
+  onToggleTaskCompleted: (taskId: string) => void;
 }
 
 /**
@@ -73,8 +62,6 @@ interface TaskManagementViewProps {
 export function TaskManagementView({
   tasks,
   projects,
-  selectedTask,
-  selectedThreadDraft,
   activeProjectFilterName,
   newTaskTitle,
   newTaskDetails,
@@ -85,10 +72,6 @@ export function TaskManagementView({
   editDetails,
   editProject,
   editTags,
-  pendingTaskId,
-  activeProviderLabel,
-  activeProviderModel,
-  isActiveProviderReady,
   taskGroupingMode,
   onClearProjectFilter,
   onSetNewTaskTitle,
@@ -98,18 +81,14 @@ export function TaskManagementView({
   onAddTask,
   onOpenTask,
   onDeleteTask,
-  onReturnToOverview,
-  onStartEdit,
   onSaveEdit,
   onCancelEdit,
-  onDeleteThreadMessage,
   onSetEditTitle,
   onSetEditDetails,
   onSetEditProject,
   onSetEditTags,
-  onThreadDraftChange,
-  onSendThreadMessage,
   onToggleGroupingMode,
+  onToggleTaskCompleted,
 }: TaskManagementViewProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const visibleProjects = filterVisibleProjects(projects);
@@ -156,12 +135,6 @@ export function TaskManagementView({
           </p>
         ) : null}
       </header>
-
-      {!isActiveProviderReady ? (
-        <p className="mt-2 text-sm text-amber-700">
-          Live agent threads stay unavailable until configuration is added.
-        </p>
-      ) : null}
 
       <section className="mt-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
         <button
@@ -225,70 +198,80 @@ export function TaskManagementView({
       </section>
 
       <section className="mt-6">
-        {selectedTask ? (
-          <TaskDrillDown
-            activeProviderLabel={activeProviderLabel}
-            activeProviderModel={activeProviderModel}
-            allTags={allTags}
-            threadDraft={selectedThreadDraft}
-            editDetails={editDetails}
-            editingTaskId={editingTaskId}
-            editProject={editProject}
-            editTags={editTags}
-            editTitle={editTitle}
-            onCancelEdit={onCancelEdit}
-            onDeleteThreadMessage={onDeleteThreadMessage}
-            onDeleteTask={onDeleteTask}
-            onReturnToOverview={onReturnToOverview}
-            onSaveEdit={onSaveEdit}
-            onSetEditDetails={onSetEditDetails}
-            onSetEditProject={onSetEditProject}
-            onSetEditTags={onSetEditTags}
-            onSetEditTitle={onSetEditTitle}
-            onStartEdit={onStartEdit}
-            onSendThreadMessage={onSendThreadMessage}
-            onThreadDraftChange={onThreadDraftChange}
-            pendingTaskId={pendingTaskId}
-            projects={visibleProjects}
-            task={selectedTask}
-          />
-        ) : (
-          <GroupedTaskOverview
-            emptyStateMessage={emptyStateMessage}
-            onDeleteTask={onDeleteTask}
-            onOpenTask={onOpenTask}
-            onToggleGroupingMode={onToggleGroupingMode}
-            projects={visibleProjects}
-            taskGroupingMode={taskGroupingMode}
-            tasks={tasks}
-          />
-        )}
+        <GroupedTaskOverview
+          allTags={allTags}
+          editDetails={editDetails}
+          editingTaskId={editingTaskId}
+          editProject={editProject}
+          editTags={editTags}
+          editTitle={editTitle}
+          emptyStateMessage={emptyStateMessage}
+          onCancelEdit={onCancelEdit}
+          onDeleteTask={onDeleteTask}
+          onOpenTask={onOpenTask}
+          onSaveEdit={onSaveEdit}
+          onSetEditDetails={onSetEditDetails}
+          onSetEditProject={onSetEditProject}
+          onSetEditTags={onSetEditTags}
+          onSetEditTitle={onSetEditTitle}
+          onToggleGroupingMode={onToggleGroupingMode}
+          onToggleTaskCompleted={onToggleTaskCompleted}
+          projects={visibleProjects}
+          taskGroupingMode={taskGroupingMode}
+          tasks={tasks}
+        />
       </section>
     </>
   );
 }
 
 interface GroupedTaskOverviewProps {
+  allTags: string[];
+  editDetails: string;
+  editingTaskId: string | null;
+  editProject: string;
+  editTags: string;
+  editTitle: string;
   tasks: Task[];
   projects: Project[];
   emptyStateMessage: string;
+  onCancelEdit: () => void;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  onSaveEdit: (taskId: string) => void;
+  onSetEditDetails: (value: string) => void;
+  onSetEditProject: (value: string) => void;
+  onSetEditTags: (value: string) => void;
+  onSetEditTitle: (value: string) => void;
   taskGroupingMode: TaskGroupingMode;
   onToggleGroupingMode: () => void;
+  onToggleTaskCompleted: (taskId: string) => void;
 }
 
 /**
  * Renders tasks grouped by project or tag with lightweight section headings and a mode toggle.
  */
 function GroupedTaskOverview({
+  allTags,
+  editDetails,
+  editingTaskId,
+  editProject,
+  editTags,
+  editTitle,
   tasks,
   projects,
   emptyStateMessage,
+  onCancelEdit,
   onOpenTask,
   onDeleteTask,
+  onSaveEdit,
+  onSetEditDetails,
+  onSetEditProject,
+  onSetEditTags,
+  onSetEditTitle,
   taskGroupingMode,
   onToggleGroupingMode,
+  onToggleTaskCompleted,
 }: GroupedTaskOverviewProps) {
   const groups =
     taskGroupingMode === "tag" ? groupTasksByTag(tasks) : groupTasksByProject(tasks, projects);
@@ -338,10 +321,24 @@ function GroupedTaskOverview({
 
       {groups.map((group) => (
         <ProjectSection
+          allTags={allTags}
+          editDetails={editDetails}
+          editingTaskId={editingTaskId}
+          editProject={editProject}
+          editTags={editTags}
+          editTitle={editTitle}
           group={group}
           key={group.project || "__no_project__"}
+          onCancelEdit={onCancelEdit}
           onDeleteTask={onDeleteTask}
           onOpenTask={onOpenTask}
+          onSaveEdit={onSaveEdit}
+          onSetEditDetails={onSetEditDetails}
+          onSetEditProject={onSetEditProject}
+          onSetEditTags={onSetEditTags}
+          onSetEditTitle={onSetEditTitle}
+          onToggleTaskCompleted={onToggleTaskCompleted}
+          projects={projects}
         />
       ))}
     </div>
@@ -349,15 +346,47 @@ function GroupedTaskOverview({
 }
 
 interface ProjectSectionProps {
+  allTags: string[];
+  editDetails: string;
+  editingTaskId: string | null;
+  editProject: string;
+  editTags: string;
+  editTitle: string;
   group: TaskGroup;
+  onCancelEdit: () => void;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  onSaveEdit: (taskId: string) => void;
+  onSetEditDetails: (value: string) => void;
+  onSetEditProject: (value: string) => void;
+  onSetEditTags: (value: string) => void;
+  onSetEditTitle: (value: string) => void;
+  onToggleTaskCompleted: (taskId: string) => void;
+  projects: Project[];
 }
 
 /**
  * Renders a single project section with its tasks as line items.
  */
-function ProjectSection({ group, onOpenTask, onDeleteTask }: ProjectSectionProps) {
+function ProjectSection({
+  allTags,
+  editDetails,
+  editingTaskId,
+  editProject,
+  editTags,
+  editTitle,
+  group,
+  onCancelEdit,
+  onOpenTask,
+  onDeleteTask,
+  onSaveEdit,
+  onSetEditDetails,
+  onSetEditProject,
+  onSetEditTags,
+  onSetEditTitle,
+  onToggleTaskCompleted,
+  projects,
+}: ProjectSectionProps) {
   return (
     <section>
       <h3 className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
@@ -367,9 +396,23 @@ function ProjectSection({ group, onOpenTask, onDeleteTask }: ProjectSectionProps
       <ul className="mt-2">
         {group.tasks.map((task, index) => (
           <TaskOverviewRow
+            allTags={allTags}
+            editDetails={editDetails}
+            editingTaskId={editingTaskId}
+            editProject={editProject}
+            editTags={editTags}
+            editTitle={editTitle}
             key={task.id}
+            onCancelEdit={onCancelEdit}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
+            onSaveEdit={onSaveEdit}
+            onSetEditDetails={onSetEditDetails}
+            onSetEditProject={onSetEditProject}
+            onSetEditTags={onSetEditTags}
+            onSetEditTitle={onSetEditTitle}
+            onToggleTaskCompleted={onToggleTaskCompleted}
+            projects={projects}
             showsSeparator={index < group.tasks.length - 1}
             task={task}
           />
@@ -380,51 +423,118 @@ function ProjectSection({ group, onOpenTask, onDeleteTask }: ProjectSectionProps
 }
 
 interface TaskOverviewRowProps {
+  allTags: string[];
+  editDetails: string;
+  editingTaskId: string | null;
+  editProject: string;
+  editTags: string;
+  editTitle: string;
+  onCancelEdit: () => void;
   task: Task;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  onSaveEdit: (taskId: string) => void;
+  onSetEditDetails: (value: string) => void;
+  onSetEditProject: (value: string) => void;
+  onSetEditTags: (value: string) => void;
+  onSetEditTitle: (value: string) => void;
+  onToggleTaskCompleted: (taskId: string) => void;
+  projects: Project[];
   showsSeparator: boolean;
 }
 
 /**
  * Shows each task as a lightweight line item so scanning stays fast.
+ * Fades out briefly when marked complete before the task moves to the archive.
  */
 function TaskOverviewRow({
+  allTags,
+  editDetails,
+  editingTaskId,
+  editProject,
+  editTags,
+  editTitle,
+  onCancelEdit,
   task,
   onOpenTask,
   onDeleteTask,
+  onSaveEdit,
+  onSetEditDetails,
+  onSetEditProject,
+  onSetEditTags,
+  onSetEditTitle,
+  onToggleTaskCompleted,
+  projects,
   showsSeparator,
 }: TaskOverviewRowProps) {
+  const [isChecking, setIsChecking] = useState(false);
+
+  function handleToggleCompleted() {
+    setIsChecking(true);
+    setTimeout(() => onToggleTaskCompleted(task.id), 800);
+  }
+
   return (
     <li className="task-overview-line-item py-2">
-      <div className="flex min-h-8 items-center gap-2">
-        <button
-          className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left hover:text-[color:var(--muted-strong)]"
-          onClick={() => onOpenTask(task.id)}
-          type="button"
-        >
-          <span className="shrink truncate text-sm">{task.title}</span>
-          {task.tags.length > 0 ? (
-            <span className="flex min-w-0 items-center gap-1 overflow-hidden">
-              {task.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-xs font-medium leading-none text-white"
-                >
-                  {tag}
-                </span>
-              ))}
-            </span>
-          ) : null}
-        </button>
-      </div>
-
-      <div className="mt-2 flex justify-end">
-        <TaskOverviewActionsMenu
-          onDeleteTask={() => onDeleteTask(task.id)}
-          onOpenTask={() => onOpenTask(task.id)}
+      {task.id === editingTaskId ? (
+        <TaskInlineEditor
+          allTags={allTags}
+          editDetails={editDetails}
+          editProject={editProject}
+          editTags={editTags}
+          editTitle={editTitle}
+          onCancel={onCancelEdit}
+          onDelete={onDeleteTask}
+          onSave={onSaveEdit}
+          onSetEditDetails={onSetEditDetails}
+          onSetEditProject={onSetEditProject}
+          onSetEditTags={onSetEditTags}
+          onSetEditTitle={onSetEditTitle}
+          projects={projects}
+          task={task}
         />
-      </div>
+      ) : (
+        <div className="pl-[13px]">
+          <div className="flex min-h-8 items-center gap-2">
+            <button
+              aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+              className="shrink-0 transition-colors hover:text-[color:var(--foreground)]"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleToggleCompleted();
+              }}
+              type="button"
+            >
+              {isChecking ? (
+                <CheckCircle2 aria-hidden="true" className="size-4 fill-[color:var(--border)] text-[color:var(--border-strong)] transition-colors duration-300" />
+              ) : task.completed ? (
+                <CheckCircle2 aria-hidden="true" className="size-4 fill-[color:var(--border)] text-[color:var(--border-strong)]" />
+              ) : (
+                <Circle aria-hidden="true" className="size-4 text-[color:var(--border-strong)]" />
+              )}
+            </button>
+            <button
+              className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left hover:text-[color:var(--muted-strong)]"
+              onClick={() => onOpenTask(task.id)}
+              type="button"
+            >
+              <span className="shrink truncate text-sm">{task.title}</span>
+              {task.tags.length > 0 ? (
+                <span className="flex min-w-0 items-center gap-1 overflow-hidden">
+                  {task.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="max-w-24 truncate rounded-full bg-[#9ca3af] px-2 py-px text-xs font-medium leading-none text-white"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </span>
+              ) : null}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showsSeparator ? <Separator className="mt-2" /> : null}
     </li>

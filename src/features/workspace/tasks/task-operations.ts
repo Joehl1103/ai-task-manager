@@ -54,9 +54,14 @@ export function addTask(
     id: nextTaskId,
     title: input.title.trim(),
     details: input.details.trim(),
+    completed: false,
     projectId: normalizeTaskProjectId(input.projectId),
     deadline: normalizeDeadline(input.deadline),
     tags: normalizeTags(input.tags),
+    createdAt: new Date().toISOString(),
+    completedAt: "",
+    remindOn: "",
+    dueBy: "",
     agentThread: createAgentThread("task", nextTaskId),
   };
 
@@ -106,6 +111,27 @@ export function updateTaskDeadline(
     ...workspace,
     tasks: workspace.tasks.map((task) =>
       task.id === taskId ? { ...task, deadline: normalizeDeadline(deadline) } : task,
+    ),
+  };
+}
+
+/**
+ * Toggles the completed state for a task, setting or clearing the completedAt timestamp.
+ */
+export function toggleTaskCompleted(
+  workspace: WorkspaceSnapshot,
+  taskId: string,
+): WorkspaceSnapshot {
+  return {
+    ...workspace,
+    tasks: workspace.tasks.map((task) =>
+      task.id === taskId
+        ? {
+            ...task,
+            completed: !task.completed,
+            completedAt: task.completed ? "" : new Date().toISOString(),
+          }
+        : task,
     ),
   };
 }

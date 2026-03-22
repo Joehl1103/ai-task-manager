@@ -1,6 +1,6 @@
 export * from "./delete-confirmation";
 export * from "./inbox-task-composer";
-export * from "./task-drill-down";
+export * from "./task-inline-editor";
 export * from "./task-editor-fields";
 export * from "./task-actions-menu";
 export * from "./task-grouping";
