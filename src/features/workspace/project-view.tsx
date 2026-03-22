@@ -4,7 +4,16 @@ import { useState } from "react";
 import { ArrowLeft, MoreHorizontal, Plus } from "lucide-react";
 
 import { featureFlags } from "@/features/feature-flags";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +23,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   filterVisibleProjects,
@@ -42,7 +50,8 @@ interface ProjectViewProps {
 }
 
 /**
- * Renders the projects overview as a quiet list of rows rather than a grid of cards.
+ * Renders the projects overview as stock-style cards so project metadata and previews stay
+ * readable without a bespoke row treatment.
  */
 export function ProjectView({
   initiatives,
@@ -82,7 +91,7 @@ export function ProjectView({
         <Button
           aria-expanded={isComposerExpanded}
           onClick={() => setIsComposerExpanded((currentValue) => !currentValue)}
-          variant={isComposerExpanded ? "subtle" : "ghost"}
+          variant={isComposerExpanded ? "outline" : "ghost"}
         >
           <Plus className="size-4" />
           Add project
@@ -90,38 +99,48 @@ export function ProjectView({
       </header>
 
       {isComposerExpanded ? (
-        <section className="grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-          <Input
-            autoFocus
-            onChange={(event) => setNewName(event.target.value)}
-            placeholder="Project name"
-            value={newName}
-          />
-          {featureFlags.initiatives ? (
-            <Select
-              onValueChange={(value) => setNewInitiativeId(value === "_none" ? "" : value)}
-              value={newInitiativeId || "_none"}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="No initiative" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">No initiative</SelectItem>
-                {initiatives.map((initiative) => (
-                  <SelectItem key={initiative.id} value={initiative.id}>
-                    {initiative.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-          <Input
-            onChange={(event) => setNewDeadline(event.target.value)}
-            placeholder="Deadline"
-            type="date"
-            value={newDeadline}
-          />
-          <div className="flex justify-end gap-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">New project</CardTitle>
+            <CardDescription>
+              Add a project and optionally connect it to an initiative right away.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="grid gap-3">
+            <Input
+              autoFocus
+              onChange={(event) => setNewName(event.target.value)}
+              placeholder="Project name"
+              value={newName}
+            />
+            {featureFlags.initiatives ? (
+              <Select
+                onValueChange={(value) => setNewInitiativeId(value === "_none" ? "" : value)}
+                value={newInitiativeId || "_none"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="No initiative" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">No initiative</SelectItem>
+                  {initiatives.map((initiative) => (
+                    <SelectItem key={initiative.id} value={initiative.id}>
+                      {initiative.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <Input
+              onChange={(event) => setNewDeadline(event.target.value)}
+              placeholder="Deadline"
+              type="date"
+              value={newDeadline}
+            />
+          </CardContent>
+
+          <CardFooter className="justify-end gap-2">
             <Button
               onClick={() => {
                 setIsComposerExpanded(false);
@@ -136,17 +155,19 @@ export function ProjectView({
             <Button disabled={!newName.trim()} onClick={handleAdd}>
               Save project
             </Button>
-          </div>
-        </section>
+          </CardFooter>
+        </Card>
       ) : null}
 
       {visibleProjects.length === 0 ? (
-        <p className="text-sm text-[color:var(--muted)]">
-          No projects yet. Add one to create a new destination in the sidebar.
-        </p>
+        <Card className="border-dashed">
+          <CardContent className="flex min-h-32 items-center justify-center px-6 py-6 text-center text-sm text-[color:var(--muted)]">
+            No projects yet. Add one to create a new destination in the sidebar.
+          </CardContent>
+        </Card>
       ) : (
-        <section>
-          {visibleProjects.map((project, index) => {
+        <section className="grid gap-4 xl:grid-cols-2">
+          {visibleProjects.map((project) => {
             const projectInitiative = project.initiativeId
               ? initiatives.find((initiative) => initiative.id === project.initiativeId) ?? null
               : null;
@@ -154,58 +175,67 @@ export function ProjectView({
             const canUseProjectThread = supportsProjectThread(project.id);
 
             return (
-              <div key={project.id}>
-                {index > 0 ? <Separator /> : null}
-                <button
-                  className="group block w-full py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
-                  onClick={() => onSelectProject(project.id)}
-                  type="button"
-                >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <p className="text-sm font-medium text-[color:var(--foreground)]">
-                          {project.name}
-                        </p>
-                        {featureFlags.initiatives ? (
-                          <p className="text-xs text-[color:var(--muted)]">
-                            {projectInitiative ? projectInitiative.name : "No initiative"}
-                          </p>
-                        ) : null}
-                        <p className="text-xs text-[color:var(--muted)]">
-                          {readTaskCountLabel(projectTasks.length)}
-                        </p>
-                        <p className="text-xs text-[color:var(--muted)]">
-                          {project.deadline
-                            ? `Due ${formatDeadline(project.deadline)}`
-                            : "No deadline"}
-                        </p>
-                        {canUseProjectThread ? (
-                          <p className="text-xs text-[color:var(--muted)]">
-                            {project.agentThread.messages.length} messages
-                          </p>
-                        ) : null}
-                      </div>
-
-                      {projectTasks.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[color:var(--muted)]">
-                          {projectTasks.slice(0, 2).map((task) => (
-                            <span key={task.id}>{task.title}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mt-2 text-sm text-[color:var(--muted)]">
-                          No tasks linked yet.
-                        </p>
-                      )}
+              <button
+                className="group block h-full w-full text-left"
+                key={project.id}
+                onClick={() => onSelectProject(project.id)}
+                type="button"
+              >
+                <Card className="flex h-full flex-col transition-colors group-hover:border-[color:var(--border-strong)] group-hover:bg-[color:var(--surface-muted)]">
+                  <CardHeader className="gap-4">
+                    <div className="flex flex-wrap gap-2">
+                      {featureFlags.initiatives ? (
+                        <Badge variant="secondary">
+                          {projectInitiative ? projectInitiative.name : "No initiative"}
+                        </Badge>
+                      ) : null}
+                      <Badge>{readTaskCountLabel(projectTasks.length)}</Badge>
+                      <Badge>
+                        {project.deadline
+                          ? `Due ${formatDeadline(project.deadline)}`
+                          : "No deadline"}
+                      </Badge>
+                      {canUseProjectThread ? (
+                        <Badge variant="secondary">
+                          {project.agentThread.messages.length} messages
+                        </Badge>
+                      ) : null}
                     </div>
 
-                    <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
-                      Open
+                    <div className="space-y-2">
+                      <CardTitle className="text-lg">{project.name}</CardTitle>
+                      <CardDescription>
+                        {projectTasks.length > 0
+                          ? "Open the project to edit tasks and keep thread context nearby."
+                          : "No tasks linked yet. Open the project to add the first one."}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-3">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                      Task preview
+                    </p>
+                    {projectTasks.length > 0 ? (
+                      <ul className="space-y-2 text-sm text-[color:var(--muted-strong)]">
+                        {projectTasks.slice(0, 2).map((task) => (
+                          <li key={task.id}>{task.title}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-[color:var(--muted)]">
+                        No tasks linked yet.
+                      </p>
+                    )}
+                  </CardContent>
+
+                  <CardFooter className="mt-auto justify-end">
+                    <span className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
+                      Open project
                     </span>
-                  </div>
-                </button>
-              </div>
+                  </CardFooter>
+                </Card>
+              </button>
             );
           })}
         </section>
@@ -247,7 +277,8 @@ interface ProjectDetailViewProps {
 }
 
 /**
- * Renders one selected project as a focused center-page detail view with minimal framing.
+ * Renders one selected project as a card-based detail view that keeps tasks and thread context
+ * together without bespoke panel styles.
  */
 export function ProjectDetailView({
   activeProviderLabel,
@@ -420,86 +451,107 @@ function ProjectDetailContent({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="min-w-0">
-          <Button onClick={onBack} variant="ghost">
-            <ArrowLeft className="size-4" />
-            Back to projects
-          </Button>
-          <p className="mt-5 text-xs font-medium uppercase tracking-[0.24em] text-[color:var(--muted)]">
-            Project detail
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">{activeProject.name}</h1>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[color:var(--muted)]">
-            <span>{readTaskCountLabel(childTasks.length)}</span>
-            <span>
+      <Card>
+        <CardHeader className="gap-6 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0 space-y-4">
+            <Button onClick={onBack} variant="ghost">
+              <ArrowLeft className="size-4" />
+              Back to projects
+            </Button>
+
+            <div className="space-y-2">
+              <Badge variant="secondary">Project detail</Badge>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight">{activeProject.name}</h1>
+              <CardDescription>
+                Keep tasks, deadlines, initiative links, and thread history inside one stock
+                workspace surface.
+              </CardDescription>
+            </div>
+          </div>
+
+          <ProjectActionsMenu
+            canDelete={!isPermanentProjectId(activeProject.id)}
+            isEditing={isEditing}
+            onDeleteProject={() => {
+              if (confirm("Delete this project? Tasks will be moved to No Project.")) {
+                onDeleteProject(activeProject.id);
+                onBack();
+              }
+            }}
+            onToggleEdit={() => setIsEditing((currentValue) => !currentValue)}
+          />
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Badge>{readTaskCountLabel(childTasks.length)}</Badge>
+            <Badge>
               {activeProject.deadline
                 ? `Due ${formatDeadline(activeProject.deadline)}`
                 : "No deadline"}
-            </span>
+            </Badge>
             {featureFlags.initiatives ? (
-              <span>
+              <Badge variant="secondary">
                 {linkedInitiative ? `Initiative: ${linkedInitiative.name}` : "No initiative"}
-              </span>
+              </Badge>
             ) : null}
             {canUseProjectThread ? (
-              <span>{activeProject.agentThread.messages.length} saved messages</span>
+              <Badge variant="secondary">
+                {activeProject.agentThread.messages.length} saved messages
+              </Badge>
             ) : null}
           </div>
+
           {featureFlags.initiatives && linkedInitiative ? (
-            <div className="mt-4">
-              <Button onClick={() => onOpenInitiative(linkedInitiative.id)} variant="ghost">
+            <div>
+              <Button onClick={() => onOpenInitiative(linkedInitiative.id)} variant="outline">
                 Open initiative
               </Button>
             </div>
           ) : null}
-        </div>
-
-        <ProjectActionsMenu
-          canDelete={!isPermanentProjectId(activeProject.id)}
-          isEditing={isEditing}
-          onDeleteProject={() => {
-            if (confirm("Delete this project? Tasks will be moved to No Project.")) {
-              onDeleteProject(activeProject.id);
-              onBack();
-            }
-          }}
-          onToggleEdit={() => setIsEditing((currentValue) => !currentValue)}
-        />
-      </div>
+        </CardContent>
+      </Card>
 
       {isEditing ? (
-        <section className="grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-          <Input
-            autoFocus
-            onChange={(event) => setEditName(event.target.value)}
-            placeholder="Project name"
-            value={editName}
-          />
-          {featureFlags.initiatives ? (
-            <Select
-              onValueChange={(value) => setEditInitiativeId(value === "_none" ? "" : value)}
-              value={editInitiativeId || "_none"}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="No initiative" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">No initiative</SelectItem>
-                {initiatives.map((initiative) => (
-                  <SelectItem key={initiative.id} value={initiative.id}>
-                    {initiative.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-          <Input
-            onChange={(event) => setEditDeadline(event.target.value)}
-            type="date"
-            value={editDeadline}
-          />
-          <div className="flex justify-end gap-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Edit project</CardTitle>
+            <CardDescription>Update the core project metadata from one shared form.</CardDescription>
+          </CardHeader>
+
+          <CardContent className="grid gap-3">
+            <Input
+              autoFocus
+              onChange={(event) => setEditName(event.target.value)}
+              placeholder="Project name"
+              value={editName}
+            />
+            {featureFlags.initiatives ? (
+              <Select
+                onValueChange={(value) => setEditInitiativeId(value === "_none" ? "" : value)}
+                value={editInitiativeId || "_none"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="No initiative" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">No initiative</SelectItem>
+                  {initiatives.map((initiative) => (
+                    <SelectItem key={initiative.id} value={initiative.id}>
+                      {initiative.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <Input
+              onChange={(event) => setEditDeadline(event.target.value)}
+              type="date"
+              value={editDeadline}
+            />
+          </CardContent>
+
+          <CardFooter className="justify-end gap-2">
             <Button
               onClick={() => {
                 setIsEditing(false);
@@ -514,104 +566,115 @@ function ProjectDetailContent({
             <Button disabled={!editName.trim()} onClick={handleSaveProject}>
               Save changes
             </Button>
-          </div>
-        </section>
+          </CardFooter>
+        </Card>
       ) : null}
 
-      <section className="pt-6">
-        <Separator className="mb-6" />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Card>
+        <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Tasks in this project</h2>
-            <p className="mt-1 text-sm text-[color:var(--muted)]">
+            <CardTitle className="text-xl">Tasks in this project</CardTitle>
+            <CardDescription>
               Keep the task list readable and editable without leaving the project page.
-            </p>
+            </CardDescription>
           </div>
           <Button
             onClick={() => setIsTaskComposerOpen((currentValue) => !currentValue)}
-            variant={isTaskComposerOpen ? "subtle" : "ghost"}
+            variant={isTaskComposerOpen ? "outline" : "ghost"}
           >
             <Plus className="size-4" />
             Add task
           </Button>
-        </div>
+        </CardHeader>
 
-        {isTaskComposerOpen ? (
-          <div className="mt-4 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-            <Input
-              autoFocus
-              onChange={(event) => setNewTaskTitle(event.target.value)}
-              placeholder="Task title"
-              value={newTaskTitle}
-            />
-            <Textarea
-              onChange={(event) => setNewTaskDetails(event.target.value)}
-              placeholder="Task details"
-              value={newTaskDetails}
-            />
-            <Input
-              onChange={(event) => setNewTaskTags(event.target.value)}
-              placeholder="Tags (comma-separated)"
-              value={newTaskTags}
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                onClick={() => {
-                  setIsTaskComposerOpen(false);
-                  setNewTaskTitle("");
-                  setNewTaskDetails("");
-                  setNewTaskTags("");
-                }}
-                variant="ghost"
-              >
-                Cancel
-              </Button>
-              <Button disabled={!newTaskTitle.trim()} onClick={handleAddTask}>
-                Save task
-              </Button>
+        <CardContent className="space-y-4">
+          {isTaskComposerOpen ? (
+            <Card className="border-dashed bg-[color:var(--background)] shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">New task</CardTitle>
+                <CardDescription>Add a task without leaving the project detail view.</CardDescription>
+              </CardHeader>
+
+              <CardContent className="grid gap-3">
+                <Input
+                  autoFocus
+                  onChange={(event) => setNewTaskTitle(event.target.value)}
+                  placeholder="Task title"
+                  value={newTaskTitle}
+                />
+                <Textarea
+                  onChange={(event) => setNewTaskDetails(event.target.value)}
+                  placeholder="Task details"
+                  value={newTaskDetails}
+                />
+                <Input
+                  onChange={(event) => setNewTaskTags(event.target.value)}
+                  placeholder="Tags (comma-separated)"
+                  value={newTaskTags}
+                />
+              </CardContent>
+
+              <CardFooter className="justify-end gap-2">
+                <Button
+                  onClick={() => {
+                    setIsTaskComposerOpen(false);
+                    setNewTaskTitle("");
+                    setNewTaskDetails("");
+                    setNewTaskTags("");
+                  }}
+                  variant="ghost"
+                >
+                  Cancel
+                </Button>
+                <Button disabled={!newTaskTitle.trim()} onClick={handleAddTask}>
+                  Save task
+                </Button>
+              </CardFooter>
+            </Card>
+          ) : null}
+
+          {childTasks.length === 0 ? (
+            <Card className="border-dashed bg-[color:var(--background)] shadow-none">
+              <CardContent className="flex min-h-24 items-center justify-center px-6 py-6 text-center text-sm text-[color:var(--muted)]">
+                No tasks yet for this project.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {childTasks.map((task) => (
+                <ProjectTaskRow
+                  allTags={allTaskTags}
+                  editDetails={editDetails}
+                  editingTaskId={editingTaskId}
+                  editProject={editProject}
+                  editTags={editTags}
+                  editTitle={editTitle}
+                  key={task.id}
+                  onCancelEdit={onCancelEdit}
+                  onDeleteTask={onDeleteTask}
+                  onOpenTask={onOpenTask}
+                  onSaveEdit={onSaveEdit}
+                  onSetEditDetails={onSetEditDetails}
+                  onSetEditProject={onSetEditProject}
+                  onSetEditTags={onSetEditTags}
+                  onSetEditTitle={onSetEditTitle}
+                  projects={visibleProjects}
+                  task={task}
+                />
+              ))}
             </div>
-          </div>
-        ) : null}
-
-        {childTasks.length === 0 ? (
-          <p className="mt-4 text-sm text-[color:var(--muted)]">No tasks yet for this project.</p>
-        ) : (
-          <div className="mt-4">
-            {childTasks.map((task, index) => (
-              <ProjectTaskRow
-                allTags={allTaskTags}
-                editDetails={editDetails}
-                editingTaskId={editingTaskId}
-                editProject={editProject}
-                editTags={editTags}
-                editTitle={editTitle}
-                key={task.id}
-                onCancelEdit={onCancelEdit}
-                onDeleteTask={onDeleteTask}
-                onOpenTask={onOpenTask}
-                onSaveEdit={onSaveEdit}
-                onSetEditDetails={onSetEditDetails}
-                onSetEditProject={onSetEditProject}
-                onSetEditTags={onSetEditTags}
-                onSetEditTitle={onSetEditTitle}
-                projects={visibleProjects}
-                showsSeparator={index > 0}
-                task={task}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+          )}
+        </CardContent>
+      </Card>
 
       {canUseProjectThread ? (
-        <section className="pt-6">
-          <Separator className="mb-6" />
-          <div className="flex items-center justify-between gap-3">
+        <Card>
+          <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Project thread</h2>
-              <p className="mt-1 text-sm text-[color:var(--muted)]">
+              <CardTitle className="text-xl">Project thread</CardTitle>
+              <CardDescription>
                 Keep agent context nearby without turning it into another dashboard panel.
-              </p>
+              </CardDescription>
             </div>
             <Button
               onClick={() => setIsThreadOpen((currentValue) => !currentValue)}
@@ -621,10 +684,10 @@ function ProjectDetailContent({
                 ? "Hide thread"
                 : `Show thread (${activeProject.agentThread.messages.length})`}
             </Button>
-          </div>
+          </CardHeader>
 
           {isThreadOpen ? (
-            <div className="mt-4">
+            <CardContent>
               <AgentThreadPanel
                 activeProviderLabel={activeProviderLabel}
                 activeProviderModel={activeProviderModel}
@@ -641,9 +704,9 @@ function ProjectDetailContent({
                 onSend={() => onSendThreadMessage(activeProject.id)}
                 thread={activeProject.agentThread}
               />
-            </div>
+            </CardContent>
           ) : null}
-        </section>
+        </Card>
       ) : null}
     </div>
   );
@@ -665,13 +728,12 @@ interface ProjectTaskRowProps {
   onSetEditTags: (value: string) => void;
   onSetEditTitle: (value: string) => void;
   projects: Project[];
-  showsSeparator: boolean;
   task: Task;
 }
 
 /**
- * Keeps project detail task entries lightweight while allowing one task to expand inline for
- * editing without replacing the rest of the list.
+ * Keeps project detail task entries inside shared card surfaces while allowing one task to expand
+ * inline for editing without replacing the rest of the list.
  */
 function ProjectTaskRow({
   allTags,
@@ -689,14 +751,12 @@ function ProjectTaskRow({
   onSetEditTags,
   onSetEditTitle,
   projects,
-  showsSeparator,
   task,
 }: ProjectTaskRowProps) {
-  return (
-    <div>
-      {showsSeparator ? <Separator /> : null}
-      {task.id === editingTaskId ? (
-        <div className="py-4">
+  if (task.id === editingTaskId) {
+    return (
+      <Card className="border-dashed bg-[color:var(--background)] shadow-none">
+        <CardContent className="px-4 pb-4 pt-4">
           <TaskInlineEditor
             allTags={allTags}
             editDetails={editDetails}
@@ -713,45 +773,39 @@ function ProjectTaskRow({
             projects={projects}
             task={task}
           />
-        </div>
-      ) : (
-        <button
-          aria-label={`Open task ${task.title}`}
-          className="group block w-full py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
-          onClick={() => onOpenTask(task.id)}
-          type="button"
-        >
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <button
+      aria-label={`Open task ${task.title}`}
+      className="group block w-full text-left"
+      onClick={() => onOpenTask(task.id)}
+      type="button"
+    >
+      <Card className="transition-colors group-hover:border-[color:var(--border-strong)] group-hover:bg-[color:var(--surface-muted)]">
+        <CardHeader className="gap-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
-              <h3 className="text-sm font-medium text-[color:var(--foreground)]">
-                {task.title}
-              </h3>
-              {task.details ? (
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-                  {task.details}
-                </p>
-              ) : (
-                <p className="mt-2 text-sm text-[color:var(--muted)]">No details yet.</p>
-              )}
+              <CardTitle className="text-base">{task.title}</CardTitle>
+              <CardDescription className="mt-2 max-w-2xl leading-6">
+                {task.details || "No details yet."}
+              </CardDescription>
             </div>
 
-            <div className="shrink-0 text-sm text-[color:var(--muted)]">
+            <div className="flex shrink-0 flex-wrap justify-start gap-2 lg:justify-end">
               {task.tags.length > 0 ? (
-                <div className="flex flex-wrap justify-start gap-x-3 gap-y-1 lg:justify-end">
-                  {task.tags.map((tag) => (
-                    <span key={tag}>#{tag}</span>
-                  ))}
-                </div>
+                task.tags.map((tag) => <Badge key={tag}>#{tag}</Badge>)
               ) : (
-                <span className="text-xs font-medium uppercase tracking-[0.16em] transition-colors group-hover:text-[color:var(--foreground)]">
-                  Open
-                </span>
+                <Badge variant="secondary">Open</Badge>
               )}
             </div>
           </div>
-        </button>
-      )}
-    </div>
+        </CardHeader>
+      </Card>
+    </button>
   );
 }
 

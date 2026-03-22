@@ -42,5 +42,6 @@ describe("agent thread panel", () => {
 
     expect(markup.match(/<ul/g)).toHaveLength(1);
     expect(markup).toContain("<li><strong>Option one</strong>: Short explanation.</li>");
+    expect(markup).toContain('data-slot="card"');
   });
 });

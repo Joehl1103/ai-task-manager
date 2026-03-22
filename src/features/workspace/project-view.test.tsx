@@ -76,6 +76,8 @@ describe("project view", () => {
     expect(markup).toContain("Define the smallest possible task manager");
     expect(markup).toContain("List the next three product decisions");
     expect(markup).toContain("0 messages");
+    expect(markup).toContain('data-slot="card"');
+    expect(markup).toContain('data-slot="badge"');
     expect(markup).toContain('class="text-2xl font-semibold tracking-tight">Projects</h1>');
     expect(markup).not.toContain("Workspace view");
     expect(markup).not.toContain(
@@ -99,8 +101,9 @@ describe("project view", () => {
     expect(markup).toContain("Show thread (0)");
     expect(markup).toContain('aria-label="Open task Define the smallest possible task manager"');
     expect(markup).toContain('aria-label="Project actions"');
+    expect(markup).toContain('data-slot="card"');
+    expect(markup).toContain('data-slot="badge"');
     expect(markup).toContain('data-slot="dropdown-menu-trigger"');
-    expect(markup).toContain('data-slot="separator"');
     expect(markup).toContain('class="mt-2 text-2xl font-semibold tracking-tight">Relay MVP</h1>');
     expect(markup).not.toContain("text-3xl");
   });

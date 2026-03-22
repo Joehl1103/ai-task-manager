@@ -50,6 +50,8 @@ describe("initiative view", () => {
     expect(markup).not.toContain("Define the smallest possible task manager");
     expect(markup).toContain("1 project");
     expect(markup).not.toContain("1 projects");
+    expect(markup).toContain('data-slot="card"');
+    expect(markup).toContain('data-slot="badge"');
     expect(markup).toContain('class="text-2xl font-semibold tracking-tight">Initiatives</h1>');
     expect(markup).not.toContain("Workspace view");
     expect(markup).not.toContain(
@@ -98,8 +100,9 @@ describe("initiative view", () => {
     expect(markup).toContain("Initiative thread");
     expect(markup).toContain("Show thread (2)");
     expect(markup).toContain('aria-label="Initiative actions"');
+    expect(markup).toContain('data-slot="card"');
+    expect(markup).toContain('data-slot="badge"');
     expect(markup).toContain('data-slot="dropdown-menu-trigger"');
-    expect(markup).toContain('data-slot="separator"');
     expect(markup).toContain('class="mt-2 text-2xl font-semibold tracking-tight">Q2 Product Launch</h1>');
     expect(markup).not.toContain("text-3xl");
   });

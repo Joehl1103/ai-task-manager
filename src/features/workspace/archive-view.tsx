@@ -4,7 +4,15 @@ import { useState } from "react";
 
 import { CheckCircle2, ChevronDown, ChevronRight } from "lucide-react";
 
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { type Project, type Task } from "@/features/workspace/core";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +42,7 @@ export function ArchiveView({
   const groups = groupTasksByCompletionDay(completedTasks);
 
   return (
-    <>
+    <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold">Archive</h1>
         <p className="mt-1 text-sm text-[color:var(--muted)]">
@@ -45,7 +53,7 @@ export function ArchiveView({
       </header>
 
       {groups.length > 0 ? (
-        <section className="mt-6 space-y-4">
+        <section className="space-y-4">
           {groups.map((group) => (
             <ArchiveDaySection
               group={group}
@@ -55,8 +63,14 @@ export function ArchiveView({
             />
           ))}
         </section>
-      ) : null}
-    </>
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="flex min-h-32 items-center justify-center px-6 py-6 text-center text-sm text-[color:var(--muted)]">
+            No completed tasks yet.
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 
@@ -77,44 +91,48 @@ function ArchiveDaySection({
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <section>
-      <button
-        className="flex w-full items-center gap-2 text-left"
-        onClick={() => setIsExpanded((current) => !current)}
-        type="button"
-      >
-        {isExpanded ? (
-          <ChevronDown className="size-3 text-[color:var(--muted)]" />
-        ) : (
-          <ChevronRight className="size-3 text-[color:var(--muted)]" />
-        )}
-        <h3 className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted-strong)]">
-          {group.label}
-          <span className="ml-2 text-[color:var(--muted)]">({group.tasks.length})</span>
-        </h3>
-      </button>
+    <Card>
+      <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <CardTitle className="text-lg">{group.label}</CardTitle>
+          <CardDescription>
+            {group.tasks.length} completed {group.tasks.length === 1 ? "task" : "tasks"}
+          </CardDescription>
+        </div>
+
+        <Button
+          onClick={() => setIsExpanded((current) => !current)}
+          size="sm"
+          variant="ghost"
+        >
+          {isExpanded ? (
+            <ChevronDown className="size-4" />
+          ) : (
+            <ChevronRight className="size-4" />
+          )}
+          {isExpanded ? "Hide tasks" : "Show tasks"}
+        </Button>
+      </CardHeader>
 
       {isExpanded ? (
-        <ul className="mt-2">
-          {group.tasks.map((task, index) => (
+        <CardContent className="space-y-3">
+          {group.tasks.map((task) => (
             <ArchiveTaskRow
               key={task.id}
               onToggleTaskCompleted={onToggleTaskCompleted}
               projects={projects}
-              showsSeparator={index < group.tasks.length - 1}
               task={task}
             />
           ))}
-        </ul>
+        </CardContent>
       ) : null}
-    </section>
+    </Card>
   );
 }
 
 interface ArchiveTaskRowProps {
   onToggleTaskCompleted: (taskId: string) => void;
   projects: Project[];
-  showsSeparator: boolean;
   task: Task;
 }
 
@@ -124,7 +142,6 @@ interface ArchiveTaskRowProps {
 function ArchiveTaskRow({
   onToggleTaskCompleted,
   projects,
-  showsSeparator,
   task,
 }: ArchiveTaskRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -132,68 +149,53 @@ function ArchiveTaskRow({
   const completionTime = formatCompletionTime(task.completedAt);
 
   return (
-    <li className="py-2">
-      <div className="pl-[13px]">
-        <div className="flex min-h-8 items-center gap-2">
-          <button
+    <Card className="bg-[color:var(--background)] shadow-none">
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-start gap-3">
+          <Button
             aria-label="Mark incomplete"
-            className="shrink-0 transition-colors hover:text-[color:var(--foreground)]"
             onClick={(event) => {
               event.stopPropagation();
               onToggleTaskCompleted(task.id);
             }}
-            type="button"
+            size="icon"
+            variant="ghost"
           >
             <CheckCircle2
               aria-hidden="true"
               className="size-4 fill-[color:var(--border)] text-[color:var(--border-strong)]"
             />
-          </button>
+          </Button>
+
           <button
             className={cn(
-              "flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-left",
+              "flex min-w-0 flex-1 flex-col items-start gap-2 text-left",
               "text-[color:var(--muted-strong)] hover:text-[color:var(--foreground)]",
             )}
             onClick={() => setIsExpanded((current) => !current)}
             type="button"
           >
-            <span className="shrink truncate text-sm line-through decoration-[color:var(--muted)]/40">
+            <span className="text-sm font-medium line-through decoration-[color:var(--muted)]/40">
               {task.title}
             </span>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {completionTime ? <Badge>{completionTime}</Badge> : null}
+              {projectName ? <Badge variant="secondary">{`Project: ${projectName}`}</Badge> : null}
+              {task.tags.map((tag) => (
+                <Badge key={tag}>{tag}</Badge>
+              ))}
+            </div>
           </button>
-          {completionTime ? (
-            <span className="shrink-0 text-xs text-[color:var(--muted)]">
-              {completionTime}
-            </span>
-          ) : null}
         </div>
 
         {isExpanded ? (
-          <div className="mt-2 ml-6 space-y-2 text-sm text-[color:var(--muted-strong)]">
-            {task.details ? (
-              <p className="whitespace-pre-wrap">{task.details}</p>
-            ) : null}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-[color:var(--muted)]">
-              {projectName ? <span>Project: {projectName}</span> : null}
-              {task.tags.length > 0 ? (
-                <span className="flex items-center gap-1">
-                  {task.tags.map((tag) => (
-                    <span
-                      className="rounded-full bg-[#9ca3af] px-2 py-px text-xs font-medium leading-none text-white"
-                      key={tag}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </span>
-              ) : null}
-            </div>
+          <div className="pl-12 text-sm text-[color:var(--muted-strong)]">
+            {task.details ? <p className="whitespace-pre-wrap">{task.details}</p> : null}
           </div>
         ) : null}
-      </div>
-
-      {showsSeparator ? <Separator className="mt-2" /> : null}
-    </li>
+      </CardContent>
+    </Card>
   );
 }
 

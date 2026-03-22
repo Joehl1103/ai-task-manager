@@ -3,7 +3,16 @@
 import { useState } from "react";
 import { ArrowLeft, MoreHorizontal, Plus } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +21,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   type Initiative,
@@ -32,7 +40,8 @@ interface InitiativeViewProps {
 }
 
 /**
- * Renders initiatives as a text-forward list so hierarchy comes from spacing and copy.
+ * Renders initiatives as stock-style cards so strategic metadata and linked projects stay readable
+ * without a bespoke row layout.
  */
 export function InitiativeView({
   initiatives,
@@ -70,7 +79,7 @@ export function InitiativeView({
         <Button
           aria-expanded={isComposerExpanded}
           onClick={() => setIsComposerExpanded((currentValue) => !currentValue)}
-          variant={isComposerExpanded ? "subtle" : "ghost"}
+          variant={isComposerExpanded ? "outline" : "ghost"}
         >
           <Plus className="size-4" />
           Add initiative
@@ -78,25 +87,35 @@ export function InitiativeView({
       </header>
 
       {isComposerExpanded ? (
-        <section className="grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-          <Input
-            autoFocus
-            onChange={(event) => setNewName(event.target.value)}
-            placeholder="Initiative name"
-            value={newName}
-          />
-          <Input
-            onChange={(event) => setNewDeadline(event.target.value)}
-            placeholder="Deadline"
-            type="date"
-            value={newDeadline}
-          />
-          <Textarea
-            onChange={(event) => setNewDescription(event.target.value)}
-            placeholder="Description"
-            value={newDescription}
-          />
-          <div className="flex justify-end gap-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">New initiative</CardTitle>
+            <CardDescription>
+              Add the strategic container first, then attach projects underneath it.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="grid gap-3">
+            <Input
+              autoFocus
+              onChange={(event) => setNewName(event.target.value)}
+              placeholder="Initiative name"
+              value={newName}
+            />
+            <Input
+              onChange={(event) => setNewDeadline(event.target.value)}
+              placeholder="Deadline"
+              type="date"
+              value={newDeadline}
+            />
+            <Textarea
+              onChange={(event) => setNewDescription(event.target.value)}
+              placeholder="Description"
+              value={newDescription}
+            />
+          </CardContent>
+
+          <CardFooter className="justify-end gap-2">
             <Button
               onClick={() => {
                 setIsComposerExpanded(false);
@@ -111,67 +130,76 @@ export function InitiativeView({
             <Button disabled={!newName.trim()} onClick={handleAdd}>
               Save initiative
             </Button>
-          </div>
-        </section>
+          </CardFooter>
+        </Card>
       ) : null}
 
       {initiatives.length === 0 ? (
-        <p className="text-sm text-[color:var(--muted)]">
-          No initiatives yet. Add one to create strategic context for your projects.
-        </p>
+        <Card className="border-dashed">
+          <CardContent className="flex min-h-32 items-center justify-center px-6 py-6 text-center text-sm text-[color:var(--muted)]">
+            No initiatives yet. Add one to create strategic context for your projects.
+          </CardContent>
+        </Card>
       ) : (
-        <section>
-          {initiatives.map((initiative, index) => {
+        <section className="grid gap-4 xl:grid-cols-2">
+          {initiatives.map((initiative) => {
             const childProjects = projects.filter(
               (project) => project.initiativeId === initiative.id,
             );
 
             return (
-              <div key={initiative.id}>
-                {index > 0 ? <Separator /> : null}
-                <button
-                  className="group block w-full py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
-                  onClick={() => onSelectInitiative(initiative.id)}
-                  type="button"
-                >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <p className="text-sm font-medium text-[color:var(--foreground)]">
-                          {initiative.name}
-                        </p>
-                        <p className="text-xs text-[color:var(--muted)]">
-                          {readProjectCountLabel(childProjects.length)}
-                        </p>
-                        <p className="text-xs text-[color:var(--muted)]">
-                          {initiative.deadline
-                            ? `Due ${formatDeadline(initiative.deadline)}`
-                            : "No deadline"}
-                        </p>
-                        <p className="text-xs text-[color:var(--muted)]">
-                          {initiative.agentThread.messages.length} messages
-                        </p>
-                      </div>
-
-                      <p className="mt-2 max-w-3xl text-sm leading-6 text-[color:var(--muted)] line-clamp-2">
-                        {initiative.description || "No description yet."}
-                      </p>
-
-                      {childProjects.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[color:var(--muted)]">
-                          {childProjects.slice(0, 2).map((project) => (
-                            <span key={project.id}>{project.name}</span>
-                          ))}
-                        </div>
-                      ) : null}
+              <button
+                className="group block h-full w-full text-left"
+                key={initiative.id}
+                onClick={() => onSelectInitiative(initiative.id)}
+                type="button"
+              >
+                <Card className="flex h-full flex-col transition-colors group-hover:border-[color:var(--border-strong)] group-hover:bg-[color:var(--surface-muted)]">
+                  <CardHeader className="gap-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge>{readProjectCountLabel(childProjects.length)}</Badge>
+                      <Badge>
+                        {initiative.deadline
+                          ? `Due ${formatDeadline(initiative.deadline)}`
+                          : "No deadline"}
+                      </Badge>
+                      <Badge variant="secondary">
+                        {initiative.agentThread.messages.length} messages
+                      </Badge>
                     </div>
 
-                    <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
-                      Open
+                    <div className="space-y-2">
+                      <CardTitle className="text-lg">{initiative.name}</CardTitle>
+                      <CardDescription className="line-clamp-2 leading-6">
+                        {initiative.description || "No description yet."}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-3">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                      Linked projects
+                    </p>
+                    {childProjects.length > 0 ? (
+                      <ul className="space-y-2 text-sm text-[color:var(--muted-strong)]">
+                        {childProjects.slice(0, 2).map((project) => (
+                          <li key={project.id}>{project.name}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-[color:var(--muted)]">
+                        No linked projects yet.
+                      </p>
+                    )}
+                  </CardContent>
+
+                  <CardFooter className="mt-auto justify-end">
+                    <span className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
+                      Open initiative
                     </span>
-                  </div>
-                </button>
-              </div>
+                  </CardFooter>
+                </Card>
+              </button>
             );
           })}
         </section>
@@ -198,7 +226,8 @@ interface InitiativeDetailViewProps {
 }
 
 /**
- * Renders the selected initiative as a minimal detail view with linked projects beneath it.
+ * Renders the selected initiative as a card-based detail view with linked projects and thread
+ * context grouped into shared surface sections.
  */
 export function InitiativeDetailView({
   activeProviderLabel,
@@ -314,63 +343,79 @@ function InitiativeDetailContent({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="min-w-0">
-          <Button onClick={onBack} variant="ghost">
-            <ArrowLeft className="size-4" />
-            Back to initiatives
-          </Button>
-          <p className="mt-5 text-xs font-medium uppercase tracking-[0.24em] text-[color:var(--muted)]">
-            Initiative detail
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-            {activeInitiative.name}
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--muted)]">
-            {activeInitiative.description || "No description yet for this initiative."}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[color:var(--muted)]">
-            <span>{readProjectCountLabel(childProjects.length)}</span>
-            <span>
+      <Card>
+        <CardHeader className="gap-6 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0 space-y-4">
+            <Button onClick={onBack} variant="ghost">
+              <ArrowLeft className="size-4" />
+              Back to initiatives
+            </Button>
+
+            <div className="space-y-2">
+              <Badge variant="secondary">Initiative detail</Badge>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+                {activeInitiative.name}
+              </h1>
+              <CardDescription className="max-w-3xl leading-6">
+                {activeInitiative.description || "No description yet for this initiative."}
+              </CardDescription>
+            </div>
+          </div>
+
+          <InitiativeActionsMenu
+            isEditing={isEditing}
+            onDeleteInitiative={() => {
+              if (confirm("Delete this initiative? Projects will be unlinked.")) {
+                onDeleteInitiative(activeInitiative.id);
+                onBack();
+              }
+            }}
+            onToggleEdit={() => setIsEditing((currentValue) => !currentValue)}
+          />
+        </CardHeader>
+
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Badge>{readProjectCountLabel(childProjects.length)}</Badge>
+            <Badge>
               {activeInitiative.deadline
                 ? `Due ${formatDeadline(activeInitiative.deadline)}`
                 : "No deadline"}
-            </span>
-            <span>{activeInitiative.agentThread.messages.length} saved messages</span>
+            </Badge>
+            <Badge variant="secondary">
+              {activeInitiative.agentThread.messages.length} saved messages
+            </Badge>
           </div>
-        </div>
-
-        <InitiativeActionsMenu
-          isEditing={isEditing}
-          onDeleteInitiative={() => {
-            if (confirm("Delete this initiative? Projects will be unlinked.")) {
-              onDeleteInitiative(activeInitiative.id);
-              onBack();
-            }
-          }}
-          onToggleEdit={() => setIsEditing((currentValue) => !currentValue)}
-        />
-      </div>
+        </CardContent>
+      </Card>
 
       {isEditing ? (
-        <section className="grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-          <Input
-            autoFocus
-            onChange={(event) => setEditName(event.target.value)}
-            placeholder="Initiative name"
-            value={editName}
-          />
-          <Input
-            onChange={(event) => setEditDeadline(event.target.value)}
-            type="date"
-            value={editDeadline}
-          />
-          <Textarea
-            onChange={(event) => setEditDescription(event.target.value)}
-            placeholder="Description"
-            value={editDescription}
-          />
-          <div className="flex justify-end gap-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Edit initiative</CardTitle>
+            <CardDescription>Update the strategic context from one shared form.</CardDescription>
+          </CardHeader>
+
+          <CardContent className="grid gap-3">
+            <Input
+              autoFocus
+              onChange={(event) => setEditName(event.target.value)}
+              placeholder="Initiative name"
+              value={editName}
+            />
+            <Input
+              onChange={(event) => setEditDeadline(event.target.value)}
+              type="date"
+              value={editDeadline}
+            />
+            <Textarea
+              onChange={(event) => setEditDescription(event.target.value)}
+              placeholder="Description"
+              value={editDescription}
+            />
+          </CardContent>
+
+          <CardFooter className="justify-end gap-2">
             <Button
               onClick={() => {
                 setIsEditing(false);
@@ -385,100 +430,115 @@ function InitiativeDetailContent({
             <Button disabled={!editName.trim()} onClick={handleSaveInitiative}>
               Save changes
             </Button>
-          </div>
-        </section>
+          </CardFooter>
+        </Card>
       ) : null}
 
-      <section className="pt-6">
-        <Separator className="mb-6" />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Card>
+        <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Projects inside this initiative</h2>
-            <p className="mt-1 text-sm text-[color:var(--muted)]">
+            <CardTitle className="text-xl">Projects inside this initiative</CardTitle>
+            <CardDescription>
               Keep linked projects easy to scan and easy to open.
-            </p>
+            </CardDescription>
           </div>
           <Button
             onClick={() => setIsProjectComposerOpen((currentValue) => !currentValue)}
-            variant={isProjectComposerOpen ? "subtle" : "ghost"}
+            variant={isProjectComposerOpen ? "outline" : "ghost"}
           >
             <Plus className="size-4" />
             Add project
           </Button>
-        </div>
+        </CardHeader>
 
-        {isProjectComposerOpen ? (
-          <div className="mt-4 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-            <Input
-              autoFocus
-              onChange={(event) => setNewProjectName(event.target.value)}
-              placeholder="Project name"
-              value={newProjectName}
-            />
-            <Input
-              onChange={(event) => setNewProjectDeadline(event.target.value)}
-              placeholder="Deadline"
-              type="date"
-              value={newProjectDeadline}
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                onClick={() => {
-                  setIsProjectComposerOpen(false);
-                  setNewProjectName("");
-                  setNewProjectDeadline("");
-                }}
-                variant="ghost"
-              >
-                Cancel
-              </Button>
-              <Button disabled={!newProjectName.trim()} onClick={handleAddProject}>
-                Save project
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <CardContent className="space-y-4">
+          {isProjectComposerOpen ? (
+            <Card className="border-dashed bg-[color:var(--background)] shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">New project</CardTitle>
+                <CardDescription>
+                  Add a project directly into this initiative.
+                </CardDescription>
+              </CardHeader>
 
-        {childProjects.length === 0 ? (
-          <p className="mt-4 text-sm text-[color:var(--muted)]">
-            No projects linked to this initiative yet.
-          </p>
-        ) : (
-          <div className="mt-4">
-            {childProjects.map((project, index) => (
-              <div key={project.id}>
-                {index > 0 ? <Separator /> : null}
+              <CardContent className="grid gap-3">
+                <Input
+                  autoFocus
+                  onChange={(event) => setNewProjectName(event.target.value)}
+                  placeholder="Project name"
+                  value={newProjectName}
+                />
+                <Input
+                  onChange={(event) => setNewProjectDeadline(event.target.value)}
+                  placeholder="Deadline"
+                  type="date"
+                  value={newProjectDeadline}
+                />
+              </CardContent>
+
+              <CardFooter className="justify-end gap-2">
+                <Button
+                  onClick={() => {
+                    setIsProjectComposerOpen(false);
+                    setNewProjectName("");
+                    setNewProjectDeadline("");
+                  }}
+                  variant="ghost"
+                >
+                  Cancel
+                </Button>
+                <Button disabled={!newProjectName.trim()} onClick={handleAddProject}>
+                  Save project
+                </Button>
+              </CardFooter>
+            </Card>
+          ) : null}
+
+          {childProjects.length === 0 ? (
+            <Card className="border-dashed bg-[color:var(--background)] shadow-none">
+              <CardContent className="flex min-h-24 items-center justify-center px-6 py-6 text-center text-sm text-[color:var(--muted)]">
+                No projects linked to this initiative yet.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {childProjects.map((project) => (
                 <button
-                  className="group flex w-full items-start justify-between gap-3 py-4 text-left transition-colors hover:bg-[color:var(--row-hover)]"
+                  className="group block w-full text-left"
+                  key={project.id}
                   onClick={() => onSelectProject(project.id)}
                   type="button"
                 >
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-medium text-[color:var(--foreground)]">
-                      {project.name}
-                    </h3>
-                    <p className="mt-2 text-sm text-[color:var(--muted)]">
-                      {project.deadline ? `Due ${formatDeadline(project.deadline)}` : "No deadline"}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
-                    Open project
-                  </span>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+                  <Card className="transition-colors group-hover:border-[color:var(--border-strong)] group-hover:bg-[color:var(--surface-muted)]">
+                    <CardHeader className="gap-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <CardTitle className="text-base">{project.name}</CardTitle>
+                          <CardDescription className="mt-2">
+                            {project.deadline
+                              ? `Due ${formatDeadline(project.deadline)}`
+                              : "No deadline"}
+                          </CardDescription>
+                        </div>
 
-      <section className="pt-6">
-        <Separator className="mb-6" />
-        <div className="flex items-center justify-between gap-3">
+                        <Badge variant="secondary">Open project</Badge>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Initiative thread</h2>
-            <p className="mt-1 text-sm text-[color:var(--muted)]">
+            <CardTitle className="text-xl">Initiative thread</CardTitle>
+            <CardDescription>
               Strategic context stays close without boxing in the whole page.
-            </p>
+            </CardDescription>
           </div>
           <Button
             onClick={() => setIsThreadOpen((currentValue) => !currentValue)}
@@ -488,10 +548,10 @@ function InitiativeDetailContent({
               ? "Hide thread"
               : `Show thread (${activeInitiative.agentThread.messages.length})`}
           </Button>
-        </div>
+        </CardHeader>
 
         {isThreadOpen ? (
-          <div className="mt-4">
+          <CardContent>
             <AgentThreadPanel
               activeProviderLabel={activeProviderLabel}
               activeProviderModel={activeProviderModel}
@@ -508,9 +568,9 @@ function InitiativeDetailContent({
               onSend={() => onSendThreadMessage(activeInitiative.id)}
               thread={activeInitiative.agentThread}
             />
-          </div>
+          </CardContent>
         ) : null}
-      </section>
+      </Card>
     </div>
   );
 }

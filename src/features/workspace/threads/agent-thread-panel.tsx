@@ -2,8 +2,16 @@
 
 import { Bot, Send, Trash2, User } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { type AgentThread, type ThreadDraft } from "@/features/workspace/core";
 import { getProviderLabel } from "@/features/workspace/providers";
@@ -39,16 +47,18 @@ export function AgentThreadPanel({
   onDeleteMessage,
 }: AgentThreadPanelProps) {
   return (
-    <section className="space-y-3 pt-3">
-      <Separator />
-      <p className="text-xs uppercase tracking-[0.14em] text-[color:var(--muted)]">
-        {readThreadActivityLabel(thread.messages.length)}
-      </p>
+    <div className="space-y-4 pt-2">
+      <div className="flex flex-wrap items-center gap-3">
+        <Badge variant="secondary">{readThreadActivityLabel(thread.messages.length)}</Badge>
+        <p className="text-sm text-[color:var(--muted)]">
+          Keep agent context nearby without adding another bespoke panel.
+        </p>
+      </div>
 
       {thread.messages.length > 0 ? (
         <div className="space-y-3">
           {thread.messages.map((message) => (
-            <ThreadMessageRow
+            <ThreadMessageCard
               key={message.id}
               message={message}
               onDelete={() => onDeleteMessage(message.id)}
@@ -56,81 +66,95 @@ export function AgentThreadPanel({
           ))}
         </div>
       ) : (
-        <p className="text-sm text-[color:var(--muted)]">{emptyStateLabel}</p>
+        <Card className="border-dashed">
+          <CardContent className="flex min-h-24 items-center justify-center px-6 py-6 text-center text-sm text-[color:var(--muted)]">
+            {emptyStateLabel}
+          </CardContent>
+        </Card>
       )}
 
-      <div className="space-y-3">
-        <p className="text-sm text-[color:var(--muted)]">
-          Using {activeProviderLabel} · {activeProviderModel}
-        </p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Continue thread</CardTitle>
+          <CardDescription>
+            {`Using ${activeProviderLabel} · ${activeProviderModel}`}
+          </CardDescription>
+        </CardHeader>
 
-        <Textarea
-          onChange={(event) => onDraftChange(event.target.value)}
-          placeholder={composerPlaceholder}
-          value={draft.message}
-        />
+        <CardContent className="space-y-3">
+          <Textarea
+            onChange={(event) => onDraftChange(event.target.value)}
+            placeholder={composerPlaceholder}
+            value={draft.message}
+          />
 
-        {draft.error ? <p className="text-sm text-rose-700">{draft.error}</p> : null}
+          {draft.error ? <p className="text-sm text-rose-700">{draft.error}</p> : null}
+        </CardContent>
 
-        <div className="flex justify-end">
+        <CardFooter className="justify-end">
           <Button disabled={isPending} onClick={onSend} size="sm">
             <Send className="size-4" />
             {isPending ? "Sending..." : "Send"}
           </Button>
-        </div>
-      </div>
-    </section>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 
-interface ThreadMessageRowProps {
+interface ThreadMessageCardProps {
   message: AgentThread["messages"][number];
   onDelete: () => void;
 }
 
 /**
- * Keeps one thread message readable while visually separating human and agent turns.
+ * Keeps one thread message readable while moving the visual structure onto shared card sections.
  */
-function ThreadMessageRow({ message, onDelete }: ThreadMessageRowProps) {
+function ThreadMessageCard({ message, onDelete }: ThreadMessageCardProps) {
   const isAgentMessage = message.role === "agent";
   const providerLabel = isAgentMessage && message.providerId ? getProviderLabel(message.providerId) : null;
 
   return (
-    <div
-      className={
-        isAgentMessage
-          ? "rounded-md border border-[color:var(--row-divider)] bg-[color:var(--surface)] p-3"
-          : "rounded-md border border-[color:var(--row-divider)] bg-[color:var(--background)] p-3"
-      }
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-sm font-medium">
+    <Card className={isAgentMessage ? "bg-[color:var(--surface-muted)]" : "bg-[color:var(--background)]"}>
+      <CardHeader className="gap-3 pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <CardTitle className="flex items-center gap-2 text-base">
             {isAgentMessage ? <Bot className="size-4" /> : <User className="size-4" />}
             {isAgentMessage ? "Agent" : "You"}
-            {providerLabel ? <span className="font-normal text-[color:var(--muted)]">{providerLabel}</span> : null}
-            {isAgentMessage && message.status ? (
-              <span className="font-normal text-[color:var(--muted)]">· {message.status}</span>
-            ) : null}
-          </p>
-          <p className="text-xs text-[color:var(--muted)]">{message.createdAt}</p>
-
-          {isAgentMessage ? (
-            <FormattedAgentResponse className="mt-2" content={message.content} />
-          ) : (
-            <p className="mt-2 whitespace-pre-wrap text-sm text-[color:var(--foreground)]">
-              {message.content}
-            </p>
-          )}
+          </CardTitle>
+          <CardDescription>{readThreadMessageMeta(message.createdAt, providerLabel, message.status)}</CardDescription>
         </div>
 
         <Button aria-label="Delete message" onClick={onDelete} size="sm" variant="ghost">
           <Trash2 className="size-4" />
           Delete
         </Button>
-      </div>
-    </div>
+      </CardHeader>
+
+      <CardContent>
+        {isAgentMessage ? (
+          <FormattedAgentResponse className="mt-0" content={message.content} />
+        ) : (
+          <p className="whitespace-pre-wrap text-sm text-[color:var(--foreground)]">
+            {message.content}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
+}
+
+/**
+ * Reads the compact metadata line shown beneath each thread message title.
+ */
+function readThreadMessageMeta(
+  createdAt: string,
+  providerLabel: string | null,
+  status?: AgentThread["messages"][number]["status"],
+) {
+  const details = [providerLabel, createdAt, status].filter(Boolean);
+
+  return details.join(" · ");
 }
 
 /**
