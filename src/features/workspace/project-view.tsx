@@ -92,7 +92,6 @@ export function ProjectView({
           aria-expanded={isComposerExpanded}
           onClick={() => setIsComposerExpanded((currentValue) => !currentValue)}
           variant={isComposerExpanded ? "secondary" : "ghost"}
-          variant={isComposerExpanded ? "secondary" : "ghost"}
         >
           <Plus className="size-4" />
           Add project
@@ -581,7 +580,6 @@ function ProjectDetailContent({
           </div>
           <Button
             onClick={() => setIsTaskComposerOpen((currentValue) => !currentValue)}
-            variant={isTaskComposerOpen ? "secondary" : "ghost"}
             variant={isTaskComposerOpen ? "secondary" : "ghost"}
           >
             <Plus className="size-4" />

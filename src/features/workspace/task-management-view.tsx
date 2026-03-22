@@ -138,7 +138,7 @@ export function TaskManagementView({
           aria-expanded={isComposerExpanded}
           onClick={handleExpandComposer}
           size="sm"
-          variant={isComposerExpanded ? "subtle" : "ghost"}
+          variant={isComposerExpanded ? "secondary" : "ghost"}
         >
           <Plus className="size-4" />
           Add task

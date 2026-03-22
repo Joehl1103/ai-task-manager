@@ -80,7 +80,6 @@ export function InitiativeView({
           aria-expanded={isComposerExpanded}
           onClick={() => setIsComposerExpanded((currentValue) => !currentValue)}
           variant={isComposerExpanded ? "secondary" : "ghost"}
-          variant={isComposerExpanded ? "secondary" : "ghost"}
         >
           <Plus className="size-4" />
           Add initiative
@@ -445,7 +444,6 @@ function InitiativeDetailContent({
           </div>
           <Button
             onClick={() => setIsProjectComposerOpen((currentValue) => !currentValue)}
-            variant={isProjectComposerOpen ? "secondary" : "ghost"}
             variant={isProjectComposerOpen ? "secondary" : "ghost"}
           >
             <Plus className="size-4" />
