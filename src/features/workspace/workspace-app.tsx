@@ -526,7 +526,7 @@ export function WorkspaceApp() {
     }
   }
 
-  function handleAddTaskFromProject(data: { title: string; details: string; projectId: string; tags: string[] }) {
+  function handleAddTaskFromProject(data: { title: string; details: string; projectId: string; tags: string[]; dueBy?: string; remindOn?: string }) {
     setWorkspace((current) => {
       const next = addTask(current, data);
       const created = next.tasks.find((t) => !current.tasks.some((ct) => ct.id === t.id));

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type KeyboardEvent, useState } from "react";
 import { ArrowLeft, MoreHorizontal, Plus } from "lucide-react";
 
 import { featureFlags } from "@/features/feature-flags";
@@ -15,14 +15,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
   filterVisibleProjects,
   isPermanentProjectId,
   supportsProjectThread,
 } from "@/features/workspace/projects";
-import { collectTaskTags, readDateBadges, TaskInlineEditor } from "@/features/workspace/tasks";
+import {
+  collectTaskTags,
+  readDateBadges,
+  TaskEditorFields,
+  TaskInlineEditor,
+} from "@/features/workspace/tasks";
 import {
   type Initiative,
   type Project,
@@ -226,7 +230,7 @@ interface ProjectDetailViewProps {
   editTags: string;
   editTitle: string;
   initiatives: Initiative[];
-  onAddTask: (data: { title: string; details: string; projectId: string; tags: string[] }) => void;
+  onAddTask: (data: { title: string; details: string; projectId: string; tags: string[]; dueBy?: string; remindOn?: string }) => void;
   onBack: () => void;
   onCancelEdit: () => void;
   onDeleteProject: (projectId: string) => void;
@@ -387,6 +391,8 @@ function ProjectDetailContent({
   const [isTaskComposerOpen, setIsTaskComposerOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
+  const [newTaskDueBy, setNewTaskDueBy] = useState("");
+  const [newTaskRemindOn, setNewTaskRemindOn] = useState("");
   const [newTaskTags, setNewTaskTags] = useState("");
   const [isThreadOpen, setIsThreadOpen] = useState(false);
 
@@ -428,11 +434,33 @@ function ProjectDetailContent({
       details: newTaskDetails,
       projectId: activeProject.id,
       tags,
+      dueBy: newTaskDueBy,
+      remindOn: newTaskRemindOn,
     });
     setNewTaskTitle("");
     setNewTaskDetails("");
+    setNewTaskDueBy("");
+    setNewTaskRemindOn("");
     setNewTaskTags("");
     setIsTaskComposerOpen(false);
+  }
+
+  function handleCollapseTaskComposer() {
+    setIsTaskComposerOpen(false);
+    setNewTaskTitle("");
+    setNewTaskDetails("");
+    setNewTaskDueBy("");
+    setNewTaskRemindOn("");
+    setNewTaskTags("");
+  }
+
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Escape") {
+      return;
+    }
+
+    event.preventDefault();
+    handleCollapseTaskComposer();
   }
 
   return (
@@ -537,58 +565,47 @@ function ProjectDetailContent({
 
       <section className="pt-6">
         <Separator className="mb-6" />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">Tasks in this project</h2>
-            <p className="mt-1 text-sm text-[color:var(--muted)]">
-              Keep the task list readable and editable without leaving the project page.
-            </p>
-          </div>
-          <Button
-            onClick={() => setIsTaskComposerOpen((currentValue) => !currentValue)}
-            variant={isTaskComposerOpen ? "subtle" : "ghost"}
-          >
-            <Plus className="size-4" />
-            Add task
-          </Button>
+        <div>
+          <h2 className="text-xl font-semibold">Tasks in this project</h2>
+          <p className="mt-1 text-sm text-[color:var(--muted)]">
+            Keep the task list readable and editable without leaving the project page.
+          </p>
         </div>
 
-        {isTaskComposerOpen ? (
-          <div className="mt-4 grid gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-            <Input
-              autoFocus
-              onChange={(event) => setNewTaskTitle(event.target.value)}
-              placeholder="Task title"
-              value={newTaskTitle}
+        <div className="mt-4">
+          {isTaskComposerOpen ? (
+            <TaskEditorFields
+              allTags={allTaskTags}
+              details={newTaskDetails}
+              dueBy={newTaskDueBy}
+              isSubmitDisabled={!newTaskTitle.trim()}
+              onCancel={handleCollapseTaskComposer}
+              onDetailsChange={setNewTaskDetails}
+              onDueByChange={setNewTaskDueBy}
+              onKeyDown={handleComposerKeyDown}
+              onProjectChange={() => {}}
+              onRemindOnChange={setNewTaskRemindOn}
+              onSubmit={handleAddTask}
+              onTagsChange={setNewTaskTags}
+              onTitleChange={setNewTaskTitle}
+              projectId={activeProject.id}
+              projects={visibleProjects}
+              remindOn={newTaskRemindOn}
+              submitHint="⌘↵"
+              submitLabel="Save"
+              tags={newTaskTags}
+              title={newTaskTitle}
             />
-            <Textarea
-              onChange={(event) => setNewTaskDetails(event.target.value)}
-              placeholder="Task details"
-              value={newTaskDetails}
-            />
-            <Input
-              onChange={(event) => setNewTaskTags(event.target.value)}
-              placeholder="Tags (comma-separated)"
-              value={newTaskTags}
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                onClick={() => {
-                  setIsTaskComposerOpen(false);
-                  setNewTaskTitle("");
-                  setNewTaskDetails("");
-                  setNewTaskTags("");
-                }}
-                variant="ghost"
-              >
-                Cancel
-              </Button>
-              <Button disabled={!newTaskTitle.trim()} onClick={handleAddTask}>
-                Save task
-              </Button>
-            </div>
-          </div>
-        ) : null}
+          ) : (
+            <button
+              className="text-left text-sm font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+              onClick={() => setIsTaskComposerOpen(true)}
+              type="button"
+            >
+              + Add task
+            </button>
+          )}
+        </div>
 
         {childTasks.length === 0 ? (
           <p className="mt-4 text-sm text-[color:var(--muted)]">No tasks yet for this project.</p>
