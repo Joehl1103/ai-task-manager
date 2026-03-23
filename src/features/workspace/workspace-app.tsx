@@ -100,6 +100,7 @@ export function WorkspaceApp() {
   const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
   const [hasLoadedAgentConfig, setHasLoadedAgentConfig] = useState(false);
   const [hasLoadedThemeSelection, setHasLoadedThemeSelection] = useState(false);
+  const [persistenceMode, setPersistenceMode] = useState<"api" | "local" | null>(null);
   const [activeMenu, setActiveMenu] = useState(createDefaultWorkspaceMenu);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(true);
@@ -168,6 +169,7 @@ export function WorkspaceApp() {
 
         if (!cancelled) {
           persistenceRef.current = apiPersistence;
+          setPersistenceMode("api");
           setWorkspace(snapshot);
           setHasLoadedWorkspace(true);
           return;
@@ -185,10 +187,12 @@ export function WorkspaceApp() {
 
         if (!cancelled) {
           persistenceRef.current = localPersistence;
+          setPersistenceMode("local");
           setWorkspace(snapshot);
         }
       } catch {
         if (!cancelled) {
+          setPersistenceMode("local");
           setWorkspace(createDefaultWorkspaceSnapshot());
         }
       }
@@ -1526,6 +1530,7 @@ export function WorkspaceApp() {
         query={globalSearchQuery}
         results={globalSearchResults}
       />
+      {persistenceMode === "local" && <DatabaseUnavailableOverlay />}
       <div className="mx-auto max-w-7xl">
         <div
           className={cn(
@@ -1691,4 +1696,37 @@ async function readJsonSafely(response: Response) {
  */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
+}
+
+/**
+ * A blocking overlay shown when the PostgreSQL-backed API was unreachable at
+ * startup and the app fell back to browser localStorage. Prevents interaction
+ * until the user reloads after starting the database.
+ */
+function DatabaseUnavailableOverlay() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="mx-4 max-w-md space-y-4 rounded-lg bg-[color:var(--surface)] p-8 text-[color:var(--foreground)] shadow-lg">
+        <h2 className="text-lg font-semibold">Database unavailable</h2>
+        <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
+          Relay could not connect to the database. The app cannot operate
+          without the persistence layer.
+        </p>
+        <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
+          Start the database with{" "}
+          <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
+            docker compose up -d
+          </code>{" "}
+          then reload the page.
+        </p>
+        <button
+          className="mt-2 w-full rounded-md bg-[color:var(--foreground)] px-4 py-2 text-sm font-medium text-[color:var(--background)] transition-opacity hover:opacity-80"
+          onClick={() => window.location.reload()}
+          type="button"
+        >
+          Reload
+        </button>
+      </div>
+    </div>
+  );
 }
