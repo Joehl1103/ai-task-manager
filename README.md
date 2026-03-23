@@ -19,7 +19,7 @@ This app lives at the repository root (`ai-task-manager/`).
 - Configure OpenAI with named local API keys and key-specific model selection
 - Make live OpenAI-backed agent calls through project and initiative threads
 - Render basic markdown and safe HTML formatting inside saved agent responses
-- Persist tasks and thread history in browser local storage
+- Persist tasks and thread history in PostgreSQL (falls back to browser local storage when DB is unavailable)
 
 ## Stack
 
@@ -27,7 +27,31 @@ This app lives at the repository root (`ai-task-manager/`).
 - TypeScript
 - Tailwind CSS v4
 - shadcn-style primitives with shared design tokens and Radix-backed Select, Dialog, DropdownMenu, Tooltip, Label, and Separator behavior
+- PostgreSQL + Drizzle ORM for persistence
 - Vitest
+
+## Setup
+
+### Database (optional)
+
+Relay can run without a database — it falls back to browser localStorage. To enable PostgreSQL persistence:
+
+1. Start the database:
+   ```bash
+   docker compose up -d
+   ```
+
+2. Copy the env file:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Push the schema:
+   ```bash
+   npm run db:push
+   ```
+
+The app auto-detects whether the database is available on mount. If the API returns an error, it falls back to localStorage.
 
 ## Commands
 
@@ -39,6 +63,15 @@ npm run dev
 npm run lint
 npm test
 npm run build
+```
+
+### Database commands
+
+```bash
+npm run db:push       # Push schema to database
+npm run db:generate   # Generate migration files
+npm run db:migrate    # Apply migrations
+npm run db:studio     # Open Drizzle Studio
 ```
 
 `npm run dev` now enables polling-based file watching automatically so edits inside worktrees and tmp-based directories are picked up without changing the dev-server command.
@@ -79,7 +112,8 @@ The app is the primary project in this repository.
 - `src/features/workspace/providers/*`: provider config and API helpers
 - `src/features/workspace/threads/*`: thread UI plus owner/context helpers
 - `src/features/workspace/search/*`: global search helpers and dialog
-- `src/features/workspace/storage/*`: workspace local storage helpers and normalization
+- `src/features/workspace/storage/*`: workspace persistence (API + localStorage fallback) and normalization
+- `src/db/*`: Drizzle ORM schema and database connection
 - `src/features/workspace/theme/*`: theme registry and selector
 - `src/features/workspace/navigation/*`: top-menu UI and menu metadata
 - `config/next/*`: Next dev-server config helpers and tests
@@ -90,7 +124,8 @@ The app is the primary project in this repository.
 - The goal right now is simplicity, not completeness.
 - There is one built-in agent flow rather than multiple agent types.
 - Tasks and provider configuration should stay visually separate.
-- Provider settings, tasks, and agent history are stored in browser local storage for this prototype.
+- Tasks, projects, initiatives, and agent threads are persisted in PostgreSQL when available, with localStorage as offline fallback.
+- Provider settings (API keys) remain in browser local storage only — they are never sent to the database.
 - Only one saved OpenAI key is active at a time, and each saved key keeps its own fetched model list.
 - OpenAI is the only live provider wired in during this pass.
 - More Relay features can be layered in after this baseline feels right.
