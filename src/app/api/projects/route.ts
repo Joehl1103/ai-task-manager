@@ -1,20 +1,70 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+import {
+  internalServerError,
+  notFoundError,
+  pickDefined,
+  readJsonObject,
+  readPositiveIntParam,
+  readStringField,
+  validationError,
+} from "@/app/api/_shared";
 import { getDb, projects } from "@/db";
 
-/**
- * Returns all projects ordered by creation date.
- */
-export async function GET() {
-  try {
-    const db = getDb();
-    const allProjects = await db.select().from(projects).orderBy(projects.createdAt);
+interface ProjectRow {
+  id: string;
+  name: string;
+  initiativeId: string | null;
+  deadline: string;
+}
 
-    return NextResponse.json(allProjects);
+/**
+ * Returns projects ordered by creation date with optional filters.
+ */
+export async function GET(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const fields: Record<string, string> = {};
+    const limitParse = readPositiveIntParam(url.searchParams.get("limit"), "limit");
+    const offsetParse = readPositiveIntParam(url.searchParams.get("offset"), "offset");
+
+    if (limitParse.error) {
+      fields.limit = limitParse.error;
+    }
+
+    if (offsetParse.error) {
+      fields.offset = offsetParse.error;
+    }
+
+    if (Object.keys(fields).length > 0) {
+      return validationError("Invalid project query parameters.", fields);
+    }
+
+    const db = getDb();
+    const allProjects = (await db.select().from(projects).orderBy(projects.createdAt)) as ProjectRow[];
+    const initiativeId = url.searchParams.get("initiativeId")?.trim() || null;
+    const search = url.searchParams.get("search")?.trim().toLowerCase() || null;
+
+    const filtered = allProjects.filter((project) => {
+      if (initiativeId && project.initiativeId !== initiativeId) {
+        return false;
+      }
+
+      if (search && !project.name.toLowerCase().includes(search)) {
+        return false;
+      }
+
+      return true;
+    });
+
+    const offset = offsetParse.value ?? 0;
+    const limit = limitParse.value;
+    const paged = filtered.slice(offset, limit === null ? undefined : offset + limit);
+
+    return NextResponse.json(paged);
   } catch (error) {
-    console.error("Failed to fetch projects:", error);
-    return NextResponse.json({ error: "Failed to fetch projects" }, { status: 500 });
+    return internalServerError("Failed to fetch projects.", error);
   }
 }
 
@@ -23,28 +73,37 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const db = getDb();
-    const body = await request.json();
-    const { id, name, initiativeId, deadline } = body;
+    const json = await readJsonObject(request);
 
-    if (!id || !name?.trim()) {
-      return NextResponse.json({ error: "id and name are required" }, { status: 400 });
+    if (!json.ok) {
+      return json.response;
+    }
+
+    const body = json.value;
+    const db = getDb();
+    const id = readStringField(body.id);
+    const name = readStringField(body.name);
+
+    if (!id || !name) {
+      return validationError("Project id and name are required.", {
+        ...(id ? {} : { id: "required" }),
+        ...(name ? {} : { name: "required" }),
+      });
     }
 
     const [newProject] = await db
       .insert(projects)
       .values({
         id,
-        name: name.trim(),
-        initiativeId: initiativeId || null,
-        deadline: deadline?.trim() || "",
+        name,
+        initiativeId: readStringField(body.initiativeId) || null,
+        deadline: typeof body.deadline === "string" ? body.deadline.trim() : "",
       })
       .returning();
 
     return NextResponse.json(newProject, { status: 201 });
   } catch (error) {
-    console.error("Failed to create project:", error);
-    return NextResponse.json({ error: "Failed to create project" }, { status: 500 });
+    return internalServerError("Failed to create project.", error);
   }
 }
 
@@ -53,33 +112,40 @@ export async function POST(request: Request) {
  */
 export async function PUT(request: Request) {
   try {
-    const db = getDb();
-    const body = await request.json();
-    const { id, name, initiativeId, deadline } = body;
+    const json = await readJsonObject(request);
 
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    if (!json.ok) {
+      return json.response;
     }
 
+    const body = json.value;
+    const id = readStringField(body.id);
+
+    if (!id) {
+      return validationError("Project id is required.", { id: "required" });
+    }
+
+    const db = getDb();
     const [updated] = await db
       .update(projects)
-      .set({
-        name: name?.trim() || undefined,
-        initiativeId: initiativeId ?? undefined,
-        deadline: deadline?.trim() ?? undefined,
-        updatedAt: new Date(),
-      })
+      .set(
+        pickDefined({
+          name: typeof body.name === "string" ? body.name.trim() : undefined,
+          initiativeId: typeof body.initiativeId === "string" ? body.initiativeId.trim() : undefined,
+          deadline: typeof body.deadline === "string" ? body.deadline.trim() : undefined,
+          updatedAt: new Date(),
+        }),
+      )
       .where(eq(projects.id, id))
       .returning();
 
     if (!updated) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      return notFoundError("Project not found.");
     }
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Failed to update project:", error);
-    return NextResponse.json({ error: "Failed to update project" }, { status: 500 });
+    return internalServerError("Failed to update project.", error);
   }
 }
 
@@ -90,21 +156,22 @@ export async function DELETE(request: Request) {
   try {
     const db = getDb();
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    const id = searchParams.get("id")?.trim();
 
     if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+      return validationError("Project id is required.", {
+        id: "required",
+      });
     }
 
     const [deleted] = await db.delete(projects).where(eq(projects.id, id)).returning();
 
     if (!deleted) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      return notFoundError("Project not found.");
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete project:", error);
-    return NextResponse.json({ error: "Failed to delete project" }, { status: 500 });
+    return internalServerError("Failed to delete project.", error);
   }
 }
