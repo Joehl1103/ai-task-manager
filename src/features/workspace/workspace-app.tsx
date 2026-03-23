@@ -1315,6 +1315,7 @@ export function WorkspaceApp() {
           editRemindOn={editRemindOn}
           editTags={editTags}
           editTitle={editTitle}
+          onAddTask={handleAddTaskFromProject}
           onCancelEdit={handleCancelEdit}
           onDeleteTask={handleDeleteTask}
           onOpenTask={handleOpenTask}
@@ -1515,7 +1516,7 @@ export function WorkspaceApp() {
 
   return (
     <main
-      className="workspace-theme-stage min-h-screen px-4 py-6 text-[color:var(--foreground)]"
+      className="workspace-theme-stage min-h-screen py-6 text-[color:var(--foreground)]"
       data-theme-mode={themeSelection.mode}
       data-theme-pair={themeSelection.themeId}
       style={buildWorkspaceThemeStyle(themeSelection)}
@@ -1531,50 +1532,50 @@ export function WorkspaceApp() {
         results={globalSearchResults}
       />
       {persistenceMode === "local" && <DatabaseUnavailableOverlay />}
-      <div className="mx-auto max-w-7xl">
+      <div
+        className={cn(
+          "flex min-h-[calc(100vh-3rem)]",
+          isSidebarVisible ? "gap-8" : "gap-0",
+        )}
+      >
         <div
           className={cn(
-            "flex min-h-[calc(100vh-3rem)]",
-            isSidebarVisible ? "gap-8" : "gap-0",
+            "shrink-0 transition-all duration-200 ease-out",
+            isSidebarVisible ? "w-[272px] opacity-100" : "w-8 opacity-100",
           )}
         >
-          <div
-            className={cn(
-              "shrink-0 transition-all duration-200 ease-out",
-              isSidebarVisible ? "w-[272px] opacity-100" : "w-8 opacity-100",
-            )}
-          >
-            {isSidebarVisible ? (
-              <WorkspaceSidebar
-                activeMenu={activeMenu}
-                initiatives={workspace.initiatives}
-                isInitiativesExpanded={isInitiativesExpanded}
-                isProjectsExpanded={isProjectsExpanded}
-                onSelectInitiative={handleSelectInitiative}
-                onSelectMenu={handleSelectMenu}
-                onSelectProject={handleSelectProject}
-                onToggleInitiatives={() =>
-                  setIsInitiativesExpanded((currentValue) => !currentValue)
-                }
-                onToggleProjects={() =>
-                  setIsProjectsExpanded((currentValue) => !currentValue)
-                }
-                onToggleSidebar={handleToggleSidebar}
-                projects={workspace.projects}
-                selectedInitiativeId={selectedInitiativeId}
-                selectedProjectId={selectedProjectId}
-              />
-            ) : (
-              <WorkspaceCollapsedRail onExpand={handleToggleSidebar} />
-            )}
-          </div>
+          {isSidebarVisible ? (
+            <WorkspaceSidebar
+              activeMenu={activeMenu}
+              initiatives={workspace.initiatives}
+              isInitiativesExpanded={isInitiativesExpanded}
+              isProjectsExpanded={isProjectsExpanded}
+              onSelectInitiative={handleSelectInitiative}
+              onSelectMenu={handleSelectMenu}
+              onSelectProject={handleSelectProject}
+              onToggleInitiatives={() =>
+                setIsInitiativesExpanded((currentValue) => !currentValue)
+              }
+              onToggleProjects={() =>
+                setIsProjectsExpanded((currentValue) => !currentValue)
+              }
+              onToggleSidebar={handleToggleSidebar}
+              projects={workspace.projects}
+              selectedInitiativeId={selectedInitiativeId}
+              selectedProjectId={selectedProjectId}
+            />
+          ) : (
+            <WorkspaceCollapsedRail onExpand={handleToggleSidebar} />
+          )}
+        </div>
 
-          <section className="min-w-0 flex-1">
+        <section className="min-w-0 flex-1">
+          <div className="mx-auto max-w-7xl">
             <div className="min-h-full px-1 py-2 sm:px-3">
               {renderActiveCenterContent()}
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </div>
     </main>
   );

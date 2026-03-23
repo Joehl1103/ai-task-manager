@@ -25,6 +25,7 @@ function buildTasksViewProps() {
     onSetEditProject: vi.fn(),
     onSetEditRemindOn: vi.fn(),
     onSetEditTags: vi.fn(),
+    onAddTask: vi.fn(),
     onToggleTaskCompleted: vi.fn(),
   };
 }
