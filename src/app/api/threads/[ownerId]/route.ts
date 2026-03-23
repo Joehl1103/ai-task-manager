@@ -1,0 +1,125 @@
+import { eq, and } from "drizzle-orm";
+import { NextResponse } from "next/server";
+
+import { getDb, agentThreads, agentThreadMessages } from "@/db";
+
+/**
+ * Returns the thread and its messages for a given owner entity.
+ * The ownerId doubles as the thread lookup key via the owner_id column.
+ */
+export async function GET(_request: Request, { params }: { params: Promise<{ ownerId: string }> }) {
+  try {
+    const { ownerId } = await params;
+    const db = getDb();
+
+    const [thread] = await db
+      .select()
+      .from(agentThreads)
+      .where(eq(agentThreads.ownerId, ownerId));
+
+    if (!thread) {
+      return NextResponse.json({ thread: null, messages: [] });
+    }
+
+    const messages = await db
+      .select()
+      .from(agentThreadMessages)
+      .where(eq(agentThreadMessages.threadId, thread.id))
+      .orderBy(agentThreadMessages.createdAt);
+
+    return NextResponse.json({ thread, messages });
+  } catch (error) {
+    console.error("Failed to fetch thread:", error);
+    return NextResponse.json({ error: "Failed to fetch thread" }, { status: 500 });
+  }
+}
+
+/**
+ * Appends a message to an entity's thread. Creates the thread if it does not exist.
+ * Expects body: { threadId, ownerType, ownerId, messageId, role, content, providerId?, model?, status?, createdAt }
+ */
+export async function POST(request: Request, { params }: { params: Promise<{ ownerId: string }> }) {
+  try {
+    const { ownerId } = await params;
+    const db = getDb();
+    const body = await request.json();
+    const { threadId, ownerType, messageId, role, content, providerId, model, status, createdAt } = body;
+
+    if (!threadId || !ownerType || !messageId || !role || !content) {
+      return NextResponse.json(
+        { error: "threadId, ownerType, messageId, role, and content are required" },
+        { status: 400 },
+      );
+    }
+
+    // Upsert thread — create if missing
+    const [existingThread] = await db
+      .select()
+      .from(agentThreads)
+      .where(eq(agentThreads.id, threadId));
+
+    if (!existingThread) {
+      await db.insert(agentThreads).values({ id: threadId, ownerType, ownerId });
+    }
+
+    // Insert the message
+    const [newMessage] = await db
+      .insert(agentThreadMessages)
+      .values({
+        id: messageId,
+        threadId,
+        role,
+        content,
+        providerId: providerId || null,
+        model: model || null,
+        status: status || null,
+        createdAt: createdAt ? new Date(createdAt) : new Date(),
+      })
+      .returning();
+
+    return NextResponse.json(newMessage, { status: 201 });
+  } catch (error) {
+    console.error("Failed to append thread message:", error);
+    return NextResponse.json({ error: "Failed to append thread message" }, { status: 500 });
+  }
+}
+
+/**
+ * Deletes a single message from a thread. Message id is passed as query param.
+ */
+export async function DELETE(request: Request, { params }: { params: Promise<{ ownerId: string }> }) {
+  try {
+    const { ownerId } = await params;
+    const db = getDb();
+    const { searchParams } = new URL(request.url);
+    const messageId = searchParams.get("messageId");
+
+    if (!messageId) {
+      return NextResponse.json({ error: "messageId query param is required" }, { status: 400 });
+    }
+
+    // Find the thread for this owner first
+    const [thread] = await db
+      .select()
+      .from(agentThreads)
+      .where(eq(agentThreads.ownerId, ownerId));
+
+    if (!thread) {
+      return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+    }
+
+    const [deleted] = await db
+      .delete(agentThreadMessages)
+      .where(and(eq(agentThreadMessages.id, messageId), eq(agentThreadMessages.threadId, thread.id)))
+      .returning();
+
+    if (!deleted) {
+      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Failed to delete thread message:", error);
+    return NextResponse.json({ error: "Failed to delete thread message" }, { status: 500 });
+  }
+}

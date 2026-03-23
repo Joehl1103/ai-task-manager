@@ -32,11 +32,17 @@ The current goal is to keep the product as small as possible before layering on 
 - `src/features/workspace/providers/*`: provider request and configuration helpers
 - `src/features/workspace/threads/*`: thread rendering, ids, and context helpers
 - `src/features/workspace/search/*`: command search helpers and dialog
-- `src/features/workspace/storage/*`: workspace local storage helpers
+- `src/features/workspace/storage/*`: workspace persistence abstraction (API + localStorage fallback)
 - `src/features/workspace/theme/*`: theme registry and selector
 - `src/features/workspace/navigation/*`: menu metadata and top-menu UI
-- `config/next/*`: Next dev-server config helpers
+- `src/db/*`: Drizzle ORM schema and database connection
+- `src/app/api/workspace/route.ts`: full workspace snapshot endpoint
+- `src/app/api/tasks/route.ts`: task CRUD endpoint
+- `src/app/api/projects/route.ts`: project CRUD endpoint
+- `src/app/api/initiatives/route.ts`: initiative CRUD endpoint
+- `src/app/api/threads/[ownerId]/route.ts`: thread message CRUD endpoint
 - `src/app/api/agent-call/route.ts`: live provider-backed agent endpoint
+- `config/next/*`: Next dev-server config helpers
 - `src/components/ui/*`: small shared UI primitives
 
 ## Design Guidelines
@@ -65,11 +71,11 @@ Current focus:
 - Keep the agent model to one built-in path, not multiple agent types
 - Support local OpenAI configuration for real project- and initiative-level agent calls first
 - Keep saved agent responses readable with safe basic markdown and HTML formatting
-- Persist tasks and thread history locally in the browser
+- Persist tasks, projects, initiatives, and thread history in PostgreSQL (localStorage as offline fallback)
+- Provider API keys stay in browser localStorage only — never sent to the database
 
 Likely next tasks:
 
-- Add persistence beyond browser local storage when shared sync becomes important
-- Add completion state
-- Add ordering and filtering only if they are truly needed
+- Add date-based task filtering (today, this week, overdue)
+- Add ordering and sorting if needed
 - Harden secret handling before any shared deployment

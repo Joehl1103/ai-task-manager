@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { featureFlags } from "@/features/feature-flags";
 import { AgentConfigurationView } from "@/features/workspace/agent-configuration-view";
@@ -57,12 +57,14 @@ import {
   type GlobalSearchResult,
 } from "@/features/workspace/search";
 import {
+  createApiPersistence,
   createDefaultWorkspaceSnapshot,
+  createLocalStoragePersistence,
   defaultTaskGroupingMode,
   normalizeTaskGroupingMode,
-  normalizeWorkspaceSnapshot,
   taskGroupingModeStorageKey,
   type TaskGroupingMode,
+  type WorkspacePersistence,
   workspaceStorageKey,
 } from "@/features/workspace/storage";
 import {
@@ -151,24 +153,58 @@ export function WorkspaceApp() {
     globalSearchQuery,
   );
 
+  const persistenceRef = useRef<WorkspacePersistence>(createLocalStoragePersistence());
+
   /**
-   * Hydrates saved workspace data after mount so task edits survive a browser refresh.
+   * Hydrates workspace data after mount. Tries the API first (PostgreSQL-backed),
+   * then falls back to localStorage if the API is unavailable.
    */
   useEffect(() => {
-    const savedWorkspace = window.localStorage.getItem(workspaceStorageKey);
+    let cancelled = false;
 
-    if (!savedWorkspace) {
-      setHasLoadedWorkspace(true);
-      return;
+    async function hydrate() {
+      const apiPersistence = createApiPersistence();
+
+      try {
+        const snapshot = await apiPersistence.loadWorkspace();
+
+        if (!cancelled) {
+          persistenceRef.current = apiPersistence;
+          setWorkspace(snapshot);
+          setHasLoadedWorkspace(true);
+          return;
+        }
+      } catch {
+        // API unavailable — fall back to localStorage
+      }
+
+      if (cancelled) return;
+
+      const localPersistence = createLocalStoragePersistence();
+
+      try {
+        const snapshot = await localPersistence.loadWorkspace();
+
+        if (!cancelled) {
+          persistenceRef.current = localPersistence;
+          setWorkspace(snapshot);
+        }
+      } catch {
+        if (!cancelled) {
+          setWorkspace(createDefaultWorkspaceSnapshot());
+        }
+      }
+
+      if (!cancelled) {
+        setHasLoadedWorkspace(true);
+      }
     }
 
-    try {
-      setWorkspace(normalizeWorkspaceSnapshot(JSON.parse(savedWorkspace)));
-    } catch {
-      setWorkspace(createDefaultWorkspaceSnapshot());
-    }
+    hydrate();
 
-    setHasLoadedWorkspace(true);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   /**
@@ -429,22 +465,39 @@ export function WorkspaceApp() {
   }
 
   function handleAddInitiative(data: { name: string; description: string; deadline: string }) {
-    setWorkspace((current) => addInitiative(current, data));
+    setWorkspace((current) => {
+      const next = addInitiative(current, data);
+      const created = next.initiatives.find((i) => !current.initiatives.some((ci) => ci.id === i.id));
+
+      if (created) {
+        persistenceRef.current.saveInitiative(created);
+      }
+
+      return next;
+    });
   }
 
   function handleUpdateInitiative(data: { id: string; name: string; description: string; deadline: string }) {
-    setWorkspace((current) =>
-      updateInitiative(current, {
+    setWorkspace((current) => {
+      const next = updateInitiative(current, {
         initiativeId: data.id,
         name: data.name,
         description: data.description,
         deadline: data.deadline,
-      }),
-    );
+      });
+      const updated = next.initiatives.find((i) => i.id === data.id);
+
+      if (updated) {
+        persistenceRef.current.saveInitiative(updated);
+      }
+
+      return next;
+    });
   }
 
   function handleDeleteInitiative(id: string) {
     setWorkspace((current) => deleteInitiative(current, id));
+    persistenceRef.current.deleteInitiative(id);
 
     if (selectedInitiativeId === id) {
       setSelectedInitiativeId(null);
@@ -461,22 +514,39 @@ export function WorkspaceApp() {
   }
 
   function handleAddProject(data: { name: string; initiativeId: string; deadline: string }) {
-    setWorkspace((current) => addProject(current, data));
+    setWorkspace((current) => {
+      const next = addProject(current, data);
+      const created = next.projects.find((p) => !current.projects.some((cp) => cp.id === p.id));
+
+      if (created) {
+        persistenceRef.current.saveProject(created);
+      }
+
+      return next;
+    });
   }
 
   function handleUpdateProject(data: { id: string; name: string; initiativeId: string; deadline: string }) {
-    setWorkspace((current) =>
-      updateProject(current, {
+    setWorkspace((current) => {
+      const next = updateProject(current, {
         projectId: data.id,
         name: data.name,
         initiativeId: data.initiativeId,
         deadline: data.deadline,
-      }),
-    );
+      });
+      const updated = next.projects.find((p) => p.id === data.id);
+
+      if (updated) {
+        persistenceRef.current.saveProject(updated);
+      }
+
+      return next;
+    });
   }
 
   function handleDeleteProject(id: string) {
     setWorkspace((current) => deleteProject(current, id));
+    persistenceRef.current.deleteProject(id);
 
     if (selectedProjectId === id) {
       setSelectedProjectId(null);
@@ -484,7 +554,16 @@ export function WorkspaceApp() {
   }
 
   function handleAddTaskFromProject(data: { title: string; details: string; projectId: string; tags: string[] }) {
-    setWorkspace((current) => addTask(current, data));
+    setWorkspace((current) => {
+      const next = addTask(current, data);
+      const created = next.tasks.find((t) => !current.tasks.some((ct) => ct.id === t.id));
+
+      if (created) {
+        persistenceRef.current.saveTask(created);
+      }
+
+      return next;
+    });
   }
 
   function handleSelectProject(projectId: string) {
@@ -515,14 +594,21 @@ export function WorkspaceApp() {
       return;
     }
 
-    setWorkspace((currentWorkspace) =>
-      addTask(currentWorkspace, {
+    setWorkspace((currentWorkspace) => {
+      const next = addTask(currentWorkspace, {
         title: newTaskTitle,
         details: newTaskDetails,
         projectId: newTaskProject,
         tags: parseTagsFromString(newTaskTags),
-      }),
-    );
+      });
+      const created = next.tasks.find((t) => !currentWorkspace.tasks.some((ct) => ct.id === t.id));
+
+      if (created) {
+        persistenceRef.current.saveTask(created);
+      }
+
+      return next;
+    });
     setNewTaskTitle("");
     setNewTaskDetails("");
     setNewTaskProject("");
@@ -576,15 +662,22 @@ export function WorkspaceApp() {
     const nextProject = editProject;
     const nextTags = parseTagsFromString(editTags);
 
-    setWorkspace((currentWorkspace) =>
-      updateTask(currentWorkspace, {
+    setWorkspace((currentWorkspace) => {
+      const next = updateTask(currentWorkspace, {
         taskId,
         title: nextTitle,
         details: nextDetails,
         projectId: nextProject,
         tags: nextTags,
-      }),
-    );
+      });
+      const updated = next.tasks.find((t) => t.id === taskId);
+
+      if (updated) {
+        persistenceRef.current.saveTask(updated);
+      }
+
+      return next;
+    });
     handleCancelEdit();
   }
 
@@ -622,6 +715,7 @@ export function WorkspaceApp() {
     }
 
     setWorkspace((currentWorkspace) => deleteTask(currentWorkspace, taskId));
+    persistenceRef.current.deleteTask(taskId);
 
     if (editingTaskId === taskId || selectedTaskId === taskId) {
       handleCancelEdit();
@@ -642,7 +736,16 @@ export function WorkspaceApp() {
    * Toggles the completed state of a task.
    */
   function handleToggleTaskCompleted(taskId: string) {
-    setWorkspace((currentWorkspace) => toggleTaskCompleted(currentWorkspace, taskId));
+    setWorkspace((currentWorkspace) => {
+      const next = toggleTaskCompleted(currentWorkspace, taskId);
+      const updated = next.tasks.find((t) => t.id === taskId);
+
+      if (updated) {
+        persistenceRef.current.saveTask(updated);
+      }
+
+      return next;
+    });
   }
 
   /**
@@ -667,6 +770,7 @@ export function WorkspaceApp() {
     }
 
     setWorkspace((currentWorkspace) => deleteThreadMessage(currentWorkspace, owner, messageId));
+    persistenceRef.current.deleteThreadMessage(owner, messageId);
   }
 
   /**
@@ -1025,6 +1129,7 @@ export function WorkspaceApp() {
         now: createdAt,
       }),
     );
+    persistenceRef.current.saveThreadMessage(owner, nextHumanMessage);
 
     try {
       const response = await fetch("/api/agent-call", {
@@ -1047,16 +1152,19 @@ export function WorkspaceApp() {
       if (!response.ok) {
         const errorMessage = readApiErrorMessage(payload);
 
-        setWorkspace((currentWorkspace) =>
-          appendAgentThreadMessage(currentWorkspace, {
+        setWorkspace((currentWorkspace) => {
+          const next = appendAgentThreadMessage(currentWorkspace, {
             owner,
             providerId: activeProvider,
             model: activeProviderSettings.model.trim(),
             now: createdAt,
             status: "error",
             content: errorMessage,
-          }),
-        );
+          });
+          persistNewThreadMessage(next, currentWorkspace, owner);
+
+          return next;
+        });
         setThreadDrafts((currentDrafts) => ({
           ...currentDrafts,
           [ownerKey]: {
@@ -1067,30 +1175,36 @@ export function WorkspaceApp() {
         return;
       }
 
-      setWorkspace((currentWorkspace) =>
-        appendAgentThreadMessage(currentWorkspace, {
+      setWorkspace((currentWorkspace) => {
+        const next = appendAgentThreadMessage(currentWorkspace, {
           owner,
           providerId: activeProvider,
           model: readApiModel(payload, activeProviderSettings.model),
           now: createdAt,
           status: "done",
           content: readApiResult(payload),
-        }),
-      );
+        });
+        persistNewThreadMessage(next, currentWorkspace, owner);
+
+        return next;
+      });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "The live thread reply failed unexpectedly.";
 
-      setWorkspace((currentWorkspace) =>
-        appendAgentThreadMessage(currentWorkspace, {
+      setWorkspace((currentWorkspace) => {
+        const next = appendAgentThreadMessage(currentWorkspace, {
           owner,
           providerId: activeProvider,
           model: activeProviderSettings.model.trim(),
           now: createdAt,
           status: "error",
           content: errorMessage,
-        }),
-      );
+        });
+        persistNewThreadMessage(next, currentWorkspace, owner);
+
+        return next;
+      });
       setThreadDrafts((currentDrafts) => ({
         ...currentDrafts,
         [ownerKey]: {
@@ -1100,6 +1214,27 @@ export function WorkspaceApp() {
       }));
     } finally {
       setPendingThreadOwnerKey(null);
+    }
+  }
+
+  /**
+   * Finds the newest thread message that was added between two workspace snapshots and persists it.
+   */
+  function persistNewThreadMessage(
+    next: import("@/features/workspace/core").WorkspaceSnapshot,
+    prev: import("@/features/workspace/core").WorkspaceSnapshot,
+    owner: ThreadOwnerRef,
+  ) {
+    const nextThread = readThreadForOwner(next, owner);
+    const prevThread = readThreadForOwner(prev, owner);
+
+    if (!nextThread) return;
+
+    const prevMessageIds = new Set(prevThread?.messages.map((m) => m.id) ?? []);
+    const newMessage = nextThread.messages.find((m) => !prevMessageIds.has(m.id));
+
+    if (newMessage) {
+      persistenceRef.current.saveThreadMessage(owner, newMessage);
     }
   }
 
