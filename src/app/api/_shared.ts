@@ -1,4 +1,14 @@
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { NextResponse } from "next/server";
+
+import type * as schema from "@/db/schema";
+import { projects } from "@/db/schema";
+import {
+  inboxProjectId,
+  inboxProjectName,
+  noProjectProjectId,
+  noProjectProjectName,
+} from "@/features/workspace/projects/inbox-project";
 
 export type FieldErrorMap = Record<string, string>;
 
@@ -122,4 +132,20 @@ export function pickDefined<T extends Record<string, unknown>>(input: T): Partia
   }
 
   return output;
+}
+
+/**
+ * Ensures the built-in system projects (Inbox, No Project) exist in the
+ * database so that foreign-key constraints on tasks.project_id are satisfied.
+ * Uses onConflictDoNothing so concurrent calls are safe.
+ */
+export async function ensureSystemProjectsExist(db: PostgresJsDatabase<typeof schema>): Promise<void> {
+  await db
+    .insert(projects)
+    .values([
+      { id: inboxProjectId, name: inboxProjectName, deadline: "" },
+      { id: noProjectProjectId, name: noProjectProjectName, deadline: "" },
+    ])
+    .onConflictDoNothing()
+    .execute();
 }

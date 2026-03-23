@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import {
+  ensureSystemProjectsExist,
   internalServerError,
   normalizeTags,
   notFoundError,
@@ -96,6 +97,9 @@ export async function POST(request: Request) {
         tags: "expected_string_array",
       });
     }
+
+    // Ensure built-in system projects exist before inserting (satisfies FK constraint)
+    await ensureSystemProjectsExist(db);
 
     const [newTask] = await db
       .insert(tasks)
