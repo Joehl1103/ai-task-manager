@@ -121,6 +121,7 @@ export function TasksView({
     }
   });
 
+  const allTags = useMemo(() => collectTaskTags(tasks), [tasks]);
   const filteredTasks = useMemo(() => filterTasks(tasks, filters, new Date()), [filters, tasks]);
   const groups = useMemo(
     () => (groupingMode === "tag" ? groupTasksByTag(filteredTasks) : groupTasksByProject(filteredTasks, visibleProjects)),
@@ -185,6 +186,16 @@ export function TasksView({
           selectedProjectId={filters.projectId}
           onSelect={(projectId) => {
             const nextFilters = { ...filters, projectId };
+
+            setFilters(nextFilters);
+            persistTaskFilters(nextFilters);
+          }}
+        />
+        <TagFilterMenu
+          tags={allTags}
+          selectedTag={filters.tag}
+          onSelect={(tag) => {
+            const nextFilters = { ...filters, tag };
 
             setFilters(nextFilters);
             persistTaskFilters(nextFilters);
@@ -364,7 +375,7 @@ function persistTaskFilters(filters: TaskFilters) {
 }
 
 function hasActiveFilters(filters: TaskFilters): boolean {
-  return Boolean(filters.projectId) || filters.dueBy !== "any" || filters.remindOn !== "any";
+  return Boolean(filters.projectId) || Boolean(filters.tag) || filters.dueBy !== "any" || filters.remindOn !== "any";
 }
 
 interface ProjectFilterMenuProps {
@@ -391,6 +402,37 @@ function ProjectFilterMenu({ selectedProjectId, projects, onSelect }: ProjectFil
         {projects.map((project) => (
           <DropdownMenuItem key={project.id} onSelect={() => onSelect(project.id)}>
             {project.name}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+interface TagFilterMenuProps {
+  tags: string[];
+  selectedTag: string | null;
+  onSelect: (tag: string | null) => void;
+}
+
+function TagFilterMenu({ tags, selectedTag, onSelect }: TagFilterMenuProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="inline-flex items-center gap-1.5 text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+          type="button"
+        >
+          <span>Tag:</span>
+          <span className="text-[color:var(--muted-strong)]">{selectedTag ?? "All"}</span>
+          <ChevronDown aria-hidden="true" className="size-3" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="text-xs">
+        <DropdownMenuItem onSelect={() => onSelect(null)}>All</DropdownMenuItem>
+        {tags.map((tag) => (
+          <DropdownMenuItem key={tag} onSelect={() => onSelect(tag)}>
+            {tag}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

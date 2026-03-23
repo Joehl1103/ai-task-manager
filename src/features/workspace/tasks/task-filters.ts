@@ -6,6 +6,7 @@ export interface TaskFilters {
   projectId: string | null;
   dueBy: DateRangeFilter;
   remindOn: DateRangeFilter;
+  tag: string | null;
 }
 
 export const dateRangeFilters: DateRangeFilter[] = ["any", "overdue", "today", "this-week", "this-month"];
@@ -18,6 +19,7 @@ export function createDefaultTaskFilters(): TaskFilters {
     projectId: null,
     dueBy: "any",
     remindOn: "any",
+    tag: null,
   };
 }
 
@@ -33,6 +35,7 @@ export function normalizeTaskFilters(value: unknown): TaskFilters {
     projectId: normalizeProjectId(value.projectId),
     dueBy: normalizeDateRangeFilter(value.dueBy),
     remindOn: normalizeDateRangeFilter(value.remindOn),
+    tag: normalizeTagFilter(value.tag),
   };
 }
 
@@ -50,6 +53,10 @@ export function filterTasks(tasks: Task[], filters: TaskFilters, now: Date): Tas
     }
 
     if (!matchesDateRange(task.remindOn, filters.remindOn, now)) {
+      return false;
+    }
+
+    if (filters.tag && !matchesTag(task.tags, filters.tag)) {
       return false;
     }
 
@@ -132,6 +139,22 @@ function normalizeProjectId(value: unknown): string | null {
   const trimmed = value.trim();
 
   return trimmed ? trimmed : null;
+}
+
+function normalizeTagFilter(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed ? trimmed : null;
+}
+
+function matchesTag(tags: string[], filterTag: string): boolean {
+  const normalizedFilter = filterTag.toLocaleLowerCase();
+
+  return tags.some((tag) => tag.toLocaleLowerCase() === normalizedFilter);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
