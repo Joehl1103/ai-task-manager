@@ -25,6 +25,7 @@ describe("agent configuration view", () => {
         modelFetchError={null}
         onDeleteSavedKey={vi.fn()}
         onFetchModels={vi.fn()}
+        onOpenDocumentation={vi.fn()}
         onSaveApiKey={vi.fn()}
         onSavedKeyModelChange={vi.fn()}
         onSetActiveKey={vi.fn()}
@@ -39,14 +40,17 @@ describe("agent configuration view", () => {
 
     expect(markup).toContain("Configuration sections");
     expect(markup).toContain("Workspace theme");
+    expect(markup).toContain("Documentation");
+    expect(markup).toContain("Open API docs");
     expect(markup).toContain("Agent settings");
     expect(markup).toContain('class="text-2xl font-semibold">Configuration</h1>');
     expect(markup).toContain('class="configuration-disclosure-status">Relay Original / Day</p>');
+    expect(markup).toContain('class="configuration-disclosure-status">API reference ready</p>');
     expect(markup).toContain('class="configuration-disclosure-status">API key needed</p>');
     expect(markup).toContain("configuration-disclosure-meta");
     expect(markup).not.toContain("lucide-check");
     expect(markup).not.toContain("text-3xl");
-    expect(markup.match(/<details/g)).toHaveLength(2);
+    expect(markup.match(/<details/g)).toHaveLength(3);
     expect(markup).not.toContain("<details open");
     expect(markup).not.toContain("Separate workspace view");
     expect(markup).not.toContain("How this connects to the workspace");
@@ -94,6 +98,7 @@ describe("agent configuration view", () => {
         modelFetchError={null}
         onDeleteSavedKey={vi.fn()}
         onFetchModels={vi.fn()}
+        onOpenDocumentation={vi.fn()}
         onSaveApiKey={vi.fn()}
         onSavedKeyModelChange={vi.fn()}
         onSetActiveKey={vi.fn()}

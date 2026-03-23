@@ -13,6 +13,7 @@ import {
   type ThreadDraft,
   type ThreadOwnerRef,
 } from "@/features/workspace/core";
+import { DocumentationView } from "@/features/workspace/documentation";
 import { InboxView } from "@/features/workspace/inbox-view";
 import {
   addInitiative,
@@ -1481,6 +1482,10 @@ export function WorkspaceApp() {
       );
     }
 
+    if (activeMenu === "documentation") {
+      return <DocumentationView />;
+    }
+
     return (
       <AgentConfigurationView
         activeProvider={activeProvider}
@@ -1493,6 +1498,7 @@ export function WorkspaceApp() {
         modelFetchError={modelFetchError}
         onDeleteSavedKey={handleDeleteSavedKey}
         onFetchModels={handleFetchModels}
+        onOpenDocumentation={() => handleSelectMenu("documentation")}
         onSaveApiKey={handleSaveApiKey}
         onSavedKeyModelChange={handleSavedKeyModelChange}
         onSetActiveKey={handleSetActiveKey}

@@ -66,6 +66,16 @@ const apiManifest = {
       methods: ["GET", "POST", "DELETE"],
       description: "Thread and thread message endpoints for a task/project/initiative owner.",
     },
+    {
+      path: "/api/models",
+      methods: ["POST"],
+      description: "Fetches chat-capable OpenAI model ids for a provided API key.",
+    },
+    {
+      path: "/api/agent-call",
+      methods: ["POST"],
+      description: "Forwards a task, project, or initiative thread request to the configured provider.",
+    },
   ],
 } as const;
 

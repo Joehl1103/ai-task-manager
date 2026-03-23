@@ -11,7 +11,7 @@ Relay is currently a minimal web starter for task management with two primary id
 
 - A compact task overview list
 - A selected-task inline editor that expands inside the current list
-- A thin top-menu shell that separates Tasks from Configuration
+- A thin top-menu shell that separates Tasks, Documentation, and Configuration
 
 The current goal is to keep the product as small as possible before layering on more capabilities.
 
@@ -24,6 +24,7 @@ The current goal is to keep the product as small as possible before layering on 
 - `src/features/workspace/project-view.tsx`: project workflow UI
 - `src/features/workspace/initiative-view.tsx`: initiative workflow UI
 - `src/features/workspace/agent-configuration-view.tsx`: provider configuration UI
+- `src/features/workspace/documentation/*`: in-app API wiki and documentation view
 - `src/features/workspace/mock-data.ts`: local seed data for tasks and sample agent history
 - `src/features/workspace/core/*`: shared workspace types
 - `src/features/workspace/tasks/*`: task operations, grouping, overview helpers, and delete messaging
@@ -69,6 +70,7 @@ Current focus:
 - Keep the main overview compact and keep task editing inline inside the list
 - Keep the selected-task inline editor language consistent across inbox, task lists, and project detail
 - Keep configuration separate from the task workflow
+- Keep the API wiki reachable from both Documentation and Configuration
 - Keep the agent model to one built-in path, not multiple agent types
 - Support local OpenAI configuration for real project- and initiative-level agent calls first
 - Keep saved agent responses readable with safe basic markdown and HTML formatting

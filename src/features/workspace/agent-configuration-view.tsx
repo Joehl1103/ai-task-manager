@@ -43,6 +43,7 @@ interface AgentConfigurationViewProps {
   modelFetchError: string | null;
   onDeleteSavedKey: (providerId: ProviderId, keyId: string) => void;
   onFetchModels: (providerId: ProviderId, keyId: string) => void;
+  onOpenDocumentation: () => void;
   onSaveApiKey: (providerId: ProviderId, label: string, apiKey: string) => void;
   onSavedKeyModelChange: (providerId: ProviderId, keyId: string, model: string) => void;
   onSetActiveKey: (providerId: ProviderId, keyId: string) => void;
@@ -65,6 +66,7 @@ export function AgentConfigurationView({
   modelFetchError,
   onDeleteSavedKey,
   onFetchModels,
+  onOpenDocumentation,
   onSaveApiKey,
   onSavedKeyModelChange,
   onSetActiveKey,
@@ -110,6 +112,26 @@ export function AgentConfigurationView({
                   selection={themeSelection}
                   showHeader={false}
                 />
+              </div>
+            </details>
+          </li>
+
+          <li>
+            <details className="configuration-disclosure rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)]">
+              <ConfigurationDisclosureSummary
+                description="Jump to the in-app wiki for the merged API surface, route conventions, and request examples."
+                statusText="API reference ready"
+                title="Documentation"
+              />
+
+              <div className="space-y-3 border-t border-[color:var(--border)] px-4 py-4">
+                <p className="max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
+                  Relay now ships an in-app API wiki. Open the Documentation section to review the
+                  manifest, CRUD routes, agent routes, and example request payloads in one place.
+                </p>
+                <Button onClick={onOpenDocumentation} type="button" variant="outline">
+                  Open API docs
+                </Button>
               </div>
             </details>
           </li>

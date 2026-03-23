@@ -4,6 +4,7 @@ import {
   createDefaultWorkspaceMenu,
   readWorkspaceMenuHint,
   readWorkspaceMenuLabel,
+  workspaceMenus,
 } from "@/features/workspace/navigation";
 
 describe("workspace navigation", () => {
@@ -22,7 +23,11 @@ describe("workspace navigation", () => {
     expect(readWorkspaceMenuHint("inbox")).toBe("Inbox workspace");
     expect(readWorkspaceMenuLabel("tasks")).toBe("Tasks");
     expect(readWorkspaceMenuHint("tasks")).toBe("All active tasks");
+    expect(readWorkspaceMenuLabel("documentation")).toBe("Documentation");
+    expect(readWorkspaceMenuHint("documentation")).toBe("API wiki");
     expect(readWorkspaceMenuLabel("configuration")).toBe("Configuration");
     expect(readWorkspaceMenuHint("configuration")).toBe("Provider setup");
+    expect(workspaceMenus).toContain("tasks");
+    expect(workspaceMenus).toContain("documentation");
   });
 });

@@ -33,16 +33,19 @@ describe("workspace sidebar", () => {
     expect(markup).toContain("Inbox");
     expect(markup).toContain("Tasks");
     expect(markup).toContain("Projects");
+    expect(markup).toContain("Documentation");
     expect(markup).toContain("Configuration");
     expect(markup).toContain("Relay MVP");
     if (featureFlags.initiatives) {
       expect(markup).toContain("Initiatives");
       expect(markup).toContain("Q2 Product Launch");
+      expect(markup.indexOf("Documentation")).toBeGreaterThan(markup.indexOf("Initiatives"));
       expect(markup.indexOf("Configuration")).toBeGreaterThan(markup.indexOf("Initiatives"));
     } else {
       expect(markup).not.toContain("Initiatives");
       expect(markup).not.toContain("Q2 Product Launch");
     }
+    expect(markup.indexOf("Configuration")).toBeGreaterThan(markup.indexOf("Documentation"));
     expect(markup).not.toContain("size-1.5 shrink-0 rounded-full");
     expect(markup).not.toContain(">Relay<");
     expect(markup).not.toContain(">Workspace<");

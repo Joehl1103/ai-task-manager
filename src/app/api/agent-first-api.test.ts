@@ -224,6 +224,8 @@ describe("agent-first API routes", () => {
         expect.objectContaining({ path: "/api/tasks", methods: expect.arrayContaining(["GET", "POST", "PUT", "DELETE"]) }),
         expect.objectContaining({ path: "/api/tasks/:id", methods: expect.arrayContaining(["GET", "PATCH", "DELETE"]) }),
         expect.objectContaining({ path: "/api/tasks/bulk", methods: expect.arrayContaining(["POST", "PATCH", "DELETE"]) }),
+        expect.objectContaining({ path: "/api/models", methods: expect.arrayContaining(["POST"]) }),
+        expect.objectContaining({ path: "/api/agent-call", methods: expect.arrayContaining(["POST"]) }),
       ]),
     );
   });

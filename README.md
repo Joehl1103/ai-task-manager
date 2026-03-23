@@ -20,6 +20,7 @@ This app lives at the repository root (`ai-task-manager/`).
 - Make live OpenAI-backed agent calls through project and initiative threads
 - Render basic markdown and safe HTML formatting inside saved agent responses
 - Persist tasks and thread history in PostgreSQL (falls back to browser local storage when DB is unavailable)
+- Browse an in-app Documentation section with an API wiki that is linked from Configuration
 
 ## Stack
 
@@ -52,6 +53,13 @@ Relay can run without a database — it falls back to browser localStorage. To e
    ```
 
 The app auto-detects whether the database is available on mount. If the API returns an error, it falls back to localStorage.
+
+### In-app documentation
+
+Relay now includes a first-party API wiki inside the product:
+
+- Open `Configuration` and use `Open API docs`
+- Or navigate directly to `Documentation -> API`
 
 ## Commands
 
@@ -104,6 +112,7 @@ The app is the primary project in this repository.
 - `src/features/workspace/initiative-view.tsx`: initiative list and drill-in view
 - `src/features/workspace/archive-view.tsx`: completed-task archive grouped by completion date
 - `src/features/workspace/agent-configuration-view.tsx`: provider setup view
+- `src/features/workspace/documentation/*`: in-app wiki content and API reference view
 - `src/features/workspace/mock-data.ts`: starter tasks and sample agent history
 - `src/features/workspace/core/*`: shared workspace types
 - `src/features/workspace/tasks/*`: shared task editor, inline editor, tag-combobox, operations, grouping, overview, and confirmation helpers
@@ -128,6 +137,7 @@ The app is the primary project in this repository.
 - Provider settings (API keys) remain in browser local storage only — they are never sent to the database.
 - Only one saved OpenAI key is active at a time, and each saved key keeps its own fetched model list.
 - OpenAI is the only live provider wired in during this pass.
+- The in-app Documentation section is the source of truth for the current API surface that ships with the app.
 - More Relay features can be layered in after this baseline feels right.
 
 ## Suggested Next Steps

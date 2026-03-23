@@ -5,6 +5,7 @@ import {
   Archive,
   ChevronDown,
   ChevronRight,
+  FileText,
   FolderKanban,
   Inbox,
   ListChecks,
@@ -166,13 +167,20 @@ export function WorkspaceSidebar({
             />
           </section>
 
-          <div className="mt-auto pt-4">
-            <Separator className="mb-4" />
-            <SidebarMenuButton
-              active={activeMenu === "configuration"}
-              hint={readWorkspaceMenuHint("configuration")}
-              icon={<Settings2 className="size-4" />}
-              label={readWorkspaceMenuLabel("configuration")}
+        <div className="mt-auto pt-4">
+          <Separator className="mb-4" />
+          <SidebarMenuButton
+            active={activeMenu === "documentation"}
+            hint={readWorkspaceMenuHint("documentation")}
+            icon={<FileText className="size-4" />}
+            label={readWorkspaceMenuLabel("documentation")}
+            onClick={() => onSelectMenu("documentation")}
+          />
+          <SidebarMenuButton
+            active={activeMenu === "configuration"}
+            hint={readWorkspaceMenuHint("configuration")}
+            icon={<Settings2 className="size-4" />}
+            label={readWorkspaceMenuLabel("configuration")}
               onClick={() => onSelectMenu("configuration")}
             />
           </div>
