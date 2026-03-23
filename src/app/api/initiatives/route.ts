@@ -1,20 +1,66 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+import {
+  internalServerError,
+  notFoundError,
+  pickDefined,
+  readJsonObject,
+  readPositiveIntParam,
+  readStringField,
+  validationError,
+} from "@/app/api/_shared";
 import { getDb, initiatives } from "@/db";
 
-/**
- * Returns all initiatives ordered by creation date.
- */
-export async function GET() {
-  try {
-    const db = getDb();
-    const allInitiatives = await db.select().from(initiatives).orderBy(initiatives.createdAt);
+interface InitiativeRow {
+  id: string;
+  name: string;
+  description: string;
+  deadline: string;
+}
 
-    return NextResponse.json(allInitiatives);
+/**
+ * Returns initiatives ordered by creation date with optional filters.
+ */
+export async function GET(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const fields: Record<string, string> = {};
+    const limitParse = readPositiveIntParam(url.searchParams.get("limit"), "limit");
+    const offsetParse = readPositiveIntParam(url.searchParams.get("offset"), "offset");
+
+    if (limitParse.error) {
+      fields.limit = limitParse.error;
+    }
+
+    if (offsetParse.error) {
+      fields.offset = offsetParse.error;
+    }
+
+    if (Object.keys(fields).length > 0) {
+      return validationError("Invalid initiative query parameters.", fields);
+    }
+
+    const db = getDb();
+    const allInitiatives = (await db.select().from(initiatives).orderBy(initiatives.createdAt)) as InitiativeRow[];
+    const search = url.searchParams.get("search")?.trim().toLowerCase() || null;
+
+    const filtered = allInitiatives.filter((initiative) => {
+      if (!search) {
+        return true;
+      }
+
+      const haystack = `${initiative.name} ${initiative.description}`.toLowerCase();
+      return haystack.includes(search);
+    });
+
+    const offset = offsetParse.value ?? 0;
+    const limit = limitParse.value;
+    const paged = filtered.slice(offset, limit === null ? undefined : offset + limit);
+
+    return NextResponse.json(paged);
   } catch (error) {
-    console.error("Failed to fetch initiatives:", error);
-    return NextResponse.json({ error: "Failed to fetch initiatives" }, { status: 500 });
+    return internalServerError("Failed to fetch initiatives.", error);
   }
 }
 
@@ -23,28 +69,37 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const db = getDb();
-    const body = await request.json();
-    const { id, name, description, deadline } = body;
+    const json = await readJsonObject(request);
 
-    if (!id || !name?.trim()) {
-      return NextResponse.json({ error: "id and name are required" }, { status: 400 });
+    if (!json.ok) {
+      return json.response;
+    }
+
+    const body = json.value;
+    const db = getDb();
+    const id = readStringField(body.id);
+    const name = readStringField(body.name);
+
+    if (!id || !name) {
+      return validationError("Initiative id and name are required.", {
+        ...(id ? {} : { id: "required" }),
+        ...(name ? {} : { name: "required" }),
+      });
     }
 
     const [newInitiative] = await db
       .insert(initiatives)
       .values({
         id,
-        name: name.trim(),
-        description: description?.trim() || "",
-        deadline: deadline?.trim() || "",
+        name,
+        description: typeof body.description === "string" ? body.description.trim() : "",
+        deadline: typeof body.deadline === "string" ? body.deadline.trim() : "",
       })
       .returning();
 
     return NextResponse.json(newInitiative, { status: 201 });
   } catch (error) {
-    console.error("Failed to create initiative:", error);
-    return NextResponse.json({ error: "Failed to create initiative" }, { status: 500 });
+    return internalServerError("Failed to create initiative.", error);
   }
 }
 
@@ -53,33 +108,40 @@ export async function POST(request: Request) {
  */
 export async function PUT(request: Request) {
   try {
-    const db = getDb();
-    const body = await request.json();
-    const { id, name, description, deadline } = body;
+    const json = await readJsonObject(request);
 
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    if (!json.ok) {
+      return json.response;
     }
 
+    const body = json.value;
+    const id = readStringField(body.id);
+
+    if (!id) {
+      return validationError("Initiative id is required.", { id: "required" });
+    }
+
+    const db = getDb();
     const [updated] = await db
       .update(initiatives)
-      .set({
-        name: name?.trim() || undefined,
-        description: description?.trim() ?? undefined,
-        deadline: deadline?.trim() ?? undefined,
-        updatedAt: new Date(),
-      })
+      .set(
+        pickDefined({
+          name: typeof body.name === "string" ? body.name.trim() : undefined,
+          description: typeof body.description === "string" ? body.description.trim() : undefined,
+          deadline: typeof body.deadline === "string" ? body.deadline.trim() : undefined,
+          updatedAt: new Date(),
+        }),
+      )
       .where(eq(initiatives.id, id))
       .returning();
 
     if (!updated) {
-      return NextResponse.json({ error: "Initiative not found" }, { status: 404 });
+      return notFoundError("Initiative not found.");
     }
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Failed to update initiative:", error);
-    return NextResponse.json({ error: "Failed to update initiative" }, { status: 500 });
+    return internalServerError("Failed to update initiative.", error);
   }
 }
 
@@ -90,21 +152,22 @@ export async function DELETE(request: Request) {
   try {
     const db = getDb();
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    const id = searchParams.get("id")?.trim();
 
     if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+      return validationError("Initiative id is required.", {
+        id: "required",
+      });
     }
 
     const [deleted] = await db.delete(initiatives).where(eq(initiatives.id, id)).returning();
 
     if (!deleted) {
-      return NextResponse.json({ error: "Initiative not found" }, { status: 404 });
+      return notFoundError("Initiative not found.");
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete initiative:", error);
-    return NextResponse.json({ error: "Failed to delete initiative" }, { status: 500 });
+    return internalServerError("Failed to delete initiative.", error);
   }
 }
