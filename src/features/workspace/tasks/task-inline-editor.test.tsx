@@ -19,14 +19,18 @@ function buildTaskInlineEditorProps() {
   return {
     allTags: collectTaskTags(workspaceSeed.tasks),
     editDetails: task.details,
+    editDueBy: task.dueBy,
     editProject: task.projectId,
+    editRemindOn: task.remindOn,
     editTags: task.tags.join(", "),
     editTitle: task.title,
     onCancel: vi.fn(),
     onDelete: vi.fn(),
     onSave: vi.fn(),
     onSetEditDetails: vi.fn(),
+    onSetEditDueBy: vi.fn(),
     onSetEditProject: vi.fn(),
+    onSetEditRemindOn: vi.fn(),
     onSetEditTags: vi.fn(),
     onSetEditTitle: vi.fn(),
     projects: filterVisibleProjects(workspaceSeed.projects),
@@ -71,6 +75,8 @@ describe("task inline editor", () => {
     expect(markup).toContain("Task title");
     expect(markup).toContain("Add details...");
     expect(markup).toContain("Add tag");
+    expect(markup).toContain('aria-label="Remind on"');
+    expect(markup).toContain('aria-label="Due by"');
     expect(markup).toContain("Cancel");
     expect(markup).toContain("Save");
     expect(markup).toContain("Delete");

@@ -1,8 +1,8 @@
 import { featureFlags } from "@/features/feature-flags";
 
-export type WorkspaceMenu = "inbox" | "projects" | "initiatives" | "archive" | "configuration";
+export type WorkspaceMenu = "inbox" | "tasks" | "projects" | "initiatives" | "archive" | "configuration";
 
-const allMenus: WorkspaceMenu[] = ["inbox", "projects", "initiatives", "archive", "configuration"];
+const allMenus: WorkspaceMenu[] = ["inbox", "tasks", "projects", "initiatives", "archive", "configuration"];
 
 /** Menus visible to the user, filtered by active feature flags. */
 export const workspaceMenus: WorkspaceMenu[] = allMenus.filter(
@@ -23,6 +23,8 @@ export function readWorkspaceMenuLabel(menu: WorkspaceMenu): string {
   switch (menu) {
     case "inbox":
       return "Inbox";
+    case "tasks":
+      return "Tasks";
     case "projects":
       return "Projects";
     case "initiatives":
@@ -41,6 +43,8 @@ export function readWorkspaceMenuHint(menu: WorkspaceMenu): string {
   switch (menu) {
     case "inbox":
       return "Inbox workspace";
+    case "tasks":
+      return "All active tasks";
     case "projects":
       return "Project management";
     case "initiatives":

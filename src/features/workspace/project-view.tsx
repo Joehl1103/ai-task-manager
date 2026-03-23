@@ -16,12 +16,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   filterVisibleProjects,
   isPermanentProjectId,
   supportsProjectThread,
 } from "@/features/workspace/projects";
-import { collectTaskTags, TaskInlineEditor } from "@/features/workspace/tasks";
+import { collectTaskTags, readDateBadges, TaskInlineEditor } from "@/features/workspace/tasks";
 import {
   type Initiative,
   type Project,
@@ -218,8 +219,10 @@ interface ProjectDetailViewProps {
   activeProviderLabel: string;
   activeProviderModel: string;
   editDetails: string;
+  editDueBy: string;
   editingTaskId: string | null;
   editProject: string;
+  editRemindOn: string;
   editTags: string;
   editTitle: string;
   initiatives: Initiative[];
@@ -234,7 +237,9 @@ interface ProjectDetailViewProps {
   onSaveEdit: (taskId: string) => void;
   onSendThreadMessage: (projectId: string) => void;
   onSetEditDetails: (value: string) => void;
+  onSetEditDueBy: (value: string) => void;
   onSetEditProject: (value: string) => void;
+  onSetEditRemindOn: (value: string) => void;
   onSetEditTags: (value: string) => void;
   onSetEditTitle: (value: string) => void;
   onThreadDraftChange: (projectId: string, message: string) => void;
@@ -253,8 +258,10 @@ export function ProjectDetailView({
   activeProviderLabel,
   activeProviderModel,
   editDetails,
+  editDueBy,
   editingTaskId,
   editProject,
+  editRemindOn,
   editTags,
   editTitle,
   initiatives,
@@ -269,7 +276,9 @@ export function ProjectDetailView({
   onSaveEdit,
   onSendThreadMessage,
   onSetEditDetails,
+  onSetEditDueBy,
   onSetEditProject,
+  onSetEditRemindOn,
   onSetEditTags,
   onSetEditTitle,
   onThreadDraftChange,
@@ -296,8 +305,10 @@ export function ProjectDetailView({
       activeProviderLabel={activeProviderLabel}
       activeProviderModel={activeProviderModel}
       editDetails={editDetails}
+      editDueBy={editDueBy}
       editingTaskId={editingTaskId}
       editProject={editProject}
+      editRemindOn={editRemindOn}
       editTags={editTags}
       editTitle={editTitle}
       initiatives={initiatives}
@@ -313,7 +324,9 @@ export function ProjectDetailView({
       onSaveEdit={onSaveEdit}
       onSendThreadMessage={onSendThreadMessage}
       onSetEditDetails={onSetEditDetails}
+      onSetEditDueBy={onSetEditDueBy}
       onSetEditProject={onSetEditProject}
+      onSetEditRemindOn={onSetEditRemindOn}
       onSetEditTags={onSetEditTags}
       onSetEditTitle={onSetEditTitle}
       onThreadDraftChange={onThreadDraftChange}
@@ -336,8 +349,10 @@ function ProjectDetailContent({
   activeProviderLabel,
   activeProviderModel,
   editDetails,
+  editDueBy,
   editingTaskId,
   editProject,
+  editRemindOn,
   editTags,
   editTitle,
   initiatives,
@@ -352,7 +367,9 @@ function ProjectDetailContent({
   onSaveEdit,
   onSendThreadMessage,
   onSetEditDetails,
+  onSetEditDueBy,
   onSetEditProject,
+  onSetEditRemindOn,
   onSetEditTags,
   onSetEditTitle,
   onThreadDraftChange,
@@ -581,8 +598,10 @@ function ProjectDetailContent({
               <ProjectTaskRow
                 allTags={allTaskTags}
                 editDetails={editDetails}
+                editDueBy={editDueBy}
                 editingTaskId={editingTaskId}
                 editProject={editProject}
+                editRemindOn={editRemindOn}
                 editTags={editTags}
                 editTitle={editTitle}
                 key={task.id}
@@ -591,7 +610,9 @@ function ProjectDetailContent({
                 onOpenTask={onOpenTask}
                 onSaveEdit={onSaveEdit}
                 onSetEditDetails={onSetEditDetails}
+                onSetEditDueBy={onSetEditDueBy}
                 onSetEditProject={onSetEditProject}
+                onSetEditRemindOn={onSetEditRemindOn}
                 onSetEditTags={onSetEditTags}
                 onSetEditTitle={onSetEditTitle}
                 projects={visibleProjects}
@@ -652,8 +673,10 @@ function ProjectDetailContent({
 interface ProjectTaskRowProps {
   allTags: string[];
   editDetails: string;
+  editDueBy: string;
   editingTaskId: string | null;
   editProject: string;
+  editRemindOn: string;
   editTags: string;
   editTitle: string;
   onCancelEdit: () => void;
@@ -661,7 +684,9 @@ interface ProjectTaskRowProps {
   onOpenTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
+  onSetEditDueBy: (value: string) => void;
   onSetEditProject: (value: string) => void;
+  onSetEditRemindOn: (value: string) => void;
   onSetEditTags: (value: string) => void;
   onSetEditTitle: (value: string) => void;
   projects: Project[];
@@ -676,8 +701,10 @@ interface ProjectTaskRowProps {
 function ProjectTaskRow({
   allTags,
   editDetails,
+  editDueBy,
   editingTaskId,
   editProject,
+  editRemindOn,
   editTags,
   editTitle,
   onCancelEdit,
@@ -685,7 +712,9 @@ function ProjectTaskRow({
   onOpenTask,
   onSaveEdit,
   onSetEditDetails,
+  onSetEditDueBy,
   onSetEditProject,
+  onSetEditRemindOn,
   onSetEditTags,
   onSetEditTitle,
   projects,
@@ -700,14 +729,18 @@ function ProjectTaskRow({
           <TaskInlineEditor
             allTags={allTags}
             editDetails={editDetails}
+            editDueBy={editDueBy}
             editProject={editProject}
+            editRemindOn={editRemindOn}
             editTags={editTags}
             editTitle={editTitle}
             onCancel={onCancelEdit}
             onDelete={onDeleteTask}
             onSave={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
+            onSetEditDueBy={onSetEditDueBy}
             onSetEditProject={onSetEditProject}
+            onSetEditRemindOn={onSetEditRemindOn}
             onSetEditTags={onSetEditTags}
             onSetEditTitle={onSetEditTitle}
             projects={projects}
@@ -721,29 +754,42 @@ function ProjectTaskRow({
           onClick={() => onOpenTask(task.id)}
           type="button"
         >
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0">
+          <div className="flex w-[700px] max-w-full items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
               <h3 className="text-sm font-medium text-[color:var(--foreground)]">
                 {task.title}
               </h3>
               {task.details ? (
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
+                <p className="mt-1 max-w-2xl truncate text-sm leading-6 text-[color:var(--muted)]">
                   {task.details}
                 </p>
               ) : (
-                <p className="mt-2 text-sm text-[color:var(--muted)]">No details yet.</p>
+                <p className="mt-1 text-sm text-[color:var(--muted)]">No details yet.</p>
               )}
             </div>
 
-            <div className="shrink-0 text-sm text-[color:var(--muted)]">
+            <div className="flex shrink-0 items-center gap-3">
+              {(() => {
+                const dateBadges = readDateBadges(task);
+
+                return dateBadges.length > 0 ? (
+                  <div className="flex items-center gap-3 text-right">
+                    {dateBadges.map((dateBadge) => (
+                      <span className={cn("text-xs", dateBadge.tone)} key={dateBadge.label}>
+                        {dateBadge.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
               {task.tags.length > 0 ? (
-                <div className="flex flex-wrap justify-start gap-x-3 gap-y-1 lg:justify-end">
+                <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 text-sm text-[color:var(--muted)]">
                   {task.tags.map((tag) => (
                     <span key={tag}>#{tag}</span>
                   ))}
                 </div>
               ) : (
-                <span className="text-xs font-medium uppercase tracking-[0.16em] transition-colors group-hover:text-[color:var(--foreground)]">
+                <span className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--muted)] transition-colors group-hover:text-[color:var(--foreground)]">
                   Open
                 </span>
               )}

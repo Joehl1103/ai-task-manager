@@ -4,6 +4,8 @@ export * from "./task-inline-editor";
 export * from "./task-editor-fields";
 export * from "./task-actions-menu";
 export * from "./task-grouping";
+export * from "./task-filters";
 export * from "./task-operations";
+export * from "./task-date-badges";
 export * from "./task-overview";
 export * from "./task-tag-combobox";

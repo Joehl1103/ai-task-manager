@@ -23,7 +23,6 @@ function createTask(
     details: "",
     completed: false,
     projectId,
-    deadline: "",
     tags,
     createdAt: "2026-03-20T10:00:00.000Z",
     completedAt: "",

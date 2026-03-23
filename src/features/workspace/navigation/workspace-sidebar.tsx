@@ -7,6 +7,7 @@ import {
   ChevronRight,
   FolderKanban,
   Inbox,
+  ListChecks,
   PanelLeftClose,
   Settings2,
   Sparkles,
@@ -103,6 +104,13 @@ export function WorkspaceSidebar({
               icon={<Inbox className="size-4" />}
               label={readWorkspaceMenuLabel("inbox")}
               onClick={() => onSelectMenu("inbox")}
+            />
+            <SidebarMenuButton
+              active={activeMenu === "tasks"}
+              hint={readWorkspaceMenuHint("tasks")}
+              icon={<ListChecks className="size-4" />}
+              label={readWorkspaceMenuLabel("tasks")}
+              onClick={() => onSelectMenu("tasks")}
             />
           </section>
 

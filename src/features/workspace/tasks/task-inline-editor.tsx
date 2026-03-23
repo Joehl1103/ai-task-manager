@@ -9,14 +9,18 @@ import { TaskEditorFields } from "./task-editor-fields";
 interface TaskInlineEditorProps {
   allTags: string[];
   editDetails: string;
+  editDueBy: string;
   editProject: string;
+  editRemindOn: string;
   editTags: string;
   editTitle: string;
   onCancel: () => void;
   onDelete: (taskId: string) => void;
   onSave: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
+  onSetEditDueBy: (value: string) => void;
   onSetEditProject: (value: string) => void;
+  onSetEditRemindOn: (value: string) => void;
   onSetEditTags: (value: string) => void;
   onSetEditTitle: (value: string) => void;
   projects: Project[];
@@ -30,14 +34,18 @@ interface TaskInlineEditorProps {
 export function TaskInlineEditor({
   allTags,
   editDetails,
+  editDueBy,
   editProject,
+  editRemindOn,
   editTags,
   editTitle,
   onCancel,
   onDelete,
   onSave,
   onSetEditDetails,
+  onSetEditDueBy,
   onSetEditProject,
+  onSetEditRemindOn,
   onSetEditTags,
   onSetEditTitle,
   projects,
@@ -60,16 +68,20 @@ export function TaskInlineEditor({
       <TaskEditorFields
         allTags={allTags}
         details={editDetails}
+        dueBy={editDueBy}
         isSubmitDisabled={!editTitle.trim()}
         onCancel={onCancel}
         onDetailsChange={onSetEditDetails}
+        onDueByChange={onSetEditDueBy}
         onKeyDown={handleKeyDown}
         onProjectChange={onSetEditProject}
+        onRemindOnChange={onSetEditRemindOn}
         onSubmit={() => onSave(task.id)}
         onTagsChange={onSetEditTags}
         onTitleChange={onSetEditTitle}
         projectId={editProject}
         projects={projects}
+        remindOn={editRemindOn}
         submitHint="⌘↵"
         submitLabel="Save"
         tags={editTags}

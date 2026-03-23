@@ -12,16 +12,22 @@ function buildInboxViewProps() {
     isComposerExpanded: false,
     newTaskTitle: "",
     newTaskDetails: "",
+    newTaskDueBy: "",
     newTaskProject: "",
+    newTaskRemindOn: "",
     newTaskTags: "",
     editingTaskId: null,
     editTitle: "",
     editDetails: "",
+    editDueBy: "",
     editProject: "",
+    editRemindOn: "",
     editTags: "",
     onSetNewTaskTitle: vi.fn(),
     onSetNewTaskDetails: vi.fn(),
+    onSetNewTaskDueBy: vi.fn(),
     onSetNewTaskProject: vi.fn(),
+    onSetNewTaskRemindOn: vi.fn(),
     onSetNewTaskTags: vi.fn(),
     onAddTask: vi.fn(),
     onOpenTask: vi.fn(),
@@ -30,7 +36,9 @@ function buildInboxViewProps() {
     onCancelEdit: vi.fn(),
     onSetEditTitle: vi.fn(),
     onSetEditDetails: vi.fn(),
+    onSetEditDueBy: vi.fn(),
     onSetEditProject: vi.fn(),
+    onSetEditRemindOn: vi.fn(),
     onSetEditTags: vi.fn(),
     onSetComposerExpanded: vi.fn(),
     onToggleTaskCompleted: vi.fn(),
@@ -73,12 +81,16 @@ describe("inbox view", () => {
         editingTaskId="task-3"
         editTitle="Review quarterly goals"
         editDetails="Compare current progress against initial targets."
+        editDueBy="2026-03-30"
         editProject=""
+        editRemindOn="2026-03-28"
         editTags="review"
       />,
     );
 
     expect(markup).toContain('data-slot="select-trigger"');
+    expect(markup).toContain('aria-label="Remind on"');
+    expect(markup).toContain('aria-label="Due by"');
     expect(markup).toContain("Delete");
     expect(markup).toContain("Review quarterly goals");
     expect(markup).not.toContain('value="project-inbox"');

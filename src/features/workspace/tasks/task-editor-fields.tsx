@@ -17,17 +17,21 @@ import {
 interface TaskEditorFieldsProps {
   allTags: string[];
   details: string;
+  dueBy: string;
   focusTitleInputSignal?: number;
   isSubmitDisabled?: boolean;
   onCancel?: () => void;
   onDetailsChange: (value: string) => void;
+  onDueByChange: (value: string) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
   onProjectChange: (value: string) => void;
+  onRemindOnChange: (value: string) => void;
   onSubmit?: () => void;
   onTagsChange: (value: string) => void;
   onTitleChange: (value: string) => void;
   projectId: string;
   projects: Project[];
+  remindOn: string;
   submitHint?: string;
   submitLabel?: string;
   tags: string;
@@ -40,17 +44,21 @@ interface TaskEditorFieldsProps {
 export function TaskEditorFields({
   allTags,
   details,
+  dueBy,
   focusTitleInputSignal,
   isSubmitDisabled = false,
   onCancel,
   onDetailsChange,
+  onDueByChange,
   onKeyDown,
   onProjectChange,
+  onRemindOnChange,
   onSubmit,
   onTagsChange,
   onTitleChange,
   projectId,
   projects,
+  remindOn,
   submitHint,
   submitLabel,
   tags,
@@ -139,26 +147,41 @@ export function TaskEditorFields({
         value={details}
       />
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-        <Select
-          onValueChange={(value) => onProjectChange(value === "_inbox" ? "" : value)}
-          value={readProjectPickerValue(projectId) || "_inbox"}
-        >
-          <SelectTrigger
-            aria-label="Project"
-            className="h-8 w-auto min-w-[11rem] rounded-none border-0 bg-transparent px-0 py-0 text-xs text-[color:var(--muted)] focus:bg-transparent focus:ring-0"
+      <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <Select
+            onValueChange={(value) => onProjectChange(value === "_inbox" ? "" : value)}
+            value={readProjectPickerValue(projectId) || "_inbox"}
           >
-            <SelectValue placeholder={inboxPickerLabel} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="_inbox">{inboxPickerLabel}</SelectItem>
-            {projects.map((project) => (
-              <SelectItem key={project.id} value={project.id}>
-                {project.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              aria-label="Project"
+              className="h-8 w-auto min-w-[11rem] rounded-none border-0 bg-transparent px-0 py-0 text-xs text-[color:var(--muted)] focus:bg-transparent focus:ring-0"
+            >
+              <SelectValue placeholder={inboxPickerLabel} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_inbox">{inboxPickerLabel}</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <TaskDateField
+            ariaLabel="Remind on"
+            label="Remind on"
+            onChange={onRemindOnChange}
+            value={remindOn}
+          />
+          <TaskDateField
+            ariaLabel="Due by"
+            label="Due by"
+            onChange={onDueByChange}
+            value={dueBy}
+          />
+        </div>
 
         <div className="flex items-center gap-3">
           {submitHint ? (
@@ -186,5 +209,32 @@ export function TaskEditorFields({
         </div>
       </div>
     </div>
+  );
+}
+
+interface TaskDateFieldProps {
+  ariaLabel: string;
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}
+
+function TaskDateField({
+  ariaLabel,
+  label,
+  onChange,
+  value,
+}: TaskDateFieldProps) {
+  return (
+    <label className="flex min-w-[8.75rem] flex-col gap-1 text-[11px] text-[color:var(--muted)]">
+      <span>{label}</span>
+      <input
+        aria-label={ariaLabel}
+        className="h-8 rounded-none border-0 border-b border-[color:var(--border)] bg-transparent px-0 py-0 text-xs text-[color:var(--muted-strong)] outline-none transition-colors focus:border-[color:var(--border-strong)]"
+        onChange={(event) => onChange(event.target.value)}
+        type="date"
+        value={value}
+      />
+    </label>
   );
 }

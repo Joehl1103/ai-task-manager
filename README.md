@@ -7,6 +7,8 @@ This app lives at the repository root (`ai-task-manager/`).
 ## Current Scope
 
 - One compact overview list holding all tasks
+- One dedicated Tasks view for all active tasks, with project/date filters and project/tag grouping
+- One Archive view for completed tasks
 - One quieter inbox composer with inline tag autocomplete plus `Cmd+N` and `Cmd+Enter` keyboard flows
 - One shared inline task editor that expands beneath the selected row across inbox, task lists, and project detail
 - A thin desktop top menu that opens from the current-view label
@@ -63,10 +65,11 @@ The app is the primary project in this repository.
 - `src/app/api/agent-call/route.ts`: provider proxy route for live agent calls
 - `components.json`: shadcn/ui configuration aligned with the existing alias and Tailwind setup
 - `src/features/workspace/workspace-app.tsx`: app shell and state wiring for top-level views
-- `src/features/workspace/task-management-view.tsx`: task-only workspace view
+- `src/features/workspace/tasks-view.tsx`: all active tasks with filtering and grouping
 - `src/features/workspace/inbox-view.tsx`: inbox-focused task view
 - `src/features/workspace/project-view.tsx`: project list and drill-in view
 - `src/features/workspace/initiative-view.tsx`: initiative list and drill-in view
+- `src/features/workspace/archive-view.tsx`: completed-task archive grouped by completion date
 - `src/features/workspace/agent-configuration-view.tsx`: provider setup view
 - `src/features/workspace/mock-data.ts`: starter tasks and sample agent history
 - `src/features/workspace/core/*`: shared workspace types
@@ -95,6 +98,5 @@ The app is the primary project in this repository.
 ## Suggested Next Steps
 
 - Add persistence beyond browser local storage when multi-device or shared access matters
-- Add task completion state
-- Add ordering, filtering, or grouping if needed
+- Add sorting once the Tasks view filtering and grouping patterns feel stable
 - Add stronger security around provider secrets before any shared deployment

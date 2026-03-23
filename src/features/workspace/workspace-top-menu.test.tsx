@@ -38,4 +38,20 @@ describe("workspace top menu", () => {
     expect(markup).toContain("Projects");
     expect(markup).not.toContain(">Menu<");
   });
+
+  /**
+   * Keeps the tasks destination available in the top menu list.
+   */
+  it("renders tasks in the expanded top menu", () => {
+    const markup = renderToStaticMarkup(
+      <WorkspaceTopMenu
+        activeMenu="tasks"
+        isExpanded
+        onSelectMenu={vi.fn()}
+        onToggleMenu={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("Tasks");
+  });
 });

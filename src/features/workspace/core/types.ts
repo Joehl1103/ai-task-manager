@@ -75,12 +75,11 @@ export interface Task {
   details: string;
   completed: boolean;
   projectId: string;
-  deadline: string;
+  dueBy: string;
+  remindOn: string;
   tags: string[];
   createdAt: string;
   completedAt: string;
-  remindOn: string;
-  dueBy: string;
   agentThread: AgentThread;
 }
 
@@ -94,7 +93,8 @@ export interface AddTaskInput {
   title: string;
   details: string;
   projectId?: string;
-  deadline?: string;
+  remindOn?: string;
+  dueBy?: string;
   tags?: string[];
 }
 
@@ -103,7 +103,8 @@ export interface UpdateTaskInput {
   title: string;
   details: string;
   projectId?: string;
-  deadline?: string;
+  remindOn?: string;
+  dueBy?: string;
   tags?: string[];
 }
 

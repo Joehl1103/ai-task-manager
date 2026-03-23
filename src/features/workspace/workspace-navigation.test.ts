@@ -20,6 +20,8 @@ describe("workspace navigation", () => {
   it("reads labels and hints for each top-level menu", () => {
     expect(readWorkspaceMenuLabel("inbox")).toBe("Inbox");
     expect(readWorkspaceMenuHint("inbox")).toBe("Inbox workspace");
+    expect(readWorkspaceMenuLabel("tasks")).toBe("Tasks");
+    expect(readWorkspaceMenuHint("tasks")).toBe("All active tasks");
     expect(readWorkspaceMenuLabel("configuration")).toBe("Configuration");
     expect(readWorkspaceMenuHint("configuration")).toBe("Provider setup");
   });

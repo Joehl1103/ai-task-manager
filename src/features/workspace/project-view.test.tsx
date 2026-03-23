@@ -21,8 +21,10 @@ function buildProjectDetailViewProps() {
     activeProviderLabel: "OpenAI",
     activeProviderModel: "gpt-5",
     editDetails: task?.details ?? "",
+    editDueBy: task?.dueBy ?? "",
     editingTaskId: null,
     editProject: task?.projectId ?? "",
+    editRemindOn: task?.remindOn ?? "",
     editTags: task?.tags.join(", ") ?? "",
     editTitle: task?.title ?? "",
     initiatives: workspaceSeed.initiatives,
@@ -37,7 +39,9 @@ function buildProjectDetailViewProps() {
     onSaveEdit: vi.fn(),
     onSendThreadMessage: vi.fn(),
     onSetEditDetails: vi.fn(),
+    onSetEditDueBy: vi.fn(),
     onSetEditProject: vi.fn(),
+    onSetEditRemindOn: vi.fn(),
     onSetEditTags: vi.fn(),
     onSetEditTitle: vi.fn(),
     onThreadDraftChange: vi.fn(),
@@ -115,12 +119,16 @@ describe("project view", () => {
         editingTaskId="task-1"
         editTitle="Define the smallest possible task manager"
         editDetails="Keep only create, edit, delete, and call-agent actions."
+        editDueBy="2026-03-30"
         editProject="project-1"
+        editRemindOn="2026-03-27"
         editTags="planning"
       />,
     );
 
     expect(markup).toContain("Task title");
+    expect(markup).toContain('aria-label="Remind on"');
+    expect(markup).toContain('aria-label="Due by"');
     expect(markup).toContain("Delete");
     expect(markup).toContain("Define the smallest possible task manager");
     expect(markup).toContain('aria-label="Open task List the next three product decisions"');

@@ -19,7 +19,7 @@ The current goal is to keep the product as small as possible before layering on 
 
 - `src/app/page.tsx`: app entry point
 - `src/features/workspace/workspace-app.tsx`: app shell and state orchestration
-- `src/features/workspace/task-management-view.tsx`: task workflow UI
+- `src/features/workspace/tasks-view.tsx`: all active tasks with filters and project/tag grouping
 - `src/features/workspace/inbox-view.tsx`: inbox-specific task workflow UI
 - `src/features/workspace/project-view.tsx`: project workflow UI
 - `src/features/workspace/initiative-view.tsx`: initiative workflow UI
@@ -57,6 +57,7 @@ Current focus:
 - Keep the app very small
 - Preserve the no-chrome UI language even as the shell evolves
 - Keep the top-level shell thin, desktop-oriented, and visually quiet
+- Keep the dedicated Tasks view lightweight while supporting project/date filters and project/tag grouping
 - Let the user compare six paired day/night visual directions from Configuration, including the original starter theme
 - Preserve add, inline edit, delete, and thread access where those threads still exist
 - Keep the main overview compact and keep task editing inline inside the list
@@ -70,6 +71,5 @@ Current focus:
 Likely next tasks:
 
 - Add persistence beyond browser local storage when shared sync becomes important
-- Add completion state
-- Add ordering and filtering only if they are truly needed
+- Add sorting once the new Tasks view usage settles
 - Harden secret handling before any shared deployment

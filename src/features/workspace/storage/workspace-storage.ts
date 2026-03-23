@@ -24,6 +24,7 @@ import {
 
 export const workspaceStorageKey = "relay-workspace";
 export const taskGroupingModeStorageKey = "relay-task-grouping-mode";
+export const tasksFilterStorageKey = "relay-tasks-filter";
 
 export type TaskGroupingMode = "project" | "tag";
 
@@ -152,12 +153,11 @@ function migrateFromLegacyFormat(legacyTasks: unknown[]): WorkspaceSnapshot {
         details: readString(task.details),
         completed: false,
         projectId,
-        deadline: readString(task.deadline),
+        dueBy: readString(task.deadline),
+        remindOn: "",
         tags: normalizeTags(task.tags),
         createdAt: new Date().toISOString(),
         completedAt: "",
-        remindOn: "",
-        dueBy: "",
         agentThread: normalizeTaskThread(task, taskId),
       },
     ];
@@ -232,12 +232,11 @@ function normalizeTask(value: unknown, index: number): Task | null {
     details: readString(value.details),
     completed,
     projectId: normalizeTaskProjectId(readString(value.projectId)),
-    deadline: readString(value.deadline),
+    dueBy: readString(value.dueBy) || readString(value.deadline),
+    remindOn: readString(value.remindOn),
     tags: normalizeTags(value.tags),
     createdAt: readString(value.createdAt) || new Date().toISOString(),
     completedAt: readString(value.completedAt),
-    remindOn: readString(value.remindOn),
-    dueBy: readString(value.dueBy),
     agentThread: normalizeTaskThread(value, taskId),
   };
 }

@@ -36,10 +36,10 @@ function normalizeTags(tags: string[] | undefined): string[] {
 }
 
 /**
- * Normalizes a task deadline string for lightweight local storage and date input controls.
+ * Normalizes a task date string for lightweight local storage and date input controls.
  */
-function normalizeDeadline(deadline: string | undefined): string {
-  return deadline?.trim() ?? "";
+function normalizeTaskDate(value: string | undefined): string {
+  return value?.trim() ?? "";
 }
 
 /**
@@ -56,12 +56,11 @@ export function addTask(
     details: input.details.trim(),
     completed: false,
     projectId: normalizeTaskProjectId(input.projectId),
-    deadline: normalizeDeadline(input.deadline),
+    dueBy: normalizeTaskDate(input.dueBy),
+    remindOn: normalizeTaskDate(input.remindOn),
     tags: normalizeTags(input.tags),
     createdAt: new Date().toISOString(),
     completedAt: "",
-    remindOn: "",
-    dueBy: "",
     agentThread: createAgentThread("task", nextTaskId),
   };
 
@@ -90,8 +89,11 @@ export function updateTask(
               input.projectId !== undefined
                 ? normalizeTaskProjectId(input.projectId)
                 : task.projectId,
-            deadline:
-              input.deadline !== undefined ? normalizeDeadline(input.deadline) : task.deadline,
+            remindOn:
+              input.remindOn !== undefined
+                ? normalizeTaskDate(input.remindOn)
+                : task.remindOn,
+            dueBy: input.dueBy !== undefined ? normalizeTaskDate(input.dueBy) : task.dueBy,
             tags: input.tags !== undefined ? normalizeTags(input.tags) : task.tags,
           }
         : task,
@@ -100,17 +102,17 @@ export function updateTask(
 }
 
 /**
- * Updates only the deadline for a task from compact grouped-view controls.
+ * Updates only the due-by value for a task from compact grouped-view controls.
  */
-export function updateTaskDeadline(
+export function updateTaskDueBy(
   workspace: WorkspaceSnapshot,
   taskId: string,
-  deadline: string,
+  dueBy: string,
 ): WorkspaceSnapshot {
   return {
     ...workspace,
     tasks: workspace.tasks.map((task) =>
-      task.id === taskId ? { ...task, deadline: normalizeDeadline(deadline) } : task,
+      task.id === taskId ? { ...task, dueBy: normalizeTaskDate(dueBy) } : task,
     ),
   };
 }

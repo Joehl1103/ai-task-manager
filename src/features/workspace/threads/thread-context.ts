@@ -78,7 +78,7 @@ function buildTaskContextSummary(workspace: WorkspaceSnapshot, taskId: string) {
   return [
     `Task title: ${task.title}`,
     `Task details: ${task.details || "No task details provided."}`,
-    `Task deadline: ${task.deadline || "No deadline"}`,
+    `Task due by: ${task.dueBy || "No due date"}`,
     `Task tags: ${task.tags.length > 0 ? task.tags.join(", ") : "No tags"}`,
     `Project: ${projectLabel}`,
     `Initiative: ${initiative?.name || "No initiative"}`,

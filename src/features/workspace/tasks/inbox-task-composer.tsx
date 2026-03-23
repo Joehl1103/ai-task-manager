@@ -11,13 +11,17 @@ interface InboxTaskComposerProps {
   focusTitleInputSignal: number;
   isExpanded: boolean;
   newTaskDetails: string;
+  newTaskDueBy: string;
   newTaskProject: string;
+  newTaskRemindOn: string;
   newTaskTags: string;
   newTaskTitle: string;
   onCollapse: () => void;
   onExpand: () => void;
   onSetNewTaskDetails: (value: string) => void;
+  onSetNewTaskDueBy: (value: string) => void;
   onSetNewTaskProject: (value: string) => void;
+  onSetNewTaskRemindOn: (value: string) => void;
   onSetNewTaskTags: (value: string) => void;
   onSetNewTaskTitle: (value: string) => void;
   onSubmit: () => void;
@@ -32,13 +36,17 @@ export function InboxTaskComposer({
   focusTitleInputSignal,
   isExpanded,
   newTaskDetails,
+  newTaskDueBy,
   newTaskProject,
+  newTaskRemindOn,
   newTaskTags,
   newTaskTitle,
   onCollapse,
   onExpand,
   onSetNewTaskDetails,
+  onSetNewTaskDueBy,
   onSetNewTaskProject,
+  onSetNewTaskRemindOn,
   onSetNewTaskTags,
   onSetNewTaskTitle,
   onSubmit,
@@ -74,16 +82,20 @@ export function InboxTaskComposer({
     <TaskEditorFields
       allTags={allTags}
       details={newTaskDetails}
+      dueBy={newTaskDueBy}
       focusTitleInputSignal={focusTitleInputSignal}
       isSubmitDisabled={!newTaskTitle.trim()}
       onDetailsChange={onSetNewTaskDetails}
+      onDueByChange={onSetNewTaskDueBy}
       onKeyDown={handleComposerKeyDown}
       onProjectChange={onSetNewTaskProject}
+      onRemindOnChange={onSetNewTaskRemindOn}
       onSubmit={onSubmit}
       onTagsChange={onSetNewTaskTags}
       onTitleChange={onSetNewTaskTitle}
       projectId={newTaskProject}
       projects={projects}
+      remindOn={newTaskRemindOn}
       submitHint="⌘↵"
       tags={newTaskTags}
       title={newTaskTitle}

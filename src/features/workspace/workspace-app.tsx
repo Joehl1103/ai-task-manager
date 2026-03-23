@@ -40,6 +40,7 @@ import {
   ProjectDetailView,
   ProjectView,
 } from "@/features/workspace/project-view";
+import { TasksView } from "@/features/workspace/tasks-view";
 import {
   agentConfigStorageKey,
   createApiKeyId,
@@ -58,11 +59,7 @@ import {
 } from "@/features/workspace/search";
 import {
   createDefaultWorkspaceSnapshot,
-  defaultTaskGroupingMode,
-  normalizeTaskGroupingMode,
   normalizeWorkspaceSnapshot,
-  taskGroupingModeStorageKey,
-  type TaskGroupingMode,
   workspaceStorageKey,
 } from "@/features/workspace/storage";
 import {
@@ -99,7 +96,6 @@ export function WorkspaceApp() {
   const [agentConfig, setAgentConfig] = useState<AgentConfigState>(createDefaultAgentConfig);
   const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
   const [hasLoadedAgentConfig, setHasLoadedAgentConfig] = useState(false);
-  const [hasLoadedGroupingMode, setHasLoadedGroupingMode] = useState(false);
   const [hasLoadedThemeSelection, setHasLoadedThemeSelection] = useState(false);
   const [activeMenu, setActiveMenu] = useState(createDefaultWorkspaceMenu);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -107,9 +103,6 @@ export function WorkspaceApp() {
   const [isInitiativesExpanded, setIsInitiativesExpanded] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedInitiativeId, setSelectedInitiativeId] = useState<string | null>(null);
-  const [taskGroupingMode, setTaskGroupingMode] = useState<TaskGroupingMode>(
-    defaultTaskGroupingMode,
-  );
   const [themeSelection, setThemeSelection] = useState<WorkspaceThemeSelection>(
     defaultWorkspaceThemeSelection,
   );
@@ -118,6 +111,8 @@ export function WorkspaceApp() {
   const [activeGlobalSearchIndex, setActiveGlobalSearchIndex] = useState(0);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
+  const [newTaskRemindOn, setNewTaskRemindOn] = useState("");
+  const [newTaskDueBy, setNewTaskDueBy] = useState("");
   const [newTaskProject, setNewTaskProject] = useState("");
   const [newTaskTags, setNewTaskTags] = useState("");
   const [isInboxComposerOpen, setIsInboxComposerOpen] = useState(false);
@@ -126,6 +121,8 @@ export function WorkspaceApp() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDetails, setEditDetails] = useState("");
+  const [editRemindOn, setEditRemindOn] = useState("");
+  const [editDueBy, setEditDueBy] = useState("");
   const [editProject, setEditProject] = useState("");
   const [editTags, setEditTags] = useState("");
   const [threadDrafts, setThreadDrafts] = useState<Record<string, ThreadDraft>>({});
@@ -212,37 +209,6 @@ export function WorkspaceApp() {
 
     window.localStorage.setItem(agentConfigStorageKey, JSON.stringify(agentConfig));
   }, [agentConfig, hasLoadedAgentConfig]);
-
-  /**
-   * Hydrates saved task grouping mode preference after mount.
-   */
-  useEffect(() => {
-    const savedMode = window.localStorage.getItem(taskGroupingModeStorageKey);
-
-    if (!savedMode) {
-      setHasLoadedGroupingMode(true);
-      return;
-    }
-
-    try {
-      setTaskGroupingMode(normalizeTaskGroupingMode(savedMode));
-    } catch {
-      setTaskGroupingMode(defaultTaskGroupingMode);
-    }
-
-    setHasLoadedGroupingMode(true);
-  }, []);
-
-  /**
-   * Persists task grouping mode preference after the initial browser hydration is complete.
-   */
-  useEffect(() => {
-    if (!hasLoadedGroupingMode) {
-      return;
-    }
-
-    window.localStorage.setItem(taskGroupingModeStorageKey, taskGroupingMode);
-  }, [taskGroupingMode, hasLoadedGroupingMode]);
 
   /**
    * Hydrates the selected theme option and mode after mount so previews persist across refreshes.
@@ -344,6 +310,8 @@ export function WorkspaceApp() {
     setIsInboxComposerOpen(false);
     setNewTaskTitle("");
     setNewTaskDetails("");
+    setNewTaskRemindOn("");
+    setNewTaskDueBy("");
     setNewTaskProject("");
     setNewTaskTags("");
   }, [activeMenu]);
@@ -519,12 +487,16 @@ export function WorkspaceApp() {
       addTask(currentWorkspace, {
         title: newTaskTitle,
         details: newTaskDetails,
+        remindOn: newTaskRemindOn,
+        dueBy: newTaskDueBy,
         projectId: newTaskProject,
         tags: parseTagsFromString(newTaskTags),
       }),
     );
     setNewTaskTitle("");
     setNewTaskDetails("");
+    setNewTaskRemindOn("");
+    setNewTaskDueBy("");
     setNewTaskProject("");
     setNewTaskTags("");
   }
@@ -559,6 +531,8 @@ export function WorkspaceApp() {
     setEditingTaskId(task.id);
     setEditTitle(task.title);
     setEditDetails(task.details);
+    setEditRemindOn(task.remindOn);
+    setEditDueBy(task.dueBy);
     setEditProject(readProjectPickerValue(task.projectId));
     setEditTags(task.tags.join(", "));
   }
@@ -573,6 +547,8 @@ export function WorkspaceApp() {
 
     const nextTitle = editTitle;
     const nextDetails = editDetails;
+    const nextRemindOn = editRemindOn;
+    const nextDueBy = editDueBy;
     const nextProject = editProject;
     const nextTags = parseTagsFromString(editTags);
 
@@ -581,6 +557,8 @@ export function WorkspaceApp() {
         taskId,
         title: nextTitle,
         details: nextDetails,
+        remindOn: nextRemindOn,
+        dueBy: nextDueBy,
         projectId: nextProject,
         tags: nextTags,
       }),
@@ -596,6 +574,8 @@ export function WorkspaceApp() {
     setEditingTaskId(null);
     setEditTitle("");
     setEditDetails("");
+    setEditRemindOn("");
+    setEditDueBy("");
     setEditProject("");
     setEditTags("");
   }
@@ -1146,14 +1126,18 @@ export function WorkspaceApp() {
       return (
         <InboxView
           editDetails={editDetails}
+          editDueBy={editDueBy}
           editingTaskId={editingTaskId}
           focusTitleInputSignal={inboxComposerFocusSignal}
           editProject={editProject}
+          editRemindOn={editRemindOn}
           editTags={editTags}
           editTitle={editTitle}
           isComposerExpanded={isInboxComposerOpen}
           newTaskDetails={newTaskDetails}
+          newTaskDueBy={newTaskDueBy}
           newTaskProject={newTaskProject}
+          newTaskRemindOn={newTaskRemindOn}
           newTaskTags={newTaskTags}
           newTaskTitle={newTaskTitle}
           onAddTask={handleAddTask}
@@ -1163,13 +1147,44 @@ export function WorkspaceApp() {
           onOpenTask={handleOpenTask}
           onSaveEdit={handleSaveEdit}
           onSetEditDetails={setEditDetails}
+          onSetEditDueBy={setEditDueBy}
           onSetEditProject={setEditProject}
+          onSetEditRemindOn={setEditRemindOn}
           onSetEditTags={setEditTags}
           onSetEditTitle={setEditTitle}
           onSetNewTaskDetails={setNewTaskDetails}
+          onSetNewTaskDueBy={setNewTaskDueBy}
           onSetNewTaskProject={setNewTaskProject}
+          onSetNewTaskRemindOn={setNewTaskRemindOn}
           onSetNewTaskTags={setNewTaskTags}
           onSetNewTaskTitle={setNewTaskTitle}
+          onToggleTaskCompleted={handleToggleTaskCompleted}
+          projects={visibleProjects}
+          tasks={activeTasks}
+        />
+      );
+    }
+
+    if (activeMenu === "tasks") {
+      return (
+        <TasksView
+          editDetails={editDetails}
+          editDueBy={editDueBy}
+          editingTaskId={editingTaskId}
+          editProject={editProject}
+          editRemindOn={editRemindOn}
+          editTags={editTags}
+          editTitle={editTitle}
+          onCancelEdit={handleCancelEdit}
+          onDeleteTask={handleDeleteTask}
+          onOpenTask={handleOpenTask}
+          onSaveEdit={handleSaveEdit}
+          onSetEditDetails={setEditDetails}
+          onSetEditDueBy={setEditDueBy}
+          onSetEditProject={setEditProject}
+          onSetEditRemindOn={setEditRemindOn}
+          onSetEditTags={setEditTags}
+          onSetEditTitle={setEditTitle}
           onToggleTaskCompleted={handleToggleTaskCompleted}
           projects={visibleProjects}
           tasks={activeTasks}
@@ -1246,8 +1261,10 @@ export function WorkspaceApp() {
             activeProviderLabel={activeProviderLabel}
             activeProviderModel={activeProviderSettings.model}
             editDetails={editDetails}
+            editDueBy={editDueBy}
             editingTaskId={editingTaskId}
             editProject={editProject}
+            editRemindOn={editRemindOn}
             editTags={editTags}
             editTitle={editTitle}
             initiatives={workspace.initiatives}
@@ -1275,7 +1292,9 @@ export function WorkspaceApp() {
               })
             }
             onSetEditDetails={setEditDetails}
+            onSetEditDueBy={setEditDueBy}
             onSetEditProject={setEditProject}
+            onSetEditRemindOn={setEditRemindOn}
             onSetEditTags={setEditTags}
             onSetEditTitle={setEditTitle}
             onThreadDraftChange={(projectId, message) =>

@@ -15,13 +15,17 @@ function buildComposerProps() {
     focusTitleInputSignal: 0,
     isExpanded: false,
     newTaskDetails: "",
+    newTaskDueBy: "",
     newTaskProject: "",
+    newTaskRemindOn: "",
     newTaskTags: "",
     newTaskTitle: "",
     onCollapse: vi.fn(),
     onExpand: vi.fn(),
     onSetNewTaskDetails: vi.fn(),
+    onSetNewTaskDueBy: vi.fn(),
     onSetNewTaskProject: vi.fn(),
+    onSetNewTaskRemindOn: vi.fn(),
     onSetNewTaskTags: vi.fn(),
     onSetNewTaskTitle: vi.fn(),
     onSubmit: vi.fn(),
@@ -98,6 +102,8 @@ describe("inbox task composer", () => {
     expect(markup).toContain("Add details...");
     expect(markup).toContain("Task title");
     expect(markup).toContain("Add tag");
+    expect(markup).toContain('aria-label="Remind on"');
+    expect(markup).toContain('aria-label="Due by"');
     expect(markup).toContain("⌘↵");
     expect(markup).toContain('aria-label="Remove planning tag"');
     expect(markup).toContain('data-slot="select-trigger"');

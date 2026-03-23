@@ -35,7 +35,7 @@ export interface Task {
   title: string;
   details: string;
   projectId: string | null;
-  deadline: string;
+  dueBy: string;
   tags: string[];
   agentCalls: AgentCall[];
   createdAt: string;
@@ -145,7 +145,7 @@ export async function createTask(data: {
   title: string;
   details: string;
   projectId: string;
-  deadline: string;
+  dueBy: string;
   tags: string[];
 }): Promise<Task> {
   const response = await fetch("/api/tasks", {
@@ -162,7 +162,7 @@ export async function updateTask(data: {
   title: string;
   details: string;
   projectId: string;
-  deadline: string;
+  dueBy: string;
   tags: string[];
 }): Promise<Task> {
   const response = await fetch("/api/tasks", {

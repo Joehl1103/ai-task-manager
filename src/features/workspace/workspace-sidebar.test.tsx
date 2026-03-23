@@ -31,6 +31,7 @@ describe("workspace sidebar", () => {
 
     expect(markup).toContain("workspace-sidebar-shell");
     expect(markup).toContain("Inbox");
+    expect(markup).toContain("Tasks");
     expect(markup).toContain("Projects");
     expect(markup).toContain("Configuration");
     expect(markup).toContain("Relay MVP");

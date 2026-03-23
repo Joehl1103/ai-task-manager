@@ -39,12 +39,16 @@ describe("workspace operations", () => {
       title: "Review sprint goals",
       details: "Check alignment with Q1 objectives.",
       projectId: "project-1",
+      remindOn: "2026-03-27",
+      dueBy: "2026-03-30",
     });
 
     expect(updatedWorkspace.tasks[0]).toMatchObject({
       title: "Review sprint goals",
       details: "Check alignment with Q1 objectives.",
       projectId: "project-1",
+      remindOn: "2026-03-27",
+      dueBy: "2026-03-30",
     });
   });
 
@@ -111,11 +115,15 @@ describe("workspace operations", () => {
       taskId: "task-1",
       title: "Tighten the starter task manager",
       details: "Only keep the features needed for a first pass.",
+      remindOn: "2026-04-01",
+      dueBy: "2026-04-03",
     });
 
     expect(updatedWorkspace.tasks.find((task) => task.id === "task-1")).toMatchObject({
       title: "Tighten the starter task manager",
       details: "Only keep the features needed for a first pass.",
+      remindOn: "2026-04-01",
+      dueBy: "2026-04-03",
     });
   });
 

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { inboxProjectId, noProjectProjectId } from "@/features/workspace/projects";
-import { normalizeWorkspaceSnapshot, workspaceStorageKey } from "@/features/workspace/storage";
+import {
+  normalizeWorkspaceSnapshot,
+  tasksFilterStorageKey,
+  workspaceStorageKey,
+} from "@/features/workspace/storage";
 
 describe("workspace storage", () => {
   /**
@@ -9,6 +13,7 @@ describe("workspace storage", () => {
    */
   it("uses a stable storage key", () => {
     expect(workspaceStorageKey).toBe("relay-workspace");
+    expect(tasksFilterStorageKey).toBe("relay-tasks-filter");
   });
 
   /**
@@ -121,6 +126,53 @@ describe("workspace storage", () => {
       content: "",
       createdAt: "Unknown time",
     });
+  });
+
+  /**
+   * Migrates saved task deadline values into dueBy and drops the deprecated task deadline field.
+   */
+  it("migrates task deadline into dueBy", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      initiatives: [],
+      projects: [],
+      tasks: [
+        {
+          id: "task-legacy",
+          title: "Legacy task",
+          details: "",
+          projectId: "",
+          deadline: "2026-03-30",
+          dueBy: "",
+          remindOn: "",
+        },
+      ],
+    });
+
+    expect(workspace.tasks[0]?.dueBy).toBe("2026-03-30");
+    expect("deadline" in (workspace.tasks[0] ?? {})).toBe(false);
+  });
+
+  /**
+   * Keeps dueBy as the source of truth when both legacy and current fields are present.
+   */
+  it("prefers dueBy when both dueBy and deadline exist", () => {
+    const workspace = normalizeWorkspaceSnapshot({
+      initiatives: [],
+      projects: [],
+      tasks: [
+        {
+          id: "task-current",
+          title: "Current task",
+          details: "",
+          projectId: "",
+          deadline: "2026-03-30",
+          dueBy: "2026-04-01",
+          remindOn: "",
+        },
+      ],
+    });
+
+    expect(workspace.tasks[0]?.dueBy).toBe("2026-04-01");
   });
 
   /**

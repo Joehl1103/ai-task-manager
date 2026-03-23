@@ -27,7 +27,7 @@ export const tasks = pgTable("tasks", {
   projectId: uuid("project_id").references(() => projects.id, {
     onDelete: "set null",
   }),
-  deadline: text("deadline").notNull().default(""),
+  dueBy: text("deadline").notNull().default(""),
   tags: text("tags").array().notNull().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
