@@ -74,6 +74,7 @@ import {
   appendHumanThreadMessage,
   deleteTask,
   deleteThreadMessage,
+  type TaskComposerSubmitData,
   QuickAddDialog,
   readSelectedTask,
   toggleTaskCompleted,
@@ -124,13 +125,6 @@ export function WorkspaceApp() {
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const [activeGlobalSearchIndex, setActiveGlobalSearchIndex] = useState(0);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskDetails, setNewTaskDetails] = useState("");
-  const [newTaskRemindOn, setNewTaskRemindOn] = useState("");
-  const [newTaskDueBy, setNewTaskDueBy] = useState("");
-  const [newTaskProject, setNewTaskProject] = useState("");
-  const [newTaskTags, setNewTaskTags] = useState("");
-  const [isInboxComposerOpen, setIsInboxComposerOpen] = useState(false);
   const [inboxComposerFocusSignal, setInboxComposerFocusSignal] = useState(0);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -147,12 +141,6 @@ export function WorkspaceApp() {
   const [modelErrorKeyId, setModelErrorKeyId] = useState<string | null>(null);
   const [modelFetchError, setModelFetchError] = useState<string | null>(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [quickAddTitle, setQuickAddTitle] = useState("");
-  const [quickAddDetails, setQuickAddDetails] = useState("");
-  const [quickAddRemindOn, setQuickAddRemindOn] = useState("");
-  const [quickAddDueBy, setQuickAddDueBy] = useState("");
-  const [quickAddProject, setQuickAddProject] = useState("");
-  const [quickAddTags, setQuickAddTags] = useState("");
 
   const activeProvider: ProviderId = "openai";
   const activeProviderSettings = agentConfig.providers.openai;
@@ -365,12 +353,6 @@ export function WorkspaceApp() {
         }
 
         event.preventDefault();
-
-        if (!isInboxComposerOpen) {
-          setNewTaskProject("");
-          setIsInboxComposerOpen(true);
-        }
-
         setInboxComposerFocusSignal((currentSignal) => currentSignal + 1);
         return;
       }
@@ -422,25 +404,7 @@ export function WorkspaceApp() {
     return () => {
       window.removeEventListener("keydown", handleWindowKeyDown);
     };
-  }, [shortcutMap, isGlobalSearchOpen, isQuickAddOpen, activeMenu, isInboxComposerOpen, selectedTaskId]);
-
-  /**
-   * Clears inbox-only draft state when the user leaves the inbox view so stale composer state does
-   * not leak into later visits.
-   */
-  useEffect(() => {
-    if (activeMenu === "inbox") {
-      return;
-    }
-
-    setIsInboxComposerOpen(false);
-    setNewTaskTitle("");
-    setNewTaskDetails("");
-    setNewTaskRemindOn("");
-    setNewTaskDueBy("");
-    setNewTaskProject("");
-    setNewTaskTags("");
-  }, [activeMenu]);
+  }, [shortcutMap, isGlobalSearchOpen, isQuickAddOpen, activeMenu, selectedTaskId]);
 
   /**
    * Clears project-detail task editing state when the selected task no longer belongs to the
@@ -611,7 +575,10 @@ export function WorkspaceApp() {
     }
   }
 
-  function handleAddTaskFromProject(data: { title: string; details: string; projectId: string; tags: string[]; dueBy?: string; remindOn?: string }) {
+  /**
+   * Shared handler for all task composers — receives the final submit payload and persists it.
+   */
+  function handleAddTaskFromComposer(data: TaskComposerSubmitData) {
     setWorkspace((current) => {
       const next = addTask(current, data);
       const created = next.tasks.find((t) => !current.tasks.some((ct) => ct.id === t.id));
@@ -631,7 +598,6 @@ export function WorkspaceApp() {
     setSelectedProjectId(projectId);
     setIsProjectsExpanded(true);
     setIsSidebarVisible(true);
-    setNewTaskProject(projectId);
   }
 
   /**
@@ -642,84 +608,6 @@ export function WorkspaceApp() {
       .split(",")
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
-  }
-
-  /**
-   * Creates a task when the title is present, then clears the draft fields for the next entry.
-   */
-  function handleAddTask() {
-    if (!newTaskTitle.trim()) {
-      return;
-    }
-
-    setWorkspace((currentWorkspace) => {
-      const next = addTask(currentWorkspace, {
-        title: newTaskTitle,
-        details: newTaskDetails,
-        remindOn: newTaskRemindOn,
-        dueBy: newTaskDueBy,
-        projectId: newTaskProject,
-        tags: parseTagsFromString(newTaskTags),
-      });
-      const created = next.tasks.find((t) => !currentWorkspace.tasks.some((ct) => ct.id === t.id));
-
-      if (created) {
-        persistenceRef.current.saveTask(created);
-      }
-
-      return next;
-    });
-    setNewTaskTitle("");
-    setNewTaskDetails("");
-    setNewTaskRemindOn("");
-    setNewTaskDueBy("");
-    setNewTaskProject("");
-    setNewTaskTags("");
-  }
-
-  /**
-   * Creates a task from the global quick-add dialog, persists it, and resets its draft fields.
-   */
-  function handleQuickAddTask() {
-    if (!quickAddTitle.trim()) {
-      return;
-    }
-
-    setWorkspace((currentWorkspace) => {
-      const next = addTask(currentWorkspace, {
-        title: quickAddTitle,
-        details: quickAddDetails,
-        remindOn: quickAddRemindOn,
-        dueBy: quickAddDueBy,
-        projectId: quickAddProject,
-        tags: parseTagsFromString(quickAddTags),
-      });
-      const created = next.tasks.find((t) => !currentWorkspace.tasks.some((ct) => ct.id === t.id));
-
-      if (created) {
-        persistenceRef.current.saveTask(created);
-      }
-
-      return next;
-    });
-    resetQuickAddDraft();
-  }
-
-  /**
-   * Closes the quick-add dialog and resets its draft fields so the next open starts clean.
-   */
-  function handleCloseQuickAdd() {
-    setIsQuickAddOpen(false);
-    resetQuickAddDraft();
-  }
-
-  function resetQuickAddDraft() {
-    setQuickAddTitle("");
-    setQuickAddDetails("");
-    setQuickAddRemindOn("");
-    setQuickAddDueBy("");
-    setQuickAddProject("");
-    setQuickAddTags("");
   }
 
   /**
@@ -742,10 +630,6 @@ export function WorkspaceApp() {
 
     if (editingTaskId === task.id && selectedTaskId === task.id) {
       return;
-    }
-
-    if (activeMenu === "inbox") {
-      setIsInboxComposerOpen(false);
     }
 
     setSelectedTaskId(task.id);
@@ -1403,16 +1287,8 @@ export function WorkspaceApp() {
           editRemindOn={editRemindOn}
           editTags={editTags}
           editTitle={editTitle}
-          isComposerExpanded={isInboxComposerOpen}
-          newTaskDetails={newTaskDetails}
-          newTaskDueBy={newTaskDueBy}
-          newTaskProject={newTaskProject}
-          newTaskRemindOn={newTaskRemindOn}
-          newTaskTags={newTaskTags}
-          newTaskTitle={newTaskTitle}
-          onAddTask={handleAddTask}
+          onAddTask={handleAddTaskFromComposer}
           onCancelEdit={handleCancelEdit}
-          onSetComposerExpanded={setIsInboxComposerOpen}
           onDeleteTask={handleDeleteTask}
           onOpenTask={handleOpenTask}
           onSaveEdit={handleSaveEdit}
@@ -1422,12 +1298,6 @@ export function WorkspaceApp() {
           onSetEditRemindOn={setEditRemindOn}
           onSetEditTags={setEditTags}
           onSetEditTitle={setEditTitle}
-          onSetNewTaskDetails={setNewTaskDetails}
-          onSetNewTaskDueBy={setNewTaskDueBy}
-          onSetNewTaskProject={setNewTaskProject}
-          onSetNewTaskRemindOn={setNewTaskRemindOn}
-          onSetNewTaskTags={setNewTaskTags}
-          onSetNewTaskTitle={setNewTaskTitle}
           onToggleTaskCompleted={handleToggleTaskCompleted}
           projects={visibleProjects}
           tasks={activeTasks}
@@ -1445,7 +1315,7 @@ export function WorkspaceApp() {
           editRemindOn={editRemindOn}
           editTags={editTags}
           editTitle={editTitle}
-          onAddTask={handleAddTaskFromProject}
+          onAddTask={handleAddTaskFromComposer}
           onCancelEdit={handleCancelEdit}
           onDeleteTask={handleDeleteTask}
           onOpenTask={handleOpenTask}
@@ -1539,7 +1409,7 @@ export function WorkspaceApp() {
             editTags={editTags}
             editTitle={editTitle}
             initiatives={workspace.initiatives}
-            onAddTask={handleAddTaskFromProject}
+            onAddTask={handleAddTaskFromComposer}
             onBack={() => setSelectedProjectId(null)}
             onCancelEdit={handleCancelEdit}
             onDeleteProject={handleDeleteProject}
@@ -1665,22 +1535,10 @@ export function WorkspaceApp() {
       />
       <QuickAddDialog
         allTags={allTaskTags}
-        details={quickAddDetails}
-        dueBy={quickAddDueBy}
         isOpen={isQuickAddOpen}
-        onClose={handleCloseQuickAdd}
-        onDetailsChange={setQuickAddDetails}
-        onDueByChange={setQuickAddDueBy}
-        onProjectChange={setQuickAddProject}
-        onRemindOnChange={setQuickAddRemindOn}
-        onSubmit={handleQuickAddTask}
-        onTagsChange={setQuickAddTags}
-        onTitleChange={setQuickAddTitle}
-        projectId={quickAddProject}
+        onClose={() => setIsQuickAddOpen(false)}
+        onSubmit={handleAddTaskFromComposer}
         projects={visibleProjects}
-        remindOn={quickAddRemindOn}
-        tags={quickAddTags}
-        title={quickAddTitle}
       />
       {persistenceMode === "local" && <DatabaseUnavailableOverlay />}
       <div

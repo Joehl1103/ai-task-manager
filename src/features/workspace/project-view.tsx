@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, MoreHorizontal, Plus } from "lucide-react";
 
 import { featureFlags } from "@/features/feature-flags";
@@ -24,7 +24,8 @@ import {
 import {
   collectTaskTags,
   readDateBadges,
-  TaskEditorFields,
+  TaskComposer,
+  type TaskComposerSubmitData,
   TaskInlineEditor,
 } from "@/features/workspace/tasks";
 import {
@@ -230,7 +231,7 @@ interface ProjectDetailViewProps {
   editTags: string;
   editTitle: string;
   initiatives: Initiative[];
-  onAddTask: (data: { title: string; details: string; projectId: string; tags: string[]; dueBy?: string; remindOn?: string }) => void;
+  onAddTask: (data: TaskComposerSubmitData) => void;
   onBack: () => void;
   onCancelEdit: () => void;
   onDeleteProject: (projectId: string) => void;
@@ -388,12 +389,6 @@ function ProjectDetailContent({
   const [editName, setEditName] = useState(project.name);
   const [editInitiativeId, setEditInitiativeId] = useState(project.initiativeId || "");
   const [editDeadline, setEditDeadline] = useState(project.deadline);
-  const [isTaskComposerOpen, setIsTaskComposerOpen] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskDetails, setNewTaskDetails] = useState("");
-  const [newTaskDueBy, setNewTaskDueBy] = useState("");
-  const [newTaskRemindOn, setNewTaskRemindOn] = useState("");
-  const [newTaskTags, setNewTaskTags] = useState("");
   const [isThreadOpen, setIsThreadOpen] = useState(false);
 
   const activeProject = project;
@@ -417,50 +412,6 @@ function ProjectDetailContent({
       deadline: editDeadline,
     });
     setIsEditing(false);
-  }
-
-  function handleAddTask() {
-    if (!newTaskTitle.trim()) {
-      return;
-    }
-
-    const tags = newTaskTags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
-
-    onAddTask({
-      title: newTaskTitle,
-      details: newTaskDetails,
-      projectId: activeProject.id,
-      tags,
-      dueBy: newTaskDueBy,
-      remindOn: newTaskRemindOn,
-    });
-    setNewTaskTitle("");
-    setNewTaskDetails("");
-    setNewTaskDueBy("");
-    setNewTaskRemindOn("");
-    setNewTaskTags("");
-    setIsTaskComposerOpen(false);
-  }
-
-  function handleCollapseTaskComposer() {
-    setIsTaskComposerOpen(false);
-    setNewTaskTitle("");
-    setNewTaskDetails("");
-    setNewTaskDueBy("");
-    setNewTaskRemindOn("");
-    setNewTaskTags("");
-  }
-
-  function handleComposerKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "Escape") {
-      return;
-    }
-
-    event.preventDefault();
-    handleCollapseTaskComposer();
   }
 
   return (
@@ -573,38 +524,13 @@ function ProjectDetailContent({
         </div>
 
         <div className="mt-4">
-          {isTaskComposerOpen ? (
-            <TaskEditorFields
-              allTags={allTaskTags}
-              details={newTaskDetails}
-              dueBy={newTaskDueBy}
-              isSubmitDisabled={!newTaskTitle.trim()}
-              onCancel={handleCollapseTaskComposer}
-              onDetailsChange={setNewTaskDetails}
-              onDueByChange={setNewTaskDueBy}
-              onKeyDown={handleComposerKeyDown}
-              onProjectChange={() => {}}
-              onRemindOnChange={setNewTaskRemindOn}
-              onSubmit={handleAddTask}
-              onTagsChange={setNewTaskTags}
-              onTitleChange={setNewTaskTitle}
-              projectId={activeProject.id}
-              projects={visibleProjects}
-              remindOn={newTaskRemindOn}
-              submitHint="⌘↵"
-              submitLabel="Save"
-              tags={newTaskTags}
-              title={newTaskTitle}
-            />
-          ) : (
-            <button
-              className="text-left text-sm font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
-              onClick={() => setIsTaskComposerOpen(true)}
-              type="button"
-            >
-              + Add task
-            </button>
-          )}
+          <TaskComposer
+            allTags={allTaskTags}
+            defaultProjectId={activeProject.id}
+            onSubmit={onAddTask}
+            projects={visibleProjects}
+            submitLabel="Save"
+          />
         </div>
 
         {childTasks.length === 0 ? (

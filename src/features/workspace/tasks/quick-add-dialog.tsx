@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent } from "react";
+import { type KeyboardEvent, useEffect } from "react";
 
 import {
   Dialog,
@@ -10,62 +10,59 @@ import {
 } from "@/components/ui/dialog";
 import { type Project } from "@/features/workspace/core";
 
+import { type TaskComposerSubmitData } from "./task-composer";
+import { parseTaskTagString } from "./task-tag-combobox";
 import { TaskEditorFields } from "./task-editor-fields";
+import { useTaskComposerDraft } from "./use-task-composer-draft";
 
 interface QuickAddDialogProps {
   allTags: string[];
-  details: string;
-  dueBy: string;
   isOpen: boolean;
   onClose: () => void;
-  onDetailsChange: (value: string) => void;
-  onDueByChange: (value: string) => void;
-  onProjectChange: (value: string) => void;
-  onRemindOnChange: (value: string) => void;
-  onSubmit: () => void;
-  onTagsChange: (value: string) => void;
-  onTitleChange: (value: string) => void;
-  projectId: string;
+  onSubmit: (data: TaskComposerSubmitData) => void;
   projects: Project[];
-  remindOn: string;
-  tags: string;
-  title: string;
 }
 
 /**
  * A global quick-add overlay for capturing tasks from any view via ⌘⇧N.
- * Reuses the shared TaskEditorFields inside a Radix Dialog that drops from the
- * top, matching the GlobalSearchDialog pattern.
+ * Manages its own draft state internally so the parent only needs to handle
+ * open/close and the final submit payload.
  */
 export function QuickAddDialog({
   allTags,
-  details,
-  dueBy,
   isOpen,
   onClose,
-  onDetailsChange,
-  onDueByChange,
-  onProjectChange,
-  onRemindOnChange,
   onSubmit,
-  onTagsChange,
-  onTitleChange,
-  projectId,
   projects,
-  remindOn,
-  tags,
-  title,
 }: QuickAddDialogProps) {
+  const { draft, setField, resetDraft } = useTaskComposerDraft();
+
+  /**
+   * Resets draft fields whenever the dialog closes so each open starts clean.
+   */
+  useEffect(() => {
+    if (!isOpen) {
+      resetDraft();
+    }
+  }, [isOpen, resetDraft]);
+
   if (!isOpen) {
     return null;
   }
 
   function handleSubmitAndClose() {
-    if (!title.trim()) {
+    if (!draft.title.trim()) {
       return;
     }
 
-    onSubmit();
+    onSubmit({
+      title: draft.title,
+      details: draft.details,
+      dueBy: draft.dueBy,
+      remindOn: draft.remindOn,
+      projectId: draft.projectId,
+      tags: parseTaskTagString(draft.tags),
+    });
     onClose();
   }
 
@@ -90,23 +87,23 @@ export function QuickAddDialog({
         <div className="p-3">
           <TaskEditorFields
             allTags={allTags}
-            details={details}
-            dueBy={dueBy}
-            isSubmitDisabled={!title.trim()}
-            onDetailsChange={onDetailsChange}
-            onDueByChange={onDueByChange}
+            details={draft.details}
+            dueBy={draft.dueBy}
+            isSubmitDisabled={!draft.title.trim()}
+            onDetailsChange={(value) => setField("details", value)}
+            onDueByChange={(value) => setField("dueBy", value)}
             onKeyDown={handleEditorKeyDown}
-            onProjectChange={onProjectChange}
-            onRemindOnChange={onRemindOnChange}
+            onProjectChange={(value) => setField("projectId", value)}
+            onRemindOnChange={(value) => setField("remindOn", value)}
             onSubmit={handleSubmitAndClose}
-            onTagsChange={onTagsChange}
-            onTitleChange={onTitleChange}
-            projectId={projectId}
+            onTagsChange={(value) => setField("tags", value)}
+            onTitleChange={(value) => setField("title", value)}
+            projectId={draft.projectId}
             projects={projects}
-            remindOn={remindOn}
+            remindOn={draft.remindOn}
             submitHint="⌘↵"
-            tags={tags}
-            title={title}
+            tags={draft.tags}
+            title={draft.title}
           />
         </div>
 
