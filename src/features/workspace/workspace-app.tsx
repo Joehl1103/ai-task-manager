@@ -68,11 +68,13 @@ import {
 import {
   buildDeleteTaskConfirmationMessage,
   buildDeleteThreadMessageConfirmationMessage,
+  collectTaskTags,
   addTask,
   appendAgentThreadMessage,
   appendHumanThreadMessage,
   deleteTask,
   deleteThreadMessage,
+  QuickAddDialog,
   readSelectedTask,
   toggleTaskCompleted,
   updateTask,
@@ -135,6 +137,13 @@ export function WorkspaceApp() {
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [modelErrorKeyId, setModelErrorKeyId] = useState<string | null>(null);
   const [modelFetchError, setModelFetchError] = useState<string | null>(null);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [quickAddTitle, setQuickAddTitle] = useState("");
+  const [quickAddDetails, setQuickAddDetails] = useState("");
+  const [quickAddRemindOn, setQuickAddRemindOn] = useState("");
+  const [quickAddDueBy, setQuickAddDueBy] = useState("");
+  const [quickAddProject, setQuickAddProject] = useState("");
+  const [quickAddTags, setQuickAddTags] = useState("");
 
   const activeProvider: ProviderId = "openai";
   const activeProviderSettings = agentConfig.providers.openai;
@@ -151,6 +160,7 @@ export function WorkspaceApp() {
     buildGlobalSearchResults(workspace),
     globalSearchQuery,
   );
+  const allTaskTags = collectTaskTags(workspace.tasks);
 
   const persistenceRef = useRef<WorkspacePersistence>(createLocalStoragePersistence());
 
@@ -317,7 +327,7 @@ export function WorkspaceApp() {
    */
   useEffect(() => {
     function handleWindowKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n" && !event.shiftKey && !event.altKey) {
         if (activeMenu !== "inbox" || selectedTaskId !== null) {
           return;
         }
@@ -338,6 +348,35 @@ export function WorkspaceApp() {
       window.removeEventListener("keydown", handleWindowKeyDown);
     };
   }, [activeMenu, isInboxComposerOpen, selectedTaskId]);
+
+  /**
+   * Opens the quick-add dialog from any view with ⌘⌥⌃N so the user can capture a task without
+   * navigating away from their current context.
+   */
+  useEffect(() => {
+    function handleWindowKeyDown(event: KeyboardEvent) {
+      if (
+        event.metaKey &&
+        event.altKey &&
+        event.ctrlKey &&
+        event.key.toLowerCase() === "n"
+      ) {
+        event.preventDefault();
+
+        if (isQuickAddOpen) {
+          return;
+        }
+
+        setIsQuickAddOpen(true);
+      }
+    }
+
+    window.addEventListener("keydown", handleWindowKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleWindowKeyDown);
+    };
+  }, [isQuickAddOpen]);
 
   /**
    * Clears inbox-only draft state when the user leaves the inbox view so stale composer state does
@@ -590,6 +629,51 @@ export function WorkspaceApp() {
     setNewTaskDueBy("");
     setNewTaskProject("");
     setNewTaskTags("");
+  }
+
+  /**
+   * Creates a task from the global quick-add dialog, persists it, and resets its draft fields.
+   */
+  function handleQuickAddTask() {
+    if (!quickAddTitle.trim()) {
+      return;
+    }
+
+    setWorkspace((currentWorkspace) => {
+      const next = addTask(currentWorkspace, {
+        title: quickAddTitle,
+        details: quickAddDetails,
+        remindOn: quickAddRemindOn,
+        dueBy: quickAddDueBy,
+        projectId: quickAddProject,
+        tags: parseTagsFromString(quickAddTags),
+      });
+      const created = next.tasks.find((t) => !currentWorkspace.tasks.some((ct) => ct.id === t.id));
+
+      if (created) {
+        persistenceRef.current.saveTask(created);
+      }
+
+      return next;
+    });
+    resetQuickAddDraft();
+  }
+
+  /**
+   * Closes the quick-add dialog and resets its draft fields so the next open starts clean.
+   */
+  function handleCloseQuickAdd() {
+    setIsQuickAddOpen(false);
+    resetQuickAddDraft();
+  }
+
+  function resetQuickAddDraft() {
+    setQuickAddTitle("");
+    setQuickAddDetails("");
+    setQuickAddRemindOn("");
+    setQuickAddDueBy("");
+    setQuickAddProject("");
+    setQuickAddTags("");
   }
 
   /**
@@ -1530,6 +1614,25 @@ export function WorkspaceApp() {
         onSelectResult={handleSelectGlobalSearchResult}
         query={globalSearchQuery}
         results={globalSearchResults}
+      />
+      <QuickAddDialog
+        allTags={allTaskTags}
+        details={quickAddDetails}
+        dueBy={quickAddDueBy}
+        isOpen={isQuickAddOpen}
+        onClose={handleCloseQuickAdd}
+        onDetailsChange={setQuickAddDetails}
+        onDueByChange={setQuickAddDueBy}
+        onProjectChange={setQuickAddProject}
+        onRemindOnChange={setQuickAddRemindOn}
+        onSubmit={handleQuickAddTask}
+        onTagsChange={setQuickAddTags}
+        onTitleChange={setQuickAddTitle}
+        projectId={quickAddProject}
+        projects={visibleProjects}
+        remindOn={quickAddRemindOn}
+        tags={quickAddTags}
+        title={quickAddTitle}
       />
       {persistenceMode === "local" && <DatabaseUnavailableOverlay />}
       <div
