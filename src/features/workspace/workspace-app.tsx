@@ -1540,7 +1540,7 @@ export function WorkspaceApp() {
       >
         <div
           className={cn(
-            "shrink-0 transition-all duration-200 ease-out",
+            "shrink-0 pl-[5px] transition-all duration-200 ease-out",
             isSidebarVisible ? "w-[272px] opacity-100" : "w-8 opacity-100",
           )}
         >

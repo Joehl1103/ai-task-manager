@@ -42,7 +42,9 @@
     ".next/instances/port-3001/types/**/*.ts",
     ".next/instances/port-3001/dev/types/**/*.ts",
     ".next/instances/port-3002/types/**/*.ts",
-    ".next/instances/port-3002/dev/types/**/*.ts"
+    ".next/instances/port-3002/dev/types/**/*.ts",
+    ".next/instances/port-3004/types/**/*.ts",
+    ".next/instances/port-3004/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

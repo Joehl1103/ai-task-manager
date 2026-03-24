@@ -88,7 +88,6 @@ export function TasksView({
   onToggleTaskCompleted,
 }: TasksViewProps) {
   const visibleProjects = filterVisibleProjects(projects);
-  const allTags = collectTaskTags(tasks);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDetails, setNewTaskDetails] = useState("");
@@ -120,9 +119,8 @@ export function TasksView({
       return createDefaultTaskFilters();
     }
   });
-
   const allTags = useMemo(() => collectTaskTags(tasks), [tasks]);
-  const filteredTasks = useMemo(() => filterTasks(tasks, filters, new Date()), [filters, tasks]);
+  const filteredTasks = useMemo(() => filterTasks(tasks, filters, new Date()), [tasks, filters]);
   const groups = useMemo(
     () => (groupingMode === "tag" ? groupTasksByTag(filteredTasks) : groupTasksByProject(filteredTasks, visibleProjects)),
     [filteredTasks, groupingMode, visibleProjects],
