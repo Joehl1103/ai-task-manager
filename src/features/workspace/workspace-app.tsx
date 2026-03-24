@@ -91,6 +91,13 @@ import {
   workspaceThemeSelectionStorageKey,
   type WorkspaceThemeSelection,
 } from "@/features/workspace/theme";
+import {
+  createDefaultShortcutMap,
+  matchesBinding,
+  normalizeShortcutMap,
+  type WorkspaceShortcutMap,
+  workspaceShortcutsStorageKey,
+} from "@/features/workspace/shortcuts";
 import { cn } from "@/lib/utils";
 
 /**
@@ -102,6 +109,7 @@ export function WorkspaceApp() {
   const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
   const [hasLoadedAgentConfig, setHasLoadedAgentConfig] = useState(false);
   const [hasLoadedThemeSelection, setHasLoadedThemeSelection] = useState(false);
+  const [hasLoadedShortcuts, setHasLoadedShortcuts] = useState(false);
   const [persistenceMode, setPersistenceMode] = useState<"api" | "local" | null>(null);
   const [activeMenu, setActiveMenu] = useState(createDefaultWorkspaceMenu);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -112,6 +120,7 @@ export function WorkspaceApp() {
   const [themeSelection, setThemeSelection] = useState<WorkspaceThemeSelection>(
     defaultWorkspaceThemeSelection,
   );
+  const [shortcutMap, setShortcutMap] = useState<WorkspaceShortcutMap>(createDefaultShortcutMap);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const [activeGlobalSearchIndex, setActiveGlobalSearchIndex] = useState(0);
@@ -296,78 +305,115 @@ export function WorkspaceApp() {
   }, [themeSelection, hasLoadedThemeSelection]);
 
   /**
-   * Opens the global search dialog from anywhere in the workspace with the platform-standard
-   * quick-search shortcut.
+   * Hydrates saved keyboard shortcuts after mount so user customizations persist across refreshes.
    */
   useEffect(() => {
-    function handleWindowKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
+    const savedShortcuts = window.localStorage.getItem(workspaceShortcutsStorageKey);
 
-        if (isGlobalSearchOpen) {
-          return;
-        }
-
-        setGlobalSearchQuery("");
-        setActiveGlobalSearchIndex(0);
-        setIsGlobalSearchOpen(true);
-      }
+    if (!savedShortcuts) {
+      setHasLoadedShortcuts(true);
+      return;
     }
 
-    window.addEventListener("keydown", handleWindowKeyDown);
+    try {
+      setShortcutMap(normalizeShortcutMap(JSON.parse(savedShortcuts)));
+    } catch {
+      setShortcutMap(createDefaultShortcutMap());
+    }
 
-    return () => {
-      window.removeEventListener("keydown", handleWindowKeyDown);
-    };
-  }, [isGlobalSearchOpen]);
+    setHasLoadedShortcuts(true);
+  }, []);
 
   /**
-   * Opens the inbox composer from the platform-standard new-item shortcut only when the inbox
-   * overview is active and no inline task editor is open.
+   * Persists keyboard shortcuts locally after the initial browser hydration is complete.
+   */
+  useEffect(() => {
+    if (!hasLoadedShortcuts) {
+      return;
+    }
+
+    window.localStorage.setItem(workspaceShortcutsStorageKey, JSON.stringify(shortcutMap));
+  }, [shortcutMap, hasLoadedShortcuts]);
+
+  /**
+   * Unified keyboard shortcut listener that dispatches both command and navigation actions
+   * from the user-configurable shortcut map.
    */
   useEffect(() => {
     function handleWindowKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n" && !event.shiftKey && !event.altKey) {
+      /* --- Command shortcuts (fire even from text inputs) --- */
+
+      const globalSearchBinding = shortcutMap.commands["global-search"];
+
+      if (globalSearchBinding && matchesBinding(event, globalSearchBinding)) {
+        event.preventDefault();
+
+        if (!isGlobalSearchOpen) {
+          setGlobalSearchQuery("");
+          setActiveGlobalSearchIndex(0);
+          setIsGlobalSearchOpen(true);
+        }
+
+        return;
+      }
+
+      const newInboxTaskBinding = shortcutMap.commands["new-inbox-task"];
+
+      if (newInboxTaskBinding && matchesBinding(event, newInboxTaskBinding)) {
         if (activeMenu !== "inbox" || selectedTaskId !== null) {
           return;
         }
 
         event.preventDefault();
+
         if (!isInboxComposerOpen) {
           setNewTaskProject("");
           setIsInboxComposerOpen(true);
         }
 
         setInboxComposerFocusSignal((currentSignal) => currentSignal + 1);
+        return;
       }
-    }
 
-    window.addEventListener("keydown", handleWindowKeyDown);
+      const quickAddBinding = shortcutMap.commands["quick-add"];
 
-    return () => {
-      window.removeEventListener("keydown", handleWindowKeyDown);
-    };
-  }, [activeMenu, isInboxComposerOpen, selectedTaskId]);
-
-  /**
-   * Opens the quick-add dialog from any view with ⌘⌥⌃N so the user can capture a task without
-   * navigating away from their current context.
-   */
-  useEffect(() => {
-    function handleWindowKeyDown(event: KeyboardEvent) {
-      if (
-        event.metaKey &&
-        event.altKey &&
-        event.ctrlKey &&
-        event.key.toLowerCase() === "n"
-      ) {
+      if (quickAddBinding && matchesBinding(event, quickAddBinding)) {
         event.preventDefault();
 
-        if (isQuickAddOpen) {
-          return;
+        if (!isQuickAddOpen) {
+          setIsQuickAddOpen(true);
         }
 
-        setIsQuickAddOpen(true);
+        return;
+      }
+
+      /* --- Navigation shortcuts (skip when focus is inside text inputs) --- */
+
+      const target = event.target as HTMLElement | null;
+
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (isGlobalSearchOpen) {
+        return;
+      }
+
+      for (const menu of Object.keys(shortcutMap.navigation) as Array<
+        keyof typeof shortcutMap.navigation
+      >) {
+        const binding = shortcutMap.navigation[menu];
+
+        if (binding && matchesBinding(event, binding)) {
+          event.preventDefault();
+          handleSelectMenu(menu);
+          return;
+        }
       }
     }
 
@@ -376,7 +422,7 @@ export function WorkspaceApp() {
     return () => {
       window.removeEventListener("keydown", handleWindowKeyDown);
     };
-  }, [isQuickAddOpen]);
+  }, [shortcutMap, isGlobalSearchOpen, isQuickAddOpen, activeMenu, isInboxComposerOpen, selectedTaskId]);
 
   /**
    * Clears inbox-only draft state when the user leaves the inbox view so stale composer state does
@@ -1591,8 +1637,10 @@ export function WorkspaceApp() {
         onSaveApiKey={handleSaveApiKey}
         onSavedKeyModelChange={handleSavedKeyModelChange}
         onSetActiveKey={handleSetActiveKey}
+        onShortcutMapChange={setShortcutMap}
         onUpdateSavedKey={handleUpdateSavedKey}
         onThemeSelectionChange={handleSelectTheme}
+        shortcutMap={shortcutMap}
         themeSelection={themeSelection}
       />
     );
