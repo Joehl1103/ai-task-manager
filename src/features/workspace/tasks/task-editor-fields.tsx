@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, type KeyboardEvent, useCallback, useEffect, useRef } from "react";
+import { type ChangeEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +65,10 @@ export function TaskEditorFields({
   title,
 }: TaskEditorFieldsProps) {
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
+  const detailsInputRef = useRef<HTMLTextAreaElement>(null);
+  const projectTriggerRef = useRef<HTMLButtonElement>(null);
+  const remindOnInputRef = useRef<HTMLInputElement>(null);
+  const dueByInputRef = useRef<HTMLInputElement>(null);
   const selectedTags = parseTaskTagString(tags);
 
   /**
@@ -92,7 +96,8 @@ export function TaskEditorFields({
 
   /**
    * Preserves the shared Cmd/Ctrl+Enter submit gesture while still allowing parent-specific
-   * keyboard behavior like Escape-to-collapse.
+   * keyboard behavior like Escape-to-collapse. Also handles single-letter shortcuts to focus
+   * specific fields.
    */
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
@@ -103,6 +108,46 @@ export function TaskEditorFields({
       }
 
       return;
+    }
+
+    // Skip shortcuts if user is typing in an input/textarea
+    const target = event.target as HTMLElement;
+    const isTyping =
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable;
+
+    if (!isTyping) {
+      // Single-letter shortcuts to focus fields
+      if (event.key === "t") {
+        event.preventDefault();
+        titleInputRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "b") {
+        event.preventDefault();
+        detailsInputRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "p") {
+        event.preventDefault();
+        projectTriggerRef.current?.click();
+        return;
+      }
+
+      if (event.key === "r") {
+        event.preventDefault();
+        remindOnInputRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "d") {
+        event.preventDefault();
+        dueByInputRef.current?.focus();
+        return;
+      }
     }
 
     onKeyDown?.(event);
@@ -144,6 +189,7 @@ export function TaskEditorFields({
         className="mt-2 min-h-20 resize-none rounded-none border-0 bg-transparent px-0 py-0 text-[12px] leading-5 focus-visible:border-0 focus-visible:bg-transparent focus-visible:ring-0"
         onChange={(event) => onDetailsChange(event.target.value)}
         placeholder="Add details..."
+        ref={detailsInputRef}
         value={details}
       />
 
@@ -156,6 +202,7 @@ export function TaskEditorFields({
             <SelectTrigger
               aria-label="Project"
               className="h-8 w-auto min-w-[11rem] rounded-none border-0 bg-transparent px-0 py-0 text-xs text-[color:var(--muted)] focus:bg-transparent focus:ring-0"
+              ref={projectTriggerRef}
             >
               <SelectValue placeholder={inboxPickerLabel} />
             </SelectTrigger>
@@ -171,12 +218,14 @@ export function TaskEditorFields({
 
           <TaskDateField
             ariaLabel="Remind on"
+            inputRef={remindOnInputRef}
             label="Remind on"
             onChange={onRemindOnChange}
             value={remindOn}
           />
           <TaskDateField
             ariaLabel="Due by"
+            inputRef={dueByInputRef}
             label="Due by"
             onChange={onDueByChange}
             value={dueBy}
@@ -214,6 +263,7 @@ export function TaskEditorFields({
 
 interface TaskDateFieldProps {
   ariaLabel: string;
+  inputRef?: React.RefObject<HTMLInputElement>;
   label: string;
   onChange: (value: string) => void;
   value: string;
@@ -221,20 +271,32 @@ interface TaskDateFieldProps {
 
 function TaskDateField({
   ariaLabel,
+  inputRef,
   label,
   onChange,
   value,
 }: TaskDateFieldProps) {
   return (
-    <label className="flex min-w-[8.75rem] flex-col gap-1 text-[11px] text-[color:var(--muted)]">
-      <span>{label}</span>
+    <div className="flex min-w-[8.75rem] flex-col gap-1 text-[11px] text-[color:var(--muted)]">
+      <div className="flex items-center justify-between">
+        <span>{label}</span>
+        <button
+          className="text-[10px] text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)] disabled:pointer-events-none disabled:opacity-30"
+          disabled={!value}
+          onClick={() => onChange("")}
+          type="button"
+        >
+          Clear
+        </button>
+      </div>
       <input
         aria-label={ariaLabel}
         className="h-8 rounded-none border-0 border-b border-[color:var(--border)] bg-transparent px-0 py-0 text-xs text-[color:var(--muted-strong)] outline-none transition-colors focus:border-[color:var(--border-strong)]"
         onChange={(event) => onChange(event.target.value)}
+        ref={inputRef}
         type="date"
         value={value}
       />
-    </label>
+    </div>
   );
 }
