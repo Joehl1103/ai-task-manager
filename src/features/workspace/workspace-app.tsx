@@ -1735,17 +1735,6 @@ function DatabaseUnavailableOverlay({ message }: { message: string | null }) {
             "Relay could not connect to the database. The app cannot operate without the persistence layer."}
         </p>
         <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
-          If you changed the connection URL in{" "}
-          <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
-            .env
-          </code>
-          , restart{" "}
-          <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
-            npm run dev
-          </code>{" "}
-          before reloading the page.
-        </p>
-        <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
           Check that your{" "}
           <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
             SUPABASE_DATABASE_URL
