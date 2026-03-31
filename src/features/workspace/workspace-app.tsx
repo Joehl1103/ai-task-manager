@@ -1721,9 +1721,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * A blocking overlay shown when the PostgreSQL-backed API was unreachable at
+ * A blocking overlay shown when the database-backed API was unreachable at
  * startup and the app fell back to browser localStorage. Prevents interaction
- * until the user reloads after starting the database.
+ * until the user reloads after fixing the runtime database configuration.
  */
 function DatabaseUnavailableOverlay({ message }: { message: string | null }) {
   return (
@@ -1746,11 +1746,15 @@ function DatabaseUnavailableOverlay({ message }: { message: string | null }) {
           before reloading the page.
         </p>
         <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
-          For local Postgres, start the database with{" "}
+          Check that your{" "}
           <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
-            docker compose up -d
+            SUPABASE_DATABASE_URL
           </code>{" "}
-          then reload the page.
+          or{" "}
+          <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
+            DATABASE_URL
+          </code>{" "}
+          is configured correctly, then reload the page.
         </p>
         <button
           className="mt-2 w-full rounded-md bg-[color:var(--foreground)] px-4 py-2 text-sm font-medium text-[color:var(--background)] transition-opacity hover:opacity-80"
