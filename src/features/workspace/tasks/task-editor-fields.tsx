@@ -263,7 +263,7 @@ export function TaskEditorFields({
 
 interface TaskDateFieldProps {
   ariaLabel: string;
-  inputRef?: React.RefObject<HTMLInputElement>;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
   label: string;
   onChange: (value: string) => void;
   value: string;

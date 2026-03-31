@@ -141,6 +141,7 @@ export function WorkspaceApp() {
   const [modelErrorKeyId, setModelErrorKeyId] = useState<string | null>(null);
   const [modelFetchError, setModelFetchError] = useState<string | null>(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [databaseErrorMessage, setDatabaseErrorMessage] = useState<string | null>(null);
 
   const activeProvider: ProviderId = "openai";
   const activeProviderSettings = agentConfig.providers.openai;
@@ -177,11 +178,20 @@ export function WorkspaceApp() {
         if (!cancelled) {
           persistenceRef.current = apiPersistence;
           setPersistenceMode("api");
+          setDatabaseErrorMessage(null);
           setWorkspace(snapshot);
           setHasLoadedWorkspace(true);
           return;
         }
-      } catch {
+      } catch (error) {
+        if (!cancelled) {
+          setDatabaseErrorMessage(
+            error instanceof Error && error.message.trim()
+              ? error.message.trim()
+              : "Relay could not load the workspace database.",
+          );
+        }
+
         // API unavailable — fall back to localStorage
       }
 
@@ -1540,7 +1550,9 @@ export function WorkspaceApp() {
         onSubmit={handleAddTaskFromComposer}
         projects={visibleProjects}
       />
-      {persistenceMode === "local" && <DatabaseUnavailableOverlay />}
+      {persistenceMode === "local" && (
+        <DatabaseUnavailableOverlay message={databaseErrorMessage} />
+      )}
       <div
         className={cn(
           "flex min-h-[calc(100vh-3rem)]",
@@ -1713,17 +1725,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * startup and the app fell back to browser localStorage. Prevents interaction
  * until the user reloads after starting the database.
  */
-function DatabaseUnavailableOverlay() {
+function DatabaseUnavailableOverlay({ message }: { message: string | null }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="mx-4 max-w-md space-y-4 rounded-lg bg-[color:var(--surface)] p-8 text-[color:var(--foreground)] shadow-lg">
         <h2 className="text-lg font-semibold">Database unavailable</h2>
         <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
-          Relay could not connect to the database. The app cannot operate
-          without the persistence layer.
+          {message ??
+            "Relay could not connect to the database. The app cannot operate without the persistence layer."}
         </p>
         <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
-          Start the database with{" "}
+          If you changed the connection URL in{" "}
+          <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
+            .env
+          </code>
+          , restart{" "}
+          <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
+            npm run dev
+          </code>{" "}
+          before reloading the page.
+        </p>
+        <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
+          For local Postgres, start the database with{" "}
           <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
             docker compose up -d
           </code>{" "}

@@ -48,6 +48,10 @@ Relay can run without a database — it falls back to browser localStorage. To e
    ```
 
    If you replace the sample DB URL with a hosted Postgres URL, percent-encode reserved password characters such as `$` and `#` inside `DATABASE_URL`.
+   Supabase-hosted setups can also use `SUPABASE_DATABASE_URL`.
+   If `.env.local` also defines the same database keys, `.env.local` wins.
+
+   After changing `.env`, restart `npm run dev`. Reloading the browser alone does not refresh server env vars.
 
 3. Push the schema:
    ```bash
