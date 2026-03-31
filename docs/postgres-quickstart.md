@@ -53,6 +53,9 @@ npm run db:push
 
 This creates all the tables (tasks, projects, initiatives, agent_threads, agent_thread_messages, agent_calls).
 
+If you swap in a hosted Postgres URL, percent-encode reserved password characters inside `DATABASE_URL`.
+For example, `$` should be `%24` and `#` should be `%23`.
+
 ## 3. Connect to the database
 
 ### Option A: psql (command line)
