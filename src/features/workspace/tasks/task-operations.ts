@@ -49,7 +49,7 @@ export function addTask(
   workspace: WorkspaceSnapshot,
   input: AddTaskInput,
 ): WorkspaceSnapshot {
-  const nextTaskId = buildNextTaskId(workspace.tasks);
+  const nextTaskId = crypto.randomUUID();
   const nextTask: Task = {
     id: nextTaskId,
     title: input.title.trim(),
@@ -198,21 +198,6 @@ export function appendAgentThreadMessage(
 }
 
 /**
- * Builds a stable incremental task id so local edits stay predictable during prototyping.
- */
-function buildNextTaskId(tasks: Task[]) {
-  const nextNumber = tasks.reduce((highestNumber, task) => {
-    const currentNumber = Number(task.id.replace("task-", ""));
-
-    return Number.isNaN(currentNumber)
-      ? highestNumber
-      : Math.max(highestNumber, currentNumber);
-  }, 0);
-
-  return `task-${nextNumber + 1}`;
-}
-
-/**
  * Updates the thread that belongs to a task, project, or initiative owner.
  */
 function updateOwnerThread(
@@ -266,7 +251,7 @@ function updateOwnerThread(
  */
 function buildHumanThreadMessage(thread: AgentThread, content: string, now: string): AgentThreadMessage {
   return {
-    id: buildNextThreadMessageId(thread),
+    id: crypto.randomUUID(),
     role: "human",
     content: content.trim(),
     createdAt: now,
@@ -281,7 +266,7 @@ function buildAgentThreadMessage(
   input: AddAgentThreadMessageInput,
 ): AgentThreadMessage {
   return {
-    id: buildNextThreadMessageId(thread),
+    id: crypto.randomUUID(),
     role: "agent",
     content: input.content.trim(),
     createdAt: input.now,
@@ -291,17 +276,3 @@ function buildAgentThreadMessage(
   };
 }
 
-/**
- * Finds the next numeric message id without reusing ids after deletions.
- */
-function buildNextThreadMessageId(thread: AgentThread) {
-  const nextNumber = thread.messages.reduce((highestNumber, message) => {
-    const currentNumber = Number(message.id.replace("message-", ""));
-
-    return Number.isNaN(currentNumber)
-      ? highestNumber
-      : Math.max(highestNumber, currentNumber);
-  }, 0);
-
-  return `message-${nextNumber + 1}`;
-}

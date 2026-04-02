@@ -13,7 +13,7 @@ export function addInitiative(
   workspace: WorkspaceSnapshot,
   input: AddInitiativeInput,
 ): WorkspaceSnapshot {
-  const nextInitiativeId = buildNextInitiativeId(workspace.initiatives);
+  const nextInitiativeId = crypto.randomUUID();
   const nextInitiative: Initiative = {
     id: nextInitiativeId,
     name: input.name.trim(),
@@ -78,14 +78,3 @@ export function countProjectsInInitiative(
   return workspace.projects.filter((p) => p.initiativeId === initiativeId).length;
 }
 
-/**
- * Builds a stable incremental initiative id.
- */
-function buildNextInitiativeId(initiatives: Initiative[]) {
-  const nextNumber = initiatives.reduce((highest, initiative) => {
-    const current = Number(initiative.id.replace("initiative-", ""));
-    return Number.isNaN(current) ? highest : Math.max(highest, current);
-  }, 0);
-
-  return `initiative-${nextNumber + 1}`;
-}
