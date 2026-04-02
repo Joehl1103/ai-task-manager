@@ -50,6 +50,8 @@ interface TasksViewProps {
   editTags: string;
   onAddTask: (data: TaskComposerSubmitData) => void;
   onOpenTask: (taskId: string) => void;
+  /** Opens the thread side panel for a given task — wired in Task 3. */
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;

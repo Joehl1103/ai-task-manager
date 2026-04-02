@@ -84,6 +84,7 @@ import {
   buildThreadContextSummary,
   buildThreadOwnerKey,
   readThreadOwnerName,
+  ThreadSidePanel,
 } from "@/features/workspace/threads";
 import {
   buildWorkspaceThemeStyle,
@@ -136,6 +137,7 @@ export function WorkspaceApp() {
   const [editTags, setEditTags] = useState("");
   const [threadDrafts, setThreadDrafts] = useState<Record<string, ThreadDraft>>({});
   const [pendingThreadOwnerKey, setPendingThreadOwnerKey] = useState<string | null>(null);
+  const [threadPanelOwner, setThreadPanelOwner] = useState<ThreadOwnerRef | null>(null);
   const [fetchingModelsKeyId, setFetchingModelsKeyId] = useState<string | null>(null);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [modelErrorKeyId, setModelErrorKeyId] = useState<string | null>(null);
@@ -460,6 +462,31 @@ export function WorkspaceApp() {
 
   function handleToggleSidebar() {
     setIsSidebarVisible((currentValue) => !currentValue);
+  }
+
+  /**
+   * Reads the display name for the thread panel header based on the current owner.
+   */
+  function readThreadPanelOwnerName(): string {
+    if (!threadPanelOwner) {
+      return "";
+    }
+
+    return readThreadOwnerName(workspace, threadPanelOwner);
+  }
+
+  /**
+   * Opens the thread side panel for a given owner entity.
+   */
+  function handleOpenThreadPanel(owner: ThreadOwnerRef) {
+    setThreadPanelOwner(owner);
+  }
+
+  /**
+   * Closes the thread side panel.
+   */
+  function handleCloseThreadPanel() {
+    setThreadPanelOwner(null);
   }
 
   /**
@@ -1329,6 +1356,9 @@ export function WorkspaceApp() {
           onCancelEdit={handleCancelEdit}
           onDeleteTask={handleDeleteTask}
           onOpenTask={handleOpenTask}
+          onOpenThreadPanel={(taskId) =>
+            handleOpenThreadPanel({ ownerType: "task", ownerId: taskId })
+          }
           onSaveEdit={handleSaveEdit}
           onSetEditDetails={setEditDetails}
           onSetEditDueBy={setEditDueBy}
@@ -1377,6 +1407,9 @@ export function WorkspaceApp() {
                 },
                 message,
               )
+            }
+            onOpenThreadPanel={(initiativeId) =>
+              handleOpenThreadPanel({ ownerType: "initiative", ownerId: initiativeId })
             }
             onUpdateInitiative={handleUpdateInitiative}
             pendingThreadId={
@@ -1435,6 +1468,9 @@ export function WorkspaceApp() {
             onDeleteTask={handleDeleteTask}
             onOpenInitiative={handleSelectInitiative}
             onOpenTask={handleOpenTask}
+            onOpenThreadPanel={(projectId) =>
+              handleOpenThreadPanel({ ownerType: "project", ownerId: projectId })
+            }
             onSaveEdit={handleSaveEdit}
             onSendThreadMessage={(projectId) =>
               handleSendThreadMessage({
@@ -1528,7 +1564,7 @@ export function WorkspaceApp() {
 
   return (
     <main
-      className="workspace-theme-stage min-h-screen py-6 text-[color:var(--foreground)]"
+      className="workspace-theme-stage min-h-screen text-[color:var(--foreground)]"
       data-theme-mode={themeSelection.mode}
       data-theme-pair={themeSelection.themeId}
       style={buildWorkspaceThemeStyle(themeSelection)}
@@ -1553,50 +1589,81 @@ export function WorkspaceApp() {
       {persistenceMode === "local" && (
         <DatabaseUnavailableOverlay message={databaseErrorMessage} />
       )}
-      <div
-        className={cn(
-          "flex min-h-[calc(100vh-3rem)]",
-          isSidebarVisible ? "gap-8" : "gap-0",
-        )}
-      >
-        <div
-          className={cn(
-            "shrink-0 pl-[5px] transition-all duration-200 ease-out",
-            isSidebarVisible ? "w-[272px] opacity-100" : "w-8 opacity-100",
-          )}
-        >
-          {isSidebarVisible ? (
-            <WorkspaceSidebar
-              activeMenu={activeMenu}
-              initiatives={workspace.initiatives}
-              isInitiativesExpanded={isInitiativesExpanded}
-              isProjectsExpanded={isProjectsExpanded}
-              onSelectInitiative={handleSelectInitiative}
-              onSelectMenu={handleSelectMenu}
-              onSelectProject={handleSelectProject}
-              onToggleInitiatives={() =>
-                setIsInitiativesExpanded((currentValue) => !currentValue)
-              }
-              onToggleProjects={() =>
-                setIsProjectsExpanded((currentValue) => !currentValue)
-              }
-              onToggleSidebar={handleToggleSidebar}
-              projects={workspace.projects}
-              selectedInitiativeId={selectedInitiativeId}
-              selectedProjectId={selectedProjectId}
-            />
-          ) : (
-            <WorkspaceCollapsedRail onExpand={handleToggleSidebar} />
-          )}
+
+      <div className="flex min-h-screen">
+        {/* Main content — shrinks when thread panel is open */}
+        <div className="min-w-0 flex-1 py-6">
+          <div
+            className={cn(
+              "flex min-h-[calc(100vh-3rem)]",
+              isSidebarVisible ? "gap-8" : "gap-0",
+            )}
+          >
+            <div
+              className={cn(
+                "shrink-0 pl-[5px] transition-all duration-200 ease-out",
+                isSidebarVisible ? "w-[272px] opacity-100" : "w-8 opacity-100",
+              )}
+            >
+              {isSidebarVisible ? (
+                <WorkspaceSidebar
+                  activeMenu={activeMenu}
+                  initiatives={workspace.initiatives}
+                  isInitiativesExpanded={isInitiativesExpanded}
+                  isProjectsExpanded={isProjectsExpanded}
+                  onSelectInitiative={handleSelectInitiative}
+                  onSelectMenu={handleSelectMenu}
+                  onSelectProject={handleSelectProject}
+                  onToggleInitiatives={() =>
+                    setIsInitiativesExpanded((currentValue) => !currentValue)
+                  }
+                  onToggleProjects={() =>
+                    setIsProjectsExpanded((currentValue) => !currentValue)
+                  }
+                  onToggleSidebar={handleToggleSidebar}
+                  projects={workspace.projects}
+                  selectedInitiativeId={selectedInitiativeId}
+                  selectedProjectId={selectedProjectId}
+                />
+              ) : (
+                <WorkspaceCollapsedRail onExpand={handleToggleSidebar} />
+              )}
+            </div>
+
+            <section className="min-w-0 flex-1">
+              <div className="mx-auto max-w-7xl">
+                <div className="min-h-full px-1 py-2 sm:px-3">
+                  {renderActiveCenterContent()}
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
 
-        <section className="min-w-0 flex-1">
-          <div className="mx-auto max-w-7xl">
-            <div className="min-h-full px-1 py-2 sm:px-3">
-              {renderActiveCenterContent()}
-            </div>
-          </div>
-        </section>
+        {/* Thread side panel — pushes from right */}
+        {threadPanelOwner && (() => {
+          const thread = readThreadForOwner(workspace, threadPanelOwner);
+          if (!thread) return null;
+
+          return (
+            <ThreadSidePanel
+              activeProviderLabel={activeProviderLabel}
+              activeProviderModel={activeProviderSettings.model}
+              draft={readThreadDraft(threadDrafts, threadPanelOwner)}
+              isPending={pendingThreadOwnerKey === buildThreadOwnerKey(threadPanelOwner)}
+              onClose={handleCloseThreadPanel}
+              onDeleteMessage={(messageId) =>
+                handleDeleteThreadMessage(threadPanelOwner, messageId)
+              }
+              onDraftChange={(message) =>
+                handleThreadDraftChange(threadPanelOwner, message)
+              }
+              onSend={() => handleSendThreadMessage(threadPanelOwner)}
+              ownerName={readThreadPanelOwnerName()}
+              thread={thread}
+            />
+          );
+        })()}
       </div>
     </main>
   );

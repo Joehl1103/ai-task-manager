@@ -188,6 +188,8 @@ interface InitiativeDetailViewProps {
   onBack: () => void;
   onDeleteInitiative: (initiativeId: string) => void;
   onDeleteThreadMessage: (initiativeId: string, messageId: string) => void;
+  /** Opens the thread side panel for this initiative — wired in Task 5. */
+  onOpenThreadPanel?: (initiativeId: string) => void;
   onSelectProject: (projectId: string) => void;
   onSendThreadMessage: (initiativeId: string) => void;
   onThreadDraftChange: (initiativeId: string, message: string) => void;

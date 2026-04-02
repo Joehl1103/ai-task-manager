@@ -239,6 +239,8 @@ interface ProjectDetailViewProps {
   onDeleteTask: (taskId: string) => void;
   onOpenInitiative: (initiativeId: string) => void;
   onOpenTask: (taskId: string) => void;
+  /** Opens the thread side panel for this project — wired in Task 4. */
+  onOpenThreadPanel?: (projectId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onSendThreadMessage: (projectId: string) => void;
   onSetEditDetails: (value: string) => void;
