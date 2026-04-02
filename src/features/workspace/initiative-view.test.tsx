@@ -18,23 +18,14 @@ function buildInitiativeViewProps(overrides?: {
 
 function buildInitiativeDetailViewProps() {
   return {
-    activeProviderLabel: "OpenAI",
-    activeProviderModel: "gpt-5",
     initiative: workspaceSeed.initiatives[0],
     onAddProject: vi.fn(),
     onBack: vi.fn(),
     onDeleteInitiative: vi.fn(),
-    onDeleteThreadMessage: vi.fn(),
+    onOpenThreadPanel: vi.fn(),
     onSelectProject: vi.fn(),
-    onSendThreadMessage: vi.fn(),
-    onThreadDraftChange: vi.fn(),
     onUpdateInitiative: vi.fn(),
-    pendingThreadId: null,
     projects: workspaceSeed.projects,
-    readThreadDraft: vi.fn(() => ({
-      message: "",
-      error: null,
-    })),
   } as const;
 }
 
@@ -96,11 +87,26 @@ describe("initiative view", () => {
     expect(markup).toContain("Projects inside this initiative");
     expect(markup).toContain("Open project");
     expect(markup).toContain("Initiative thread");
-    expect(markup).toContain("Show thread (2)");
+    expect(markup).toContain("Thread (2)");
     expect(markup).toContain('aria-label="Initiative actions"');
     expect(markup).toContain('data-slot="dropdown-menu-trigger"');
     expect(markup).toContain('data-slot="separator"');
     expect(markup).toContain('class="mt-2 text-2xl font-semibold tracking-tight">Q2 Product Launch</h1>');
     expect(markup).not.toContain("text-3xl");
+  });
+
+  /**
+   * Renders thread trigger button with message count instead of inline thread.
+   */
+  it("renders thread trigger button with message count instead of inline thread", () => {
+    const markup = renderToStaticMarkup(
+      <InitiativeDetailView
+        {...buildInitiativeDetailViewProps()}
+      />,
+    );
+
+    expect(markup).toContain("Thread (");
+    expect(markup).not.toContain("Show thread");
+    expect(markup).not.toContain("Hide thread");
   });
 });

@@ -1377,53 +1377,16 @@ export function WorkspaceApp() {
       if (selectedInitiative) {
         return (
           <InitiativeDetailView
-            activeProviderLabel={activeProviderLabel}
-            activeProviderModel={activeProviderSettings.model}
             initiative={selectedInitiative}
             onAddProject={handleAddProject}
             onBack={() => setSelectedInitiativeId(null)}
             onDeleteInitiative={handleDeleteInitiative}
-            onDeleteThreadMessage={(initiativeId, messageId) =>
-              handleDeleteThreadMessage(
-                {
-                  ownerType: "initiative",
-                  ownerId: initiativeId,
-                },
-                messageId,
-              )
-            }
-            onSelectProject={handleSelectProject}
-            onSendThreadMessage={(initiativeId) =>
-              handleSendThreadMessage({
-                ownerType: "initiative",
-                ownerId: initiativeId,
-              })
-            }
-            onThreadDraftChange={(initiativeId, message) =>
-              handleThreadDraftChange(
-                {
-                  ownerType: "initiative",
-                  ownerId: initiativeId,
-                },
-                message,
-              )
-            }
             onOpenThreadPanel={(initiativeId) =>
               handleOpenThreadPanel({ ownerType: "initiative", ownerId: initiativeId })
             }
+            onSelectProject={handleSelectProject}
             onUpdateInitiative={handleUpdateInitiative}
-            pendingThreadId={
-              pendingThreadOwnerKey?.startsWith("initiative:")
-                ? pendingThreadOwnerKey.slice("initiative:".length)
-                : null
-            }
             projects={visibleProjects}
-            readThreadDraft={(initiativeId) =>
-              readThreadDraft(threadDrafts, {
-                ownerType: "initiative",
-                ownerId: initiativeId,
-              })
-            }
           />
         );
       }
