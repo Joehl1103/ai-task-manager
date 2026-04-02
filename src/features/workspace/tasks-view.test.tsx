@@ -27,6 +27,7 @@ function buildTasksViewProps() {
     onSetEditTags: vi.fn(),
     onAddTask: vi.fn(),
     onToggleTaskCompleted: vi.fn(),
+    onOpenThreadPanel: vi.fn(),
   };
 }
 
@@ -73,5 +74,46 @@ describe("tasks view", () => {
     const markup = renderToStaticMarkup(<TasksView {...buildTasksViewProps()} tasks={[]} />);
 
     expect(markup).toContain("No tasks yet.");
+  });
+
+  it("renders thread button with message count in task inline editor", () => {
+    const taskWithMessages = {
+      ...workspaceSeed.tasks[0]!,
+      id: "task-1",
+      agentThread: {
+        id: "thread-task-task-1",
+        ownerType: "task" as const,
+        ownerId: "task-1",
+        messages: [
+          {
+            id: "msg-1",
+            role: "human" as const,
+            content: "Hello",
+            createdAt: "2026-04-01 12:00",
+          },
+          {
+            id: "msg-2",
+            role: "agent" as const,
+            content: "Hi there",
+            createdAt: "2026-04-01 12:01",
+            providerId: "openai" as const,
+            model: "gpt-4",
+            status: "done" as const,
+          },
+        ],
+      },
+    };
+
+    const markup = renderToStaticMarkup(
+      <TasksView
+        {...buildTasksViewProps()}
+        tasks={[taskWithMessages]}
+        editingTaskId="task-1"
+        editTitle="Test task"
+        onOpenThreadPanel={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("Thread (2)");
   });
 });

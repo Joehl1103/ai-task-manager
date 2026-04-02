@@ -79,6 +79,7 @@ export function TasksView({
   editTags,
   onAddTask,
   onOpenTask,
+  onOpenThreadPanel,
   onDeleteTask,
   onSaveEdit,
   onCancelEdit,
@@ -245,6 +246,7 @@ export function TasksView({
               onCancelEdit={onCancelEdit}
               onDeleteTask={onDeleteTask}
               onOpenTask={onOpenTask}
+              onOpenThreadPanel={onOpenThreadPanel}
               onSaveEdit={onSaveEdit}
               onSetEditDetails={onSetEditDetails}
               onSetEditDueBy={onSetEditDueBy}
@@ -404,6 +406,7 @@ interface TaskGroupSectionProps {
   editTags: string;
   projects: Project[];
   onOpenTask: (taskId: string) => void;
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
@@ -427,6 +430,7 @@ function TaskGroupSection({
   editTags,
   projects,
   onOpenTask,
+  onOpenThreadPanel,
   onDeleteTask,
   onSaveEdit,
   onCancelEdit,
@@ -461,6 +465,7 @@ function TaskGroupSection({
                   editTitle={editTitle}
                   onCancel={onCancelEdit}
                   onDelete={onDeleteTask}
+                  onOpenThread={onOpenThreadPanel ? () => onOpenThreadPanel(task.id) : undefined}
                   onSave={onSaveEdit}
                   onSetEditDetails={onSetEditDetails}
                   onSetEditDueBy={onSetEditDueBy}
@@ -470,6 +475,7 @@ function TaskGroupSection({
                   onSetEditTitle={onSetEditTitle}
                   projects={projects}
                   task={task}
+                  threadMessageCount={task.agentThread.messages.length}
                 />
               ) : (
                 <div className="pl-[13px]">

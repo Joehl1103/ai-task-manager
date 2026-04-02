@@ -16,6 +16,7 @@ interface TaskInlineEditorProps {
   editTitle: string;
   onCancel: () => void;
   onDelete: (taskId: string) => void;
+  onOpenThread?: () => void;
   onSave: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditDueBy: (value: string) => void;
@@ -25,6 +26,7 @@ interface TaskInlineEditorProps {
   onSetEditTitle: (value: string) => void;
   projects: Project[];
   task: Task;
+  threadMessageCount?: number;
 }
 
 /**
@@ -41,6 +43,7 @@ export function TaskInlineEditor({
   editTitle,
   onCancel,
   onDelete,
+  onOpenThread,
   onSave,
   onSetEditDetails,
   onSetEditDueBy,
@@ -50,6 +53,7 @@ export function TaskInlineEditor({
   onSetEditTitle,
   projects,
   task,
+  threadMessageCount,
 }: TaskInlineEditorProps) {
   /**
    * Lets the inline editor dismiss on Escape without interfering with the shared submit shortcut.
@@ -88,7 +92,18 @@ export function TaskInlineEditor({
         title={editTitle}
       />
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        {onOpenThread ? (
+          <button
+            className="text-[11px] text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+            onClick={onOpenThread}
+            type="button"
+          >
+            Thread ({threadMessageCount})
+          </button>
+        ) : (
+          <span />
+        )}
         <button
           className="text-[11px] text-rose-600 transition-colors hover:text-rose-700"
           onClick={() => onDelete(task.id)}
