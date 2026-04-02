@@ -1442,8 +1442,6 @@ export function WorkspaceApp() {
       if (selectedProject) {
         return (
           <ProjectDetailView
-            activeProviderLabel={activeProviderLabel}
-            activeProviderModel={activeProviderSettings.model}
             editDetails={editDetails}
             editDueBy={editDueBy}
             editingTaskId={editingTaskId}
@@ -1456,15 +1454,6 @@ export function WorkspaceApp() {
             onBack={() => setSelectedProjectId(null)}
             onCancelEdit={handleCancelEdit}
             onDeleteProject={handleDeleteProject}
-            onDeleteThreadMessage={(projectId, messageId) =>
-              handleDeleteThreadMessage(
-                {
-                  ownerType: "project",
-                  ownerId: projectId,
-                },
-                messageId,
-              )
-            }
             onDeleteTask={handleDeleteTask}
             onOpenInitiative={handleSelectInitiative}
             onOpenTask={handleOpenTask}
@@ -1472,41 +1461,15 @@ export function WorkspaceApp() {
               handleOpenThreadPanel({ ownerType: "project", ownerId: projectId })
             }
             onSaveEdit={handleSaveEdit}
-            onSendThreadMessage={(projectId) =>
-              handleSendThreadMessage({
-                ownerType: "project",
-                ownerId: projectId,
-              })
-            }
             onSetEditDetails={setEditDetails}
             onSetEditDueBy={setEditDueBy}
             onSetEditProject={setEditProject}
             onSetEditRemindOn={setEditRemindOn}
             onSetEditTags={setEditTags}
             onSetEditTitle={setEditTitle}
-            onThreadDraftChange={(projectId, message) =>
-              handleThreadDraftChange(
-                {
-                  ownerType: "project",
-                  ownerId: projectId,
-                },
-                message,
-              )
-            }
             onUpdateProject={handleUpdateProject}
-            pendingThreadId={
-              pendingThreadOwnerKey?.startsWith("project:")
-                ? pendingThreadOwnerKey.slice("project:".length)
-                : null
-            }
             project={selectedProject}
             projects={visibleProjects}
-            readThreadDraft={(projectId) =>
-              readThreadDraft(threadDrafts, {
-                ownerType: "project",
-                ownerId: projectId,
-              })
-            }
             tasks={activeTasks}
           />
         );

@@ -34,10 +34,6 @@ import {
   type Task,
   type ThreadDraft,
 } from "@/features/workspace/core";
-import {
-  AgentThreadPanel,
-  readThreadComposerPlaceholder,
-} from "@/features/workspace/threads";
 
 interface ProjectViewProps {
   initiatives: Initiative[];
@@ -221,8 +217,6 @@ export function ProjectView({
 }
 
 interface ProjectDetailViewProps {
-  activeProviderLabel: string;
-  activeProviderModel: string;
   editDetails: string;
   editDueBy: string;
   editingTaskId: string | null;
@@ -235,26 +229,21 @@ interface ProjectDetailViewProps {
   onBack: () => void;
   onCancelEdit: () => void;
   onDeleteProject: (projectId: string) => void;
-  onDeleteThreadMessage: (projectId: string, messageId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onOpenInitiative: (initiativeId: string) => void;
   onOpenTask: (taskId: string) => void;
   /** Opens the thread side panel for this project — wired in Task 4. */
-  onOpenThreadPanel?: (projectId: string) => void;
+  onOpenThreadPanel: (projectId: string) => void;
   onSaveEdit: (taskId: string) => void;
-  onSendThreadMessage: (projectId: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditDueBy: (value: string) => void;
   onSetEditProject: (value: string) => void;
   onSetEditRemindOn: (value: string) => void;
   onSetEditTags: (value: string) => void;
   onSetEditTitle: (value: string) => void;
-  onThreadDraftChange: (projectId: string, message: string) => void;
   onUpdateProject: (data: { id: string; name: string; initiativeId: string; deadline: string }) => void;
-  pendingThreadId: string | null;
   project: Project | null;
   projects: Project[];
-  readThreadDraft: (projectId: string) => ThreadDraft;
   tasks: Task[];
 }
 
@@ -262,8 +251,6 @@ interface ProjectDetailViewProps {
  * Renders one selected project as a focused center-page detail view with minimal framing.
  */
 export function ProjectDetailView({
-  activeProviderLabel,
-  activeProviderModel,
   editDetails,
   editDueBy,
   editingTaskId,
@@ -276,24 +263,20 @@ export function ProjectDetailView({
   onBack,
   onCancelEdit,
   onDeleteProject,
-  onDeleteThreadMessage,
   onDeleteTask,
   onOpenInitiative,
   onOpenTask,
+  onOpenThreadPanel,
   onSaveEdit,
-  onSendThreadMessage,
   onSetEditDetails,
   onSetEditDueBy,
   onSetEditProject,
   onSetEditRemindOn,
   onSetEditTags,
   onSetEditTitle,
-  onThreadDraftChange,
   onUpdateProject,
-  pendingThreadId,
   project,
   projects,
-  readThreadDraft,
   tasks,
 }: ProjectDetailViewProps) {
   if (!project) {
@@ -309,8 +292,6 @@ export function ProjectDetailView({
 
   return (
     <ProjectDetailContent
-      activeProviderLabel={activeProviderLabel}
-      activeProviderModel={activeProviderModel}
       editDetails={editDetails}
       editDueBy={editDueBy}
       editingTaskId={editingTaskId}
@@ -324,24 +305,20 @@ export function ProjectDetailView({
       onBack={onBack}
       onCancelEdit={onCancelEdit}
       onDeleteProject={onDeleteProject}
-      onDeleteThreadMessage={onDeleteThreadMessage}
       onDeleteTask={onDeleteTask}
       onOpenInitiative={onOpenInitiative}
       onOpenTask={onOpenTask}
+      onOpenThreadPanel={onOpenThreadPanel}
       onSaveEdit={onSaveEdit}
-      onSendThreadMessage={onSendThreadMessage}
       onSetEditDetails={onSetEditDetails}
       onSetEditDueBy={onSetEditDueBy}
       onSetEditProject={onSetEditProject}
       onSetEditRemindOn={onSetEditRemindOn}
       onSetEditTags={onSetEditTags}
       onSetEditTitle={onSetEditTitle}
-      onThreadDraftChange={onThreadDraftChange}
       onUpdateProject={onUpdateProject}
-      pendingThreadId={pendingThreadId}
       project={project}
       projects={projects}
-      readThreadDraft={readThreadDraft}
       tasks={tasks}
     />
   );
@@ -353,8 +330,6 @@ interface ProjectDetailContentProps
 }
 
 function ProjectDetailContent({
-  activeProviderLabel,
-  activeProviderModel,
   editDetails,
   editDueBy,
   editingTaskId,
@@ -367,31 +342,26 @@ function ProjectDetailContent({
   onBack,
   onCancelEdit,
   onDeleteProject,
-  onDeleteThreadMessage,
   onDeleteTask,
   onOpenInitiative,
   onOpenTask,
+  onOpenThreadPanel,
   onSaveEdit,
-  onSendThreadMessage,
   onSetEditDetails,
   onSetEditDueBy,
   onSetEditProject,
   onSetEditRemindOn,
   onSetEditTags,
   onSetEditTitle,
-  onThreadDraftChange,
   onUpdateProject,
-  pendingThreadId,
   project,
   projects,
-  readThreadDraft,
   tasks,
 }: ProjectDetailContentProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(project.name);
   const [editInitiativeId, setEditInitiativeId] = useState(project.initiativeId || "");
   const [editDeadline, setEditDeadline] = useState(project.deadline);
-  const [isThreadOpen, setIsThreadOpen] = useState(false);
 
   const activeProject = project;
   const linkedInitiative = activeProject.initiativeId
@@ -580,35 +550,12 @@ function ProjectDetailContent({
               </p>
             </div>
             <Button
-              onClick={() => setIsThreadOpen((currentValue) => !currentValue)}
+              onClick={() => onOpenThreadPanel(activeProject.id)}
               variant="ghost"
             >
-              {isThreadOpen
-                ? "Hide thread"
-                : `Show thread (${activeProject.agentThread.messages.length})`}
+              Thread ({activeProject.agentThread.messages.length})
             </Button>
           </div>
-
-          {isThreadOpen ? (
-            <div className="mt-4">
-              <AgentThreadPanel
-                activeProviderLabel={activeProviderLabel}
-                activeProviderModel={activeProviderModel}
-                composerPlaceholder={readThreadComposerPlaceholder({
-                  ownerType: "project",
-                  ownerId: activeProject.id,
-                })}
-                draft={readThreadDraft(activeProject.id)}
-                isPending={pendingThreadId === activeProject.id}
-                onDeleteMessage={(messageId) =>
-                  onDeleteThreadMessage(activeProject.id, messageId)
-                }
-                onDraftChange={(message) => onThreadDraftChange(activeProject.id, message)}
-                onSend={() => onSendThreadMessage(activeProject.id)}
-                thread={activeProject.agentThread}
-              />
-            </div>
-          ) : null}
         </section>
       ) : null}
     </div>
