@@ -1516,9 +1516,9 @@ export function WorkspaceApp() {
         <DatabaseUnavailableOverlay message={databaseErrorMessage} />
       )}
 
-      <div className="flex min-h-screen">
-        {/* Main content — shrinks when thread panel is open */}
-        <div className="min-w-0 flex-1 py-6">
+      <div className="flex h-screen">
+        {/* Main content — shrinks when thread panel is open, scrolls independently */}
+        <div className="min-w-0 flex-1 overflow-y-auto py-6">
           <div
             className={cn(
               "flex min-h-[calc(100vh-3rem)]",
