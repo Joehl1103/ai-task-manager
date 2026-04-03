@@ -237,20 +237,22 @@ export function TaskEditorFields({
             </SelectContent>
           </Select>
 
-          <TaskDateField
-            ariaLabel="Remind on"
-            inputRef={remindOnInputRef}
-            label="Remind on"
-            onChange={onRemindOnChange}
-            value={remindOn}
-          />
-          <TaskDateField
-            ariaLabel="Due by"
-            inputRef={dueByInputRef}
-            label="Due by"
-            onChange={onDueByChange}
-            value={dueBy}
-          />
+          <div className="flex items-end gap-4">
+            <TaskDateField
+              ariaLabel="Remind on"
+              inputRef={remindOnInputRef}
+              label="Remind on"
+              onChange={onRemindOnChange}
+              value={remindOn}
+            />
+            <TaskDateField
+              ariaLabel="Due by"
+              inputRef={dueByInputRef}
+              label="Due by"
+              onChange={onDueByChange}
+              value={dueBy}
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
