@@ -45,17 +45,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ own
     const json = await readJsonObject(request);
     if (!json.ok) return json.response;
     const body = json.value;
-    const { threadId, ownerType, messageId, role, content, providerId, model, status, createdAt } = body;
 
     const fields: Record<string, string> = {};
-    if (!threadId) fields.threadId = "required";
-    if (!ownerType) fields.ownerType = "required";
-    if (!messageId) fields.messageId = "required";
-    if (!role) fields.role = "required";
-    if (!content) fields.content = "required";
+    if (!body.threadId) fields.threadId = "required";
+    if (!body.ownerType) fields.ownerType = "required";
+    if (!body.messageId) fields.messageId = "required";
+    if (!body.role) fields.role = "required";
+    if (!body.content) fields.content = "required";
     if (Object.keys(fields).length > 0) {
       return validationError("Required fields are missing.", fields);
     }
+
+    /* After validation, narrow the required fields to strings */
+    const threadId = body.threadId as string;
+    const ownerType = body.ownerType as string;
+    const messageId = body.messageId as string;
+    const role = body.role as string;
+    const content = body.content as string;
 
     // Upsert thread — create if missing
     const [existingThread] = await db
@@ -75,10 +81,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ own
         threadId,
         role,
         content,
-        providerId: providerId || null,
-        model: model || null,
-        status: status || null,
-        createdAt: createdAt ? new Date(createdAt) : new Date(),
+        providerId: (body.providerId as string) || null,
+        model: (body.model as string) || null,
+        status: (body.status as string) || null,
+        createdAt: body.createdAt ? new Date(body.createdAt as string) : new Date(),
       })
       .returning();
 

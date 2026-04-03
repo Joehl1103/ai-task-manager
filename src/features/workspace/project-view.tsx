@@ -218,7 +218,7 @@ export function ProjectView({
   );
 }
 
-interface ProjectDetailViewProps extends TaskEditState, TaskEditCallbacks {
+interface ProjectDetailViewProps extends TaskEditState, Omit<TaskEditCallbacks, "onToggleTaskCompleted"> {
   initiatives: Initiative[];
   onBack: () => void;
   onDeleteProject: (projectId: string) => void;
