@@ -114,6 +114,6 @@ describe("tasks view", () => {
       />,
     );
 
-    expect(markup).toContain("Thread (2)");
+    expect(markup).toContain('aria-label="Open thread"');
   });
 });

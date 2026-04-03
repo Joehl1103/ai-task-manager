@@ -232,8 +232,10 @@ interface ProjectDetailViewProps {
   onDeleteTask: (taskId: string) => void;
   onOpenInitiative: (initiativeId: string) => void;
   onOpenTask: (taskId: string) => void;
-  /** Opens the thread side panel for this project — wired in Task 4. */
+  /** Opens the thread side panel for this project. */
   onOpenThreadPanel: (projectId: string) => void;
+  /** Opens the thread side panel for a task within this project. */
+  onOpenTaskThreadPanel?: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditDueBy: (value: string) => void;
@@ -266,6 +268,7 @@ export function ProjectDetailView({
   onDeleteTask,
   onOpenInitiative,
   onOpenTask,
+  onOpenTaskThreadPanel,
   onOpenThreadPanel,
   onSaveEdit,
   onSetEditDetails,
@@ -308,6 +311,7 @@ export function ProjectDetailView({
       onDeleteTask={onDeleteTask}
       onOpenInitiative={onOpenInitiative}
       onOpenTask={onOpenTask}
+      onOpenTaskThreadPanel={onOpenTaskThreadPanel}
       onOpenThreadPanel={onOpenThreadPanel}
       onSaveEdit={onSaveEdit}
       onSetEditDetails={onSetEditDetails}
@@ -345,6 +349,7 @@ function ProjectDetailContent({
   onDeleteTask,
   onOpenInitiative,
   onOpenTask,
+  onOpenTaskThreadPanel,
   onOpenThreadPanel,
   onSaveEdit,
   onSetEditDetails,
@@ -523,6 +528,7 @@ function ProjectDetailContent({
                 onCancelEdit={onCancelEdit}
                 onDeleteTask={onDeleteTask}
                 onOpenTask={onOpenTask}
+                onOpenThreadPanel={onOpenTaskThreadPanel}
                 onSaveEdit={onSaveEdit}
                 onSetEditDetails={onSetEditDetails}
                 onSetEditDueBy={onSetEditDueBy}
@@ -574,6 +580,7 @@ interface ProjectTaskRowProps {
   onCancelEdit: () => void;
   onDeleteTask: (taskId: string) => void;
   onOpenTask: (taskId: string) => void;
+  onOpenThreadPanel?: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditDueBy: (value: string) => void;
@@ -602,6 +609,7 @@ function ProjectTaskRow({
   onCancelEdit,
   onDeleteTask,
   onOpenTask,
+  onOpenThreadPanel,
   onSaveEdit,
   onSetEditDetails,
   onSetEditDueBy,
@@ -628,6 +636,7 @@ function ProjectTaskRow({
             editTitle={editTitle}
             onCancel={onCancelEdit}
             onDelete={onDeleteTask}
+            onOpenThread={onOpenThreadPanel ? () => onOpenThreadPanel(task.id) : undefined}
             onSave={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
             onSetEditDueBy={onSetEditDueBy}
@@ -637,6 +646,7 @@ function ProjectTaskRow({
             onSetEditTitle={onSetEditTitle}
             projects={projects}
             task={task}
+            threadMessageCount={task.agentThread.messages.length}
           />
         </div>
       ) : (

@@ -2,6 +2,8 @@
 
 import { type ChangeEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 
+import { MessageCircle } from "lucide-react";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { type Project } from "@/features/workspace/core";
@@ -21,9 +23,11 @@ interface TaskEditorFieldsProps {
   focusTitleInputSignal?: number;
   isSubmitDisabled?: boolean;
   onCancel?: () => void;
+  onDelete?: () => void;
   onDetailsChange: (value: string) => void;
   onDueByChange: (value: string) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
+  onOpenThread?: () => void;
   onProjectChange: (value: string) => void;
   onRemindOnChange: (value: string) => void;
   onSubmit?: () => void;
@@ -35,6 +39,7 @@ interface TaskEditorFieldsProps {
   submitHint?: string;
   submitLabel?: string;
   tags: string;
+  threadMessageCount?: number;
   title: string;
 }
 
@@ -48,9 +53,11 @@ export function TaskEditorFields({
   focusTitleInputSignal,
   isSubmitDisabled = false,
   onCancel,
+  onDelete,
   onDetailsChange,
   onDueByChange,
   onKeyDown,
+  onOpenThread,
   onProjectChange,
   onRemindOnChange,
   onSubmit,
@@ -62,6 +69,7 @@ export function TaskEditorFields({
   submitHint,
   submitLabel,
   tags,
+  threadMessageCount,
   title,
 }: TaskEditorFieldsProps) {
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
@@ -162,8 +170,8 @@ export function TaskEditorFields({
         <textarea
           aria-label="Task title"
           className={cn(
-            "min-w-0 basis-3/4 resize-none overflow-hidden border-0 border-b border-[color:var(--border)] bg-transparent px-0 pb-2 pt-0 text-sm text-[color:var(--foreground)] shadow-none outline-none transition-colors",
-            "placeholder:text-[color:var(--muted)] placeholder:opacity-70 focus:border-[color:var(--border-strong)]",
+            "min-w-0 basis-3/4 resize-none overflow-hidden border-0 bg-transparent px-0 pb-2 pt-0 text-sm text-[color:var(--foreground)] shadow-none outline-none",
+            "placeholder:text-[color:var(--muted)] placeholder:opacity-70",
           )}
           onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
             onTitleChange(event.target.value.replace(/\n/g, " "));
@@ -175,12 +183,25 @@ export function TaskEditorFields({
           value={title}
         />
 
-        <div className="basis-1/4">
+        <div className="flex basis-1/4 items-start gap-2">
           <TaskTagCombobox
             allTags={allTags}
             onChange={(nextTags) => onTagsChange(formatTaskTagString(nextTags))}
             selectedTags={selectedTags}
           />
+          {onOpenThread ? (
+            <button
+              aria-label="Open thread"
+              className="mt-0.5 shrink-0 text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
+              onClick={onOpenThread}
+              type="button"
+            >
+              <MessageCircle className="size-3.5" />
+              {threadMessageCount ? (
+                <span className="ml-0.5 text-[10px]">{threadMessageCount}</span>
+              ) : null}
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -233,6 +254,15 @@ export function TaskEditorFields({
         </div>
 
         <div className="flex items-center gap-3">
+          {onDelete ? (
+            <button
+              className="text-[11px] text-[color:var(--muted)] transition-colors hover:text-rose-600"
+              onClick={onDelete}
+              type="button"
+            >
+              Delete
+            </button>
+          ) : null}
           {submitHint ? (
             <span className="text-[11px] text-[color:var(--muted)]">{submitHint}</span>
           ) : null}

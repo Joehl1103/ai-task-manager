@@ -32,6 +32,7 @@ interface InboxViewProps {
   editTags: string;
   onAddTask: (data: TaskComposerSubmitData) => void;
   onOpenTask: (taskId: string) => void;
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
@@ -60,6 +61,7 @@ export function InboxView({
   editTags,
   onAddTask,
   onOpenTask,
+  onOpenThreadPanel,
   onDeleteTask,
   onSaveEdit,
   onCancelEdit,
@@ -111,6 +113,7 @@ export function InboxView({
             onCancelEdit={onCancelEdit}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
+            onOpenThreadPanel={onOpenThreadPanel}
             onSaveEdit={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
             onSetEditDueBy={onSetEditDueBy}
@@ -140,6 +143,7 @@ interface InboxTaskListProps {
   onCancelEdit: () => void;
   tasks: Task[];
   onOpenTask: (taskId: string) => void;
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
@@ -168,6 +172,7 @@ function InboxTaskList({
   tasks,
   onDeleteTask,
   onOpenTask,
+  onOpenThreadPanel,
   onSaveEdit,
   onSetEditDetails,
   onSetEditDueBy,
@@ -196,6 +201,7 @@ function InboxTaskList({
             key={task.id}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
+            onOpenThreadPanel={onOpenThreadPanel}
             onSaveEdit={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
             onSetEditDueBy={onSetEditDueBy}
@@ -226,6 +232,7 @@ interface InboxTaskRowProps {
   onCancelEdit: () => void;
   task: Task;
   onOpenTask: (taskId: string) => void;
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
@@ -255,6 +262,7 @@ function InboxTaskRow({
   onCancelEdit,
   task,
   onOpenTask,
+  onOpenThreadPanel,
   onDeleteTask,
   onSaveEdit,
   onSetEditDetails,
@@ -290,6 +298,7 @@ function InboxTaskRow({
             editTitle={editTitle}
             onCancel={onCancelEdit}
             onDelete={onDeleteTask}
+            onOpenThread={onOpenThreadPanel ? () => onOpenThreadPanel(task.id) : undefined}
             onSave={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
             onSetEditDueBy={onSetEditDueBy}
@@ -299,6 +308,7 @@ function InboxTaskRow({
             onSetEditTitle={onSetEditTitle}
             projects={projects}
             task={task}
+            threadMessageCount={task.agentThread.messages.length}
           />
         ) : (
           <div className="pl-[13px]">

@@ -38,38 +38,12 @@ function buildTaskInlineEditorProps() {
   };
 }
 
-/**
- * Walks the returned React element tree so the tests can inspect prop wiring without a DOM.
- */
-function findElement(
-  node: ReactNode,
-  predicate: (element: ReactElement) => boolean,
-): ReactElement | null {
-  if (!isValidElement(node)) {
-    return null;
-  }
-
-  if (predicate(node)) {
-    return node;
-  }
-
-  for (const child of Children.toArray(node.props.children)) {
-    const match = findElement(child, predicate);
-
-    if (match) {
-      return match;
-    }
-  }
-
-  return null;
-}
-
 describe("task inline editor", () => {
   /**
-   * Verifies the inline editor keeps the shared no-chrome task fields while adding the quiet
-   * delete affordance requested for the inline editing flow.
+   * Verifies the inline editor renders shared task fields with delete in the action bar
+   * and thread icon in the header.
    */
-  it("renders shared task editor fields plus a footer delete action", () => {
+  it("renders shared task editor fields with delete in the action bar", () => {
     const markup = renderToStaticMarkup(<TaskInlineEditor {...buildTaskInlineEditorProps()} />);
 
     expect(markup).toContain("Task title");
@@ -85,35 +59,30 @@ describe("task inline editor", () => {
   });
 
   /**
-   * Confirms the wrapper keeps save, cancel, delete, and Escape wired to the task-level handlers.
+   * Confirms save, cancel, delete, and Escape are wired through to TaskEditorFields props.
+   * Delete and thread are now props on TaskEditorFields rather than separate footer buttons.
    */
   it("wires save, cancel, delete, and Escape to the inline editing handlers", () => {
     const props = buildTaskInlineEditorProps();
-    const tree = TaskInlineEditor(props);
-    const editorFields = findElement(
-      tree,
-      (element) => element.type === TaskEditorFields,
-    ) as ReactElement<{
+    const tree = TaskInlineEditor(props) as ReactElement;
+
+    // TaskInlineEditor now returns TaskEditorFields directly (no wrapping div)
+    expect(tree.type).toBe(TaskEditorFields);
+
+    const editorProps = tree.props as {
       onCancel?: () => void;
+      onDelete?: () => void;
       onKeyDown?: (event: { key: string; preventDefault: () => void }) => void;
       onSubmit?: () => void;
-    }> | null;
-    const deleteButton = findElement(
-      tree,
-      (element) =>
-        element.type === "button" &&
-        Children.toArray(element.props.children).join("").includes("Delete"),
-    ) as ReactElement<{ onClick?: () => void }> | null;
+    };
 
-    expect(editorFields).not.toBeNull();
-    expect(deleteButton).not.toBeNull();
-
-    editorFields?.props.onSubmit?.();
-    editorFields?.props.onCancel?.();
-    deleteButton?.props.onClick?.();
+    // Verify handlers are wired
+    editorProps.onSubmit?.();
+    editorProps.onCancel?.();
+    editorProps.onDelete?.();
 
     const preventDefault = vi.fn();
-    editorFields?.props.onKeyDown?.({
+    editorProps.onKeyDown?.({
       key: "Escape",
       preventDefault,
     });
@@ -122,5 +91,20 @@ describe("task inline editor", () => {
     expect(props.onDelete).toHaveBeenCalledWith(props.task.id);
     expect(props.onCancel).toHaveBeenCalledTimes(2);
     expect(preventDefault).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * Verifies that when onOpenThread is provided, the thread icon renders in the editor header.
+   */
+  it("passes thread props through to TaskEditorFields", () => {
+    const onOpenThread = vi.fn();
+    const props = {
+      ...buildTaskInlineEditorProps(),
+      onOpenThread,
+      threadMessageCount: 5,
+    };
+    const markup = renderToStaticMarkup(<TaskInlineEditor {...props} />);
+
+    expect(markup).toContain('aria-label="Open thread"');
   });
 });

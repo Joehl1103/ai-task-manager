@@ -48,7 +48,7 @@ export function ThreadSidePanel({
   }, [onClose]);
 
   return (
-    <aside className="flex h-full w-80 min-w-80 flex-col border-l border-[color:var(--row-divider)] bg-[color:var(--surface)]">
+    <aside className="flex h-full w-80 min-w-80 flex-col border-l border-[color:var(--row-divider)]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[color:var(--row-divider)] px-4 py-3">
         <div className="min-w-0">

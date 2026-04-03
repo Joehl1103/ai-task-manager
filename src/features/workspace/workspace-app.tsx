@@ -727,6 +727,7 @@ export function WorkspaceApp() {
     setEditDueBy("");
     setEditProject("");
     setEditTags("");
+    setThreadPanelOwner(null);
   }
 
   /**
@@ -1328,6 +1329,9 @@ export function WorkspaceApp() {
           onCancelEdit={handleCancelEdit}
           onDeleteTask={handleDeleteTask}
           onOpenTask={handleOpenTask}
+          onOpenThreadPanel={(taskId) =>
+            handleOpenThreadPanel({ ownerType: "task", ownerId: taskId })
+          }
           onSaveEdit={handleSaveEdit}
           onSetEditDetails={setEditDetails}
           onSetEditDueBy={setEditDueBy}
@@ -1420,6 +1424,9 @@ export function WorkspaceApp() {
             onDeleteTask={handleDeleteTask}
             onOpenInitiative={handleSelectInitiative}
             onOpenTask={handleOpenTask}
+            onOpenTaskThreadPanel={(taskId) =>
+              handleOpenThreadPanel({ ownerType: "task", ownerId: taskId })
+            }
             onOpenThreadPanel={(projectId) =>
               handleOpenThreadPanel({ ownerType: "project", ownerId: projectId })
             }
@@ -1566,7 +1573,7 @@ export function WorkspaceApp() {
           </div>
         </div>
 
-        {/* Thread side panel — pushes from right */}
+        {/* Thread side panel — tied to the active task/project/initiative */}
         {threadPanelOwner && (() => {
           const thread = readThreadForOwner(workspace, threadPanelOwner);
           if (!thread) return null;
