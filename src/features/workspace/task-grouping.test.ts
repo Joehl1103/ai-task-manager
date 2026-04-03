@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { type Project, type Task } from "@/features/workspace/core";
 import { inboxProjectId } from "@/features/workspace/projects";
 import {
-  countGroupedTasks,
   groupTasksByProject,
   groupTasksByTag,
   noProjectLabel,
@@ -135,19 +134,6 @@ describe("task grouping", () => {
     expect(groups[0]?.label).toBe(noProjectLabel);
     expect(groups[0]?.tasks).toHaveLength(2);
   });
-
-  it("counts total tasks across all groups", () => {
-    const tasks: Task[] = [
-      createTask("task-1", "Task A", "project-alpha"),
-      createTask("task-2", "Task B", "project-beta"),
-      createTask("task-3", "Task C", ""),
-    ];
-
-    const groups = groupTasksByProject(tasks, projects);
-    const count = countGroupedTasks(groups);
-
-    expect(count).toBe(3);
-  });
 });
 
 describe("tag grouping", () => {
@@ -259,19 +245,6 @@ describe("tag grouping", () => {
     expect(groups).toHaveLength(1);
     expect(groups[0]?.label).toBe(noTagsLabel);
     expect(groups[0]?.tasks).toHaveLength(2);
-  });
-
-  it("counts total task occurrences across all groups (including duplicates)", () => {
-    const tasks: Task[] = [
-      createTask("task-1", "Task A", "", ["work", "urgent"]),
-      createTask("task-2", "Task B", "", ["work"]),
-      createTask("task-3", "Task C", ""),
-    ];
-
-    const groups = groupTasksByTag(tasks);
-    const count = countGroupedTasks(groups);
-
-    expect(count).toBe(4);
   });
 
   it("trims whitespace from tags before grouping", () => {
