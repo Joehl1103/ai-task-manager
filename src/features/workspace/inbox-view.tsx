@@ -12,8 +12,9 @@ import {
 } from "@/features/workspace/projects";
 import {
   collectTaskTags,
-  InboxTaskComposer,
   readDateBadges,
+  TaskComposer,
+  type TaskComposerSubmitData,
   TaskInlineEditor,
 } from "@/features/workspace/tasks";
 import { type Project, type Task } from "@/features/workspace/core";
@@ -22,13 +23,6 @@ interface InboxViewProps {
   tasks: Task[];
   projects: Project[];
   focusTitleInputSignal: number;
-  isComposerExpanded: boolean;
-  newTaskTitle: string;
-  newTaskDetails: string;
-  newTaskDueBy: string;
-  newTaskProject: string;
-  newTaskRemindOn: string;
-  newTaskTags: string;
   editingTaskId: string | null;
   editTitle: string;
   editDetails: string;
@@ -36,14 +30,9 @@ interface InboxViewProps {
   editProject: string;
   editRemindOn: string;
   editTags: string;
-  onSetNewTaskTitle: (value: string) => void;
-  onSetNewTaskDetails: (value: string) => void;
-  onSetNewTaskDueBy: (value: string) => void;
-  onSetNewTaskProject: (value: string) => void;
-  onSetNewTaskRemindOn: (value: string) => void;
-  onSetNewTaskTags: (value: string) => void;
-  onAddTask: () => void;
+  onAddTask: (data: TaskComposerSubmitData) => void;
   onOpenTask: (taskId: string) => void;
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
@@ -53,7 +42,6 @@ interface InboxViewProps {
   onSetEditProject: (value: string) => void;
   onSetEditRemindOn: (value: string) => void;
   onSetEditTags: (value: string) => void;
-  onSetComposerExpanded: (value: boolean) => void;
   onToggleTaskCompleted: (taskId: string) => void;
 }
 
@@ -64,13 +52,6 @@ export function InboxView({
   tasks,
   projects,
   focusTitleInputSignal,
-  isComposerExpanded,
-  newTaskTitle,
-  newTaskDetails,
-  newTaskDueBy,
-  newTaskProject,
-  newTaskRemindOn,
-  newTaskTags,
   editingTaskId,
   editTitle,
   editDetails,
@@ -78,14 +59,9 @@ export function InboxView({
   editProject,
   editRemindOn,
   editTags,
-  onSetNewTaskTitle,
-  onSetNewTaskDetails,
-  onSetNewTaskDueBy,
-  onSetNewTaskProject,
-  onSetNewTaskRemindOn,
-  onSetNewTaskTags,
   onAddTask,
   onOpenTask,
+  onOpenThreadPanel,
   onDeleteTask,
   onSaveEdit,
   onCancelEdit,
@@ -95,36 +71,11 @@ export function InboxView({
   onSetEditProject,
   onSetEditRemindOn,
   onSetEditTags,
-  onSetComposerExpanded,
   onToggleTaskCompleted,
 }: InboxViewProps) {
   const visibleProjects = filterVisibleProjects(projects);
   const inboxTasks = tasks.filter((task) => isTaskInInbox(task));
   const allTags = collectTaskTags(tasks);
-
-  function handleExpandComposer() {
-    onSetNewTaskProject("");
-    onSetComposerExpanded(true);
-  }
-
-  function handleAddTaskAndCollapse() {
-    if (!newTaskTitle.trim()) {
-      return;
-    }
-
-    onAddTask();
-    onSetComposerExpanded(false);
-  }
-
-  function handleCollapseComposer() {
-    onSetComposerExpanded(false);
-    onSetNewTaskTitle("");
-    onSetNewTaskDetails("");
-    onSetNewTaskDueBy("");
-    onSetNewTaskProject("");
-    onSetNewTaskRemindOn("");
-    onSetNewTaskTags("");
-  }
 
   return (
     <>
@@ -136,26 +87,10 @@ export function InboxView({
       </header>
 
       <section className="mt-4">
-        <InboxTaskComposer
+        <TaskComposer
           allTags={allTags}
-          focusTitleInputSignal={focusTitleInputSignal}
-          isExpanded={isComposerExpanded}
-          key={isComposerExpanded ? "expanded" : "collapsed"}
-          newTaskDetails={newTaskDetails}
-          newTaskDueBy={newTaskDueBy}
-          newTaskProject={newTaskProject}
-          newTaskRemindOn={newTaskRemindOn}
-          newTaskTags={newTaskTags}
-          newTaskTitle={newTaskTitle}
-          onCollapse={handleCollapseComposer}
-          onExpand={handleExpandComposer}
-          onSetNewTaskDetails={onSetNewTaskDetails}
-          onSetNewTaskDueBy={onSetNewTaskDueBy}
-          onSetNewTaskProject={onSetNewTaskProject}
-          onSetNewTaskRemindOn={onSetNewTaskRemindOn}
-          onSetNewTaskTags={onSetNewTaskTags}
-          onSetNewTaskTitle={onSetNewTaskTitle}
-          onSubmit={handleAddTaskAndCollapse}
+          focusSignal={focusTitleInputSignal}
+          onSubmit={onAddTask}
           projects={visibleProjects}
         />
       </section>
@@ -178,6 +113,7 @@ export function InboxView({
             onCancelEdit={onCancelEdit}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
+            onOpenThreadPanel={onOpenThreadPanel}
             onSaveEdit={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
             onSetEditDueBy={onSetEditDueBy}
@@ -207,6 +143,7 @@ interface InboxTaskListProps {
   onCancelEdit: () => void;
   tasks: Task[];
   onOpenTask: (taskId: string) => void;
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
@@ -235,6 +172,7 @@ function InboxTaskList({
   tasks,
   onDeleteTask,
   onOpenTask,
+  onOpenThreadPanel,
   onSaveEdit,
   onSetEditDetails,
   onSetEditDueBy,
@@ -263,6 +201,7 @@ function InboxTaskList({
             key={task.id}
             onDeleteTask={onDeleteTask}
             onOpenTask={onOpenTask}
+            onOpenThreadPanel={onOpenThreadPanel}
             onSaveEdit={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
             onSetEditDueBy={onSetEditDueBy}
@@ -293,6 +232,7 @@ interface InboxTaskRowProps {
   onCancelEdit: () => void;
   task: Task;
   onOpenTask: (taskId: string) => void;
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
@@ -322,6 +262,7 @@ function InboxTaskRow({
   onCancelEdit,
   task,
   onOpenTask,
+  onOpenThreadPanel,
   onDeleteTask,
   onSaveEdit,
   onSetEditDetails,
@@ -357,6 +298,7 @@ function InboxTaskRow({
             editTitle={editTitle}
             onCancel={onCancelEdit}
             onDelete={onDeleteTask}
+            onOpenThread={onOpenThreadPanel ? () => onOpenThreadPanel(task.id) : undefined}
             onSave={onSaveEdit}
             onSetEditDetails={onSetEditDetails}
             onSetEditDueBy={onSetEditDueBy}
@@ -366,6 +308,7 @@ function InboxTaskRow({
             onSetEditTitle={onSetEditTitle}
             projects={projects}
             task={task}
+            threadMessageCount={task.agentThread.messages.length}
           />
         ) : (
           <div className="pl-[13px]">

@@ -27,6 +27,11 @@ import {
 } from "@/features/workspace/core";
 import { providerCatalog } from "@/features/workspace/providers";
 import {
+  readShortcutMapSummary,
+  ShortcutConfigurationPanel,
+  type WorkspaceShortcutMap,
+} from "@/features/workspace/shortcuts";
+import {
   readWorkspaceThemeLabel,
   WorkspaceThemeSelector,
   type WorkspaceThemeSelection,
@@ -47,8 +52,10 @@ interface AgentConfigurationViewProps {
   onSaveApiKey: (providerId: ProviderId, label: string, apiKey: string) => void;
   onSavedKeyModelChange: (providerId: ProviderId, keyId: string, model: string) => void;
   onSetActiveKey: (providerId: ProviderId, keyId: string) => void;
+  onShortcutMapChange: (nextMap: WorkspaceShortcutMap) => void;
   onUpdateSavedKey: (providerId: ProviderId, keyId: string, label: string, apiKey: string) => void;
   onThemeSelectionChange: (selection: WorkspaceThemeSelection) => void;
+  shortcutMap: WorkspaceShortcutMap;
   themeSelection: WorkspaceThemeSelection;
 }
 
@@ -70,11 +77,14 @@ export function AgentConfigurationView({
   onSaveApiKey,
   onSavedKeyModelChange,
   onSetActiveKey,
+  onShortcutMapChange,
   onUpdateSavedKey,
   onThemeSelectionChange,
+  shortcutMap,
   themeSelection,
 }: AgentConfigurationViewProps) {
   const themeSummary = readWorkspaceThemeLabel(themeSelection);
+  const shortcutsSummary = readShortcutMapSummary(shortcutMap);
   const providerSummary = isActiveProviderReady
     ? { text: "Live provider ready", showsCheckmark: true }
     : { text: "API key needed", showsCheckmark: false };
@@ -111,6 +121,23 @@ export function AgentConfigurationView({
                   onSelectTheme={onThemeSelectionChange}
                   selection={themeSelection}
                   showHeader={false}
+                />
+              </div>
+            </details>
+          </li>
+
+          <li>
+            <details className="configuration-disclosure rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-strong)]">
+              <ConfigurationDisclosureSummary
+                description="Assign keyboard shortcuts to navigate views and trigger commands."
+                statusText={shortcutsSummary}
+                title="Keyboard shortcuts"
+              />
+
+              <div className="border-t border-[color:var(--border)] px-4 py-4">
+                <ShortcutConfigurationPanel
+                  onShortcutMapChange={onShortcutMapChange}
+                  shortcutMap={shortcutMap}
                 />
               </div>
             </details>

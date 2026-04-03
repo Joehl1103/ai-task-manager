@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { CheckCircle2, ChevronDown, Circle } from "lucide-react";
 
@@ -23,7 +23,8 @@ import {
   groupTasksByTag,
   normalizeTaskFilters,
   readDateBadges,
-  TaskEditorFields,
+  TaskComposer,
+  type TaskComposerSubmitData,
   TaskInlineEditor,
   type TaskFilters,
   type TaskGroup,
@@ -47,8 +48,10 @@ interface TasksViewProps {
   editProject: string;
   editRemindOn: string;
   editTags: string;
-  onAddTask: (data: { title: string; details: string; projectId: string; tags: string[]; dueBy?: string; remindOn?: string }) => void;
+  onAddTask: (data: TaskComposerSubmitData) => void;
   onOpenTask: (taskId: string) => void;
+  /** Opens the thread side panel for a given task — wired in Task 3. */
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
@@ -76,6 +79,7 @@ export function TasksView({
   editTags,
   onAddTask,
   onOpenTask,
+  onOpenThreadPanel,
   onDeleteTask,
   onSaveEdit,
   onCancelEdit,
@@ -88,13 +92,6 @@ export function TasksView({
   onToggleTaskCompleted,
 }: TasksViewProps) {
   const visibleProjects = filterVisibleProjects(projects);
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskDetails, setNewTaskDetails] = useState("");
-  const [newTaskDueBy, setNewTaskDueBy] = useState("");
-  const [newTaskRemindOn, setNewTaskRemindOn] = useState("");
-  const [newTaskProject, setNewTaskProject] = useState("");
-  const [newTaskTags, setNewTaskTags] = useState("");
   const [groupingMode, setGroupingMode] = useState<TaskGroupingMode>(() => {
     if (typeof window === "undefined") {
       return defaultTaskGroupingMode;
@@ -125,52 +122,6 @@ export function TasksView({
     () => (groupingMode === "tag" ? groupTasksByTag(filteredTasks) : groupTasksByProject(filteredTasks, visibleProjects)),
     [filteredTasks, groupingMode, visibleProjects],
   );
-
-  function handleAddTask() {
-    if (!newTaskTitle.trim()) {
-      return;
-    }
-
-    const tags = newTaskTags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
-
-    onAddTask({
-      title: newTaskTitle,
-      details: newTaskDetails,
-      projectId: newTaskProject,
-      tags,
-      dueBy: newTaskDueBy,
-      remindOn: newTaskRemindOn,
-    });
-    setNewTaskTitle("");
-    setNewTaskDetails("");
-    setNewTaskDueBy("");
-    setNewTaskRemindOn("");
-    setNewTaskProject("");
-    setNewTaskTags("");
-    setIsComposerOpen(false);
-  }
-
-  function handleCollapseComposer() {
-    setIsComposerOpen(false);
-    setNewTaskTitle("");
-    setNewTaskDetails("");
-    setNewTaskDueBy("");
-    setNewTaskRemindOn("");
-    setNewTaskProject("");
-    setNewTaskTags("");
-  }
-
-  function handleComposerKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "Escape") {
-      return;
-    }
-
-    event.preventDefault();
-    handleCollapseComposer();
-  }
 
   return (
     <>
@@ -251,37 +202,12 @@ export function TasksView({
       </section>
 
       <section className="mt-4">
-        {isComposerOpen ? (
-          <TaskEditorFields
-            allTags={allTags}
-            details={newTaskDetails}
-            dueBy={newTaskDueBy}
-            isSubmitDisabled={!newTaskTitle.trim()}
-            onCancel={handleCollapseComposer}
-            onDetailsChange={setNewTaskDetails}
-            onDueByChange={setNewTaskDueBy}
-            onKeyDown={handleComposerKeyDown}
-            onProjectChange={setNewTaskProject}
-            onRemindOnChange={setNewTaskRemindOn}
-            onSubmit={handleAddTask}
-            onTagsChange={setNewTaskTags}
-            onTitleChange={setNewTaskTitle}
-            projectId={newTaskProject}
-            projects={visibleProjects}
-            remindOn={newTaskRemindOn}
-            submitHint="⌘↵"
-            tags={newTaskTags}
-            title={newTaskTitle}
-          />
-        ) : (
-          <button
-            className="text-left text-sm font-medium text-[color:var(--muted)] transition-colors hover:text-[color:var(--foreground)]"
-            onClick={() => setIsComposerOpen(true)}
-            type="button"
-          >
-            + Add task
-          </button>
-        )}
+        <TaskComposer
+          allTags={allTags}
+          onSubmit={onAddTask}
+          projects={visibleProjects}
+          submitLabel="Save"
+        />
       </section>
 
       <section className="mt-5">
@@ -320,6 +246,7 @@ export function TasksView({
               onCancelEdit={onCancelEdit}
               onDeleteTask={onDeleteTask}
               onOpenTask={onOpenTask}
+              onOpenThreadPanel={onOpenThreadPanel}
               onSaveEdit={onSaveEdit}
               onSetEditDetails={onSetEditDetails}
               onSetEditDueBy={onSetEditDueBy}
@@ -479,6 +406,7 @@ interface TaskGroupSectionProps {
   editTags: string;
   projects: Project[];
   onOpenTask: (taskId: string) => void;
+  onOpenThreadPanel?: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onSaveEdit: (taskId: string) => void;
   onCancelEdit: () => void;
@@ -502,6 +430,7 @@ function TaskGroupSection({
   editTags,
   projects,
   onOpenTask,
+  onOpenThreadPanel,
   onDeleteTask,
   onSaveEdit,
   onCancelEdit,
@@ -536,6 +465,7 @@ function TaskGroupSection({
                   editTitle={editTitle}
                   onCancel={onCancelEdit}
                   onDelete={onDeleteTask}
+                  onOpenThread={onOpenThreadPanel ? () => onOpenThreadPanel(task.id) : undefined}
                   onSave={onSaveEdit}
                   onSetEditDetails={onSetEditDetails}
                   onSetEditDueBy={onSetEditDueBy}
@@ -545,6 +475,7 @@ function TaskGroupSection({
                   onSetEditTitle={onSetEditTitle}
                   projects={projects}
                   task={task}
+                  threadMessageCount={task.agentThread.messages.length}
                 />
               ) : (
                 <div className="pl-[13px]">

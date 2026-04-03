@@ -18,8 +18,6 @@ function buildProjectDetailViewProps() {
   const task = workspaceSeed.tasks.find((candidate) => candidate.id === "task-1") ?? null;
 
   return {
-    activeProviderLabel: "OpenAI",
-    activeProviderModel: "gpt-5",
     editDetails: task?.details ?? "",
     editDueBy: task?.dueBy ?? "",
     editingTaskId: null,
@@ -32,27 +30,20 @@ function buildProjectDetailViewProps() {
     onBack: vi.fn(),
     onCancelEdit: vi.fn(),
     onDeleteProject: vi.fn(),
-    onDeleteThreadMessage: vi.fn(),
     onDeleteTask: vi.fn(),
     onOpenInitiative: vi.fn(),
     onOpenTask: vi.fn(),
+    onOpenThreadPanel: vi.fn(),
     onSaveEdit: vi.fn(),
-    onSendThreadMessage: vi.fn(),
     onSetEditDetails: vi.fn(),
     onSetEditDueBy: vi.fn(),
     onSetEditProject: vi.fn(),
     onSetEditRemindOn: vi.fn(),
     onSetEditTags: vi.fn(),
     onSetEditTitle: vi.fn(),
-    onThreadDraftChange: vi.fn(),
     onUpdateProject: vi.fn(),
-    pendingThreadId: null,
     project: workspaceSeed.projects.find((project) => project.id === "project-1") ?? null,
     projects: workspaceSeed.projects,
-    readThreadDraft: vi.fn(() => ({
-      message: "",
-      error: null,
-    })),
     tasks: workspaceSeed.tasks,
   } as const;
 }
@@ -100,7 +91,7 @@ describe("project view", () => {
     expect(markup).toContain("Project detail");
     expect(markup).toContain("Tasks in this project");
     expect(markup).toContain("Project thread");
-    expect(markup).toContain("Show thread (0)");
+    expect(markup).toContain("Thread (0)");
     expect(markup).toContain('aria-label="Open task Define the smallest possible task manager"');
     expect(markup).toContain('aria-label="Project actions"');
     expect(markup).toContain('data-slot="dropdown-menu-trigger"');
@@ -147,5 +138,20 @@ describe("project view", () => {
     expect(markup).not.toContain("Project thread");
     expect(markup).not.toContain("Show thread");
     expect(markup).not.toContain("saved messages");
+  });
+
+  /**
+   * Confirms project thread is now a trigger button that opens the side panel
+   * instead of rendering inline.
+   */
+  it("renders thread trigger button with message count instead of inline thread", () => {
+    const markup = renderToStaticMarkup(
+      <ProjectDetailView {...buildProjectDetailViewProps()} />,
+    );
+
+    expect(markup).toContain("Thread (");
+    // Should NOT contain the old inline thread toggle
+    expect(markup).not.toContain("Show thread");
+    expect(markup).not.toContain("Hide thread");
   });
 });

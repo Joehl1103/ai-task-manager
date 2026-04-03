@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { readWorkspaceDatabaseErrorMessage } from "@/db/database-errors";
 import { getDb, tasks, projects, initiatives, agentThreads, agentThreadMessages } from "@/db";
 
 /**
@@ -119,8 +120,10 @@ export async function GET() {
       tasks: assembledTasks,
     });
   } catch (error) {
+    const message = readWorkspaceDatabaseErrorMessage(error);
+
     console.error("Failed to fetch workspace:", error);
-    return NextResponse.json({ error: "Failed to fetch workspace" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch workspace", message }, { status: 500 });
   }
 }
 

@@ -16,6 +16,7 @@ interface TaskInlineEditorProps {
   editTitle: string;
   onCancel: () => void;
   onDelete: (taskId: string) => void;
+  onOpenThread?: () => void;
   onSave: (taskId: string) => void;
   onSetEditDetails: (value: string) => void;
   onSetEditDueBy: (value: string) => void;
@@ -25,11 +26,12 @@ interface TaskInlineEditorProps {
   onSetEditTitle: (value: string) => void;
   projects: Project[];
   task: Task;
+  threadMessageCount?: number;
 }
 
 /**
- * Reuses the shared task editor fields inline beneath a row while adding the quiet delete action
- * requested for the no-drill-down editing flow.
+ * Wraps the shared task editor fields for inline editing beneath a task row.
+ * Thread access is a small icon in the editor header; delete lives in the action bar.
  */
 export function TaskInlineEditor({
   allTags,
@@ -41,6 +43,7 @@ export function TaskInlineEditor({
   editTitle,
   onCancel,
   onDelete,
+  onOpenThread,
   onSave,
   onSetEditDetails,
   onSetEditDueBy,
@@ -50,6 +53,7 @@ export function TaskInlineEditor({
   onSetEditTitle,
   projects,
   task,
+  threadMessageCount,
 }: TaskInlineEditorProps) {
   /**
    * Lets the inline editor dismiss on Escape without interfering with the shared submit shortcut.
@@ -64,39 +68,30 @@ export function TaskInlineEditor({
   }
 
   return (
-    <div className="space-y-2">
-      <TaskEditorFields
-        allTags={allTags}
-        details={editDetails}
-        dueBy={editDueBy}
-        isSubmitDisabled={!editTitle.trim()}
-        onCancel={onCancel}
-        onDetailsChange={onSetEditDetails}
-        onDueByChange={onSetEditDueBy}
-        onKeyDown={handleKeyDown}
-        onProjectChange={onSetEditProject}
-        onRemindOnChange={onSetEditRemindOn}
-        onSubmit={() => onSave(task.id)}
-        onTagsChange={onSetEditTags}
-        onTitleChange={onSetEditTitle}
-        projectId={editProject}
-        projects={projects}
-        remindOn={editRemindOn}
-        submitHint="⌘↵"
-        submitLabel="Save"
-        tags={editTags}
-        title={editTitle}
-      />
-
-      <div className="flex justify-end">
-        <button
-          className="text-[11px] text-rose-600 transition-colors hover:text-rose-700"
-          onClick={() => onDelete(task.id)}
-          type="button"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
+    <TaskEditorFields
+      allTags={allTags}
+      details={editDetails}
+      dueBy={editDueBy}
+      isSubmitDisabled={!editTitle.trim()}
+      onCancel={onCancel}
+      onDelete={() => onDelete(task.id)}
+      onDetailsChange={onSetEditDetails}
+      onDueByChange={onSetEditDueBy}
+      onKeyDown={handleKeyDown}
+      onOpenThread={onOpenThread}
+      onProjectChange={onSetEditProject}
+      onRemindOnChange={onSetEditRemindOn}
+      onSubmit={() => onSave(task.id)}
+      onTagsChange={onSetEditTags}
+      onTitleChange={onSetEditTitle}
+      projectId={editProject}
+      projects={projects}
+      remindOn={editRemindOn}
+      submitHint="⌘↵"
+      submitLabel="Save"
+      tags={editTags}
+      threadMessageCount={threadMessageCount}
+      title={editTitle}
+    />
   );
 }

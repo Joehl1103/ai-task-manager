@@ -17,12 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   type Initiative,
   type Project,
-  type ThreadDraft,
 } from "@/features/workspace/core";
-import {
-  AgentThreadPanel,
-  readThreadComposerPlaceholder,
-} from "@/features/workspace/threads";
 
 interface InitiativeViewProps {
   initiatives: Initiative[];
@@ -181,40 +176,29 @@ export function InitiativeView({
 }
 
 interface InitiativeDetailViewProps {
-  activeProviderLabel: string;
-  activeProviderModel: string;
   initiative: Initiative | null;
   onAddProject: (data: { name: string; initiativeId: string; deadline: string }) => void;
   onBack: () => void;
   onDeleteInitiative: (initiativeId: string) => void;
-  onDeleteThreadMessage: (initiativeId: string, messageId: string) => void;
+  /** Opens the thread side panel for this initiative — wired in Task 5. */
+  onOpenThreadPanel: (initiativeId: string) => void;
   onSelectProject: (projectId: string) => void;
-  onSendThreadMessage: (initiativeId: string) => void;
-  onThreadDraftChange: (initiativeId: string, message: string) => void;
   onUpdateInitiative: (data: { id: string; name: string; description: string; deadline: string }) => void;
-  pendingThreadId: string | null;
   projects: Project[];
-  readThreadDraft: (initiativeId: string) => ThreadDraft;
 }
 
 /**
  * Renders the selected initiative as a minimal detail view with linked projects beneath it.
  */
 export function InitiativeDetailView({
-  activeProviderLabel,
-  activeProviderModel,
   initiative,
   onAddProject,
   onBack,
   onDeleteInitiative,
-  onDeleteThreadMessage,
+  onOpenThreadPanel,
   onSelectProject,
-  onSendThreadMessage,
-  onThreadDraftChange,
   onUpdateInitiative,
-  pendingThreadId,
   projects,
-  readThreadDraft,
 }: InitiativeDetailViewProps) {
   if (!initiative) {
     return (
@@ -229,21 +213,15 @@ export function InitiativeDetailView({
 
   return (
     <InitiativeDetailContent
-      activeProviderLabel={activeProviderLabel}
-      activeProviderModel={activeProviderModel}
       initiative={initiative}
       key={readInitiativeDetailKey(initiative)}
       onAddProject={onAddProject}
       onBack={onBack}
       onDeleteInitiative={onDeleteInitiative}
-      onDeleteThreadMessage={onDeleteThreadMessage}
+      onOpenThreadPanel={onOpenThreadPanel}
       onSelectProject={onSelectProject}
-      onSendThreadMessage={onSendThreadMessage}
-      onThreadDraftChange={onThreadDraftChange}
       onUpdateInitiative={onUpdateInitiative}
-      pendingThreadId={pendingThreadId}
       projects={projects}
-      readThreadDraft={readThreadDraft}
     />
   );
 }
@@ -254,20 +232,14 @@ interface InitiativeDetailContentProps
 }
 
 function InitiativeDetailContent({
-  activeProviderLabel,
-  activeProviderModel,
   initiative,
   onAddProject,
   onBack,
   onDeleteInitiative,
-  onDeleteThreadMessage,
+  onOpenThreadPanel,
   onSelectProject,
-  onSendThreadMessage,
-  onThreadDraftChange,
   onUpdateInitiative,
-  pendingThreadId,
   projects,
-  readThreadDraft,
 }: InitiativeDetailContentProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(initiative.name);
@@ -276,7 +248,6 @@ function InitiativeDetailContent({
   const [isProjectComposerOpen, setIsProjectComposerOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDeadline, setNewProjectDeadline] = useState("");
-  const [isThreadOpen, setIsThreadOpen] = useState(false);
 
   const activeInitiative = initiative;
   const childProjects = projects.filter(
@@ -481,35 +452,12 @@ function InitiativeDetailContent({
             </p>
           </div>
           <Button
-            onClick={() => setIsThreadOpen((currentValue) => !currentValue)}
+            onClick={() => onOpenThreadPanel(activeInitiative.id)}
             variant="ghost"
           >
-            {isThreadOpen
-              ? "Hide thread"
-              : `Show thread (${activeInitiative.agentThread.messages.length})`}
+            Thread ({activeInitiative.agentThread.messages.length})
           </Button>
         </div>
-
-        {isThreadOpen ? (
-          <div className="mt-4">
-            <AgentThreadPanel
-              activeProviderLabel={activeProviderLabel}
-              activeProviderModel={activeProviderModel}
-              composerPlaceholder={readThreadComposerPlaceholder({
-                ownerType: "initiative",
-                ownerId: activeInitiative.id,
-              })}
-              draft={readThreadDraft(activeInitiative.id)}
-              isPending={pendingThreadId === activeInitiative.id}
-              onDeleteMessage={(messageId) =>
-                onDeleteThreadMessage(activeInitiative.id, messageId)
-              }
-              onDraftChange={(message) => onThreadDraftChange(activeInitiative.id, message)}
-              onSend={() => onSendThreadMessage(activeInitiative.id)}
-              thread={activeInitiative.agentThread}
-            />
-          </div>
-        ) : null}
       </section>
     </div>
   );

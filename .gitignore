@@ -1,4 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+  e# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 node_modules
@@ -46,3 +46,7 @@ output/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+CODEX_PLAN*.md
+.factory
+

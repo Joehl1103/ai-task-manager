@@ -1,5 +1,6 @@
 export * from "./delete-confirmation";
-export * from "./inbox-task-composer";
+export * from "./quick-add-dialog";
+export * from "./task-composer";
 export * from "./task-inline-editor";
 export * from "./task-editor-fields";
 export * from "./task-actions-menu";
@@ -9,3 +10,4 @@ export * from "./task-operations";
 export * from "./task-date-badges";
 export * from "./task-overview";
 export * from "./task-tag-combobox";
+export * from "./use-task-composer-draft";

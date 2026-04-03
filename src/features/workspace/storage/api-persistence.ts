@@ -39,12 +39,11 @@ export function createApiPersistence(): WorkspacePersistence {
  */
 async function loadWorkspace(): Promise<WorkspaceSnapshot> {
   const response = await fetch("/api/workspace");
+  const raw = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(`Workspace fetch failed: ${response.status}`);
+    throw new Error(readWorkspaceLoadErrorMessage(raw, response.status));
   }
-
-  const raw = await response.json();
 
   return normalizeWorkspaceSnapshot(raw);
 }
@@ -64,7 +63,7 @@ async function saveTask(task: Task): Promise<void> {
       details: task.details,
       completed: task.completed,
       projectId: task.projectId,
-      deadline: task.deadline,
+      deadline: task.dueBy,
       tags: task.tags,
       completedAt: task.completedAt,
       remindOn: task.remindOn,
@@ -84,7 +83,7 @@ async function saveTask(task: Task): Promise<void> {
         details: task.details,
         completed: task.completed,
         projectId: task.projectId,
-        deadline: task.deadline,
+        deadline: task.dueBy,
         tags: task.tags,
         completedAt: task.completedAt,
         remindOn: task.remindOn,
@@ -243,4 +242,18 @@ async function deleteThreadMessage(owner: ThreadOwnerRef, messageId: string): Pr
   if (!response.ok) {
     console.error("Failed to delete thread message via API:", await response.text());
   }
+}
+
+function readWorkspaceLoadErrorMessage(payload: unknown, status: number) {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "message" in payload &&
+    typeof payload.message === "string" &&
+    payload.message.trim()
+  ) {
+    return payload.message.trim();
+  }
+
+  return `Workspace fetch failed with status ${status}.`;
 }

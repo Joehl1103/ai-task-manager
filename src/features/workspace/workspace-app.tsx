@@ -68,11 +68,14 @@ import {
 import {
   buildDeleteTaskConfirmationMessage,
   buildDeleteThreadMessageConfirmationMessage,
+  collectTaskTags,
   addTask,
   appendAgentThreadMessage,
   appendHumanThreadMessage,
   deleteTask,
   deleteThreadMessage,
+  type TaskComposerSubmitData,
+  QuickAddDialog,
   readSelectedTask,
   toggleTaskCompleted,
   updateTask,
@@ -81,6 +84,7 @@ import {
   buildThreadContextSummary,
   buildThreadOwnerKey,
   readThreadOwnerName,
+  ThreadSidePanel,
 } from "@/features/workspace/threads";
 import {
   buildWorkspaceThemeStyle,
@@ -89,6 +93,13 @@ import {
   workspaceThemeSelectionStorageKey,
   type WorkspaceThemeSelection,
 } from "@/features/workspace/theme";
+import {
+  createDefaultShortcutMap,
+  matchesBinding,
+  normalizeShortcutMap,
+  type WorkspaceShortcutMap,
+  workspaceShortcutsStorageKey,
+} from "@/features/workspace/shortcuts";
 import { cn } from "@/lib/utils";
 
 /**
@@ -100,6 +111,7 @@ export function WorkspaceApp() {
   const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
   const [hasLoadedAgentConfig, setHasLoadedAgentConfig] = useState(false);
   const [hasLoadedThemeSelection, setHasLoadedThemeSelection] = useState(false);
+  const [hasLoadedShortcuts, setHasLoadedShortcuts] = useState(false);
   const [persistenceMode, setPersistenceMode] = useState<"api" | "local" | null>(null);
   const [activeMenu, setActiveMenu] = useState(createDefaultWorkspaceMenu);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -110,16 +122,10 @@ export function WorkspaceApp() {
   const [themeSelection, setThemeSelection] = useState<WorkspaceThemeSelection>(
     defaultWorkspaceThemeSelection,
   );
+  const [shortcutMap, setShortcutMap] = useState<WorkspaceShortcutMap>(createDefaultShortcutMap);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const [activeGlobalSearchIndex, setActiveGlobalSearchIndex] = useState(0);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskDetails, setNewTaskDetails] = useState("");
-  const [newTaskRemindOn, setNewTaskRemindOn] = useState("");
-  const [newTaskDueBy, setNewTaskDueBy] = useState("");
-  const [newTaskProject, setNewTaskProject] = useState("");
-  const [newTaskTags, setNewTaskTags] = useState("");
-  const [isInboxComposerOpen, setIsInboxComposerOpen] = useState(false);
   const [inboxComposerFocusSignal, setInboxComposerFocusSignal] = useState(0);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -131,10 +137,13 @@ export function WorkspaceApp() {
   const [editTags, setEditTags] = useState("");
   const [threadDrafts, setThreadDrafts] = useState<Record<string, ThreadDraft>>({});
   const [pendingThreadOwnerKey, setPendingThreadOwnerKey] = useState<string | null>(null);
+  const [threadPanelOwner, setThreadPanelOwner] = useState<ThreadOwnerRef | null>(null);
   const [fetchingModelsKeyId, setFetchingModelsKeyId] = useState<string | null>(null);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [modelErrorKeyId, setModelErrorKeyId] = useState<string | null>(null);
   const [modelFetchError, setModelFetchError] = useState<string | null>(null);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [databaseErrorMessage, setDatabaseErrorMessage] = useState<string | null>(null);
 
   const activeProvider: ProviderId = "openai";
   const activeProviderSettings = agentConfig.providers.openai;
@@ -151,6 +160,7 @@ export function WorkspaceApp() {
     buildGlobalSearchResults(workspace),
     globalSearchQuery,
   );
+  const allTaskTags = collectTaskTags(workspace.tasks);
 
   const persistenceRef = useRef<WorkspacePersistence>(createLocalStoragePersistence());
 
@@ -170,11 +180,20 @@ export function WorkspaceApp() {
         if (!cancelled) {
           persistenceRef.current = apiPersistence;
           setPersistenceMode("api");
+          setDatabaseErrorMessage(null);
           setWorkspace(snapshot);
           setHasLoadedWorkspace(true);
           return;
         }
-      } catch {
+      } catch (error) {
+        if (!cancelled) {
+          setDatabaseErrorMessage(
+            error instanceof Error && error.message.trim()
+              ? error.message.trim()
+              : "Relay could not load the workspace database.",
+          );
+        }
+
         // API unavailable — fall back to localStorage
       }
 
@@ -286,49 +305,109 @@ export function WorkspaceApp() {
   }, [themeSelection, hasLoadedThemeSelection]);
 
   /**
-   * Opens the global search dialog from anywhere in the workspace with the platform-standard
-   * quick-search shortcut.
+   * Hydrates saved keyboard shortcuts after mount so user customizations persist across refreshes.
    */
   useEffect(() => {
-    function handleWindowKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
+    const savedShortcuts = window.localStorage.getItem(workspaceShortcutsStorageKey);
 
-        if (isGlobalSearchOpen) {
-          return;
-        }
-
-        setGlobalSearchQuery("");
-        setActiveGlobalSearchIndex(0);
-        setIsGlobalSearchOpen(true);
-      }
+    if (!savedShortcuts) {
+      setHasLoadedShortcuts(true);
+      return;
     }
 
-    window.addEventListener("keydown", handleWindowKeyDown);
+    try {
+      setShortcutMap(normalizeShortcutMap(JSON.parse(savedShortcuts)));
+    } catch {
+      setShortcutMap(createDefaultShortcutMap());
+    }
 
-    return () => {
-      window.removeEventListener("keydown", handleWindowKeyDown);
-    };
-  }, [isGlobalSearchOpen]);
+    setHasLoadedShortcuts(true);
+  }, []);
 
   /**
-   * Opens the inbox composer from the platform-standard new-item shortcut only when the inbox
-   * overview is active and no inline task editor is open.
+   * Persists keyboard shortcuts locally after the initial browser hydration is complete.
+   */
+  useEffect(() => {
+    if (!hasLoadedShortcuts) {
+      return;
+    }
+
+    window.localStorage.setItem(workspaceShortcutsStorageKey, JSON.stringify(shortcutMap));
+  }, [shortcutMap, hasLoadedShortcuts]);
+
+  /**
+   * Unified keyboard shortcut listener that dispatches both command and navigation actions
+   * from the user-configurable shortcut map.
    */
   useEffect(() => {
     function handleWindowKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
+      /* --- Command shortcuts (fire even from text inputs) --- */
+
+      const globalSearchBinding = shortcutMap.commands["global-search"];
+
+      if (globalSearchBinding && matchesBinding(event, globalSearchBinding)) {
+        event.preventDefault();
+
+        if (!isGlobalSearchOpen) {
+          setGlobalSearchQuery("");
+          setActiveGlobalSearchIndex(0);
+          setIsGlobalSearchOpen(true);
+        }
+
+        return;
+      }
+
+      const newInboxTaskBinding = shortcutMap.commands["new-inbox-task"];
+
+      if (newInboxTaskBinding && matchesBinding(event, newInboxTaskBinding)) {
         if (activeMenu !== "inbox" || selectedTaskId !== null) {
           return;
         }
 
         event.preventDefault();
-        if (!isInboxComposerOpen) {
-          setNewTaskProject("");
-          setIsInboxComposerOpen(true);
+        setInboxComposerFocusSignal((currentSignal) => currentSignal + 1);
+        return;
+      }
+
+      const quickAddBinding = shortcutMap.commands["quick-add"];
+
+      if (quickAddBinding && matchesBinding(event, quickAddBinding)) {
+        event.preventDefault();
+
+        if (!isQuickAddOpen) {
+          setIsQuickAddOpen(true);
         }
 
-        setInboxComposerFocusSignal((currentSignal) => currentSignal + 1);
+        return;
+      }
+
+      /* --- Navigation shortcuts (skip when focus is inside text inputs) --- */
+
+      const target = event.target as HTMLElement | null;
+
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (isGlobalSearchOpen) {
+        return;
+      }
+
+      for (const menu of Object.keys(shortcutMap.navigation) as Array<
+        keyof typeof shortcutMap.navigation
+      >) {
+        const binding = shortcutMap.navigation[menu];
+
+        if (binding && matchesBinding(event, binding)) {
+          event.preventDefault();
+          handleSelectMenu(menu);
+          return;
+        }
       }
     }
 
@@ -337,25 +416,7 @@ export function WorkspaceApp() {
     return () => {
       window.removeEventListener("keydown", handleWindowKeyDown);
     };
-  }, [activeMenu, isInboxComposerOpen, selectedTaskId]);
-
-  /**
-   * Clears inbox-only draft state when the user leaves the inbox view so stale composer state does
-   * not leak into later visits.
-   */
-  useEffect(() => {
-    if (activeMenu === "inbox") {
-      return;
-    }
-
-    setIsInboxComposerOpen(false);
-    setNewTaskTitle("");
-    setNewTaskDetails("");
-    setNewTaskRemindOn("");
-    setNewTaskDueBy("");
-    setNewTaskProject("");
-    setNewTaskTags("");
-  }, [activeMenu]);
+  }, [shortcutMap, isGlobalSearchOpen, isQuickAddOpen, activeMenu, selectedTaskId]);
 
   /**
    * Clears project-detail task editing state when the selected task no longer belongs to the
@@ -401,6 +462,31 @@ export function WorkspaceApp() {
 
   function handleToggleSidebar() {
     setIsSidebarVisible((currentValue) => !currentValue);
+  }
+
+  /**
+   * Reads the display name for the thread panel header based on the current owner.
+   */
+  function readThreadPanelOwnerName(): string {
+    if (!threadPanelOwner) {
+      return "";
+    }
+
+    return readThreadOwnerName(workspace, threadPanelOwner);
+  }
+
+  /**
+   * Opens the thread side panel for a given owner entity.
+   */
+  function handleOpenThreadPanel(owner: ThreadOwnerRef) {
+    setThreadPanelOwner(owner);
+  }
+
+  /**
+   * Closes the thread side panel.
+   */
+  function handleCloseThreadPanel() {
+    setThreadPanelOwner(null);
   }
 
   /**
@@ -526,7 +612,10 @@ export function WorkspaceApp() {
     }
   }
 
-  function handleAddTaskFromProject(data: { title: string; details: string; projectId: string; tags: string[]; dueBy?: string; remindOn?: string }) {
+  /**
+   * Shared handler for all task composers — receives the final submit payload and persists it.
+   */
+  function handleAddTaskFromComposer(data: TaskComposerSubmitData) {
     setWorkspace((current) => {
       const next = addTask(current, data);
       const created = next.tasks.find((t) => !current.tasks.some((ct) => ct.id === t.id));
@@ -546,7 +635,6 @@ export function WorkspaceApp() {
     setSelectedProjectId(projectId);
     setIsProjectsExpanded(true);
     setIsSidebarVisible(true);
-    setNewTaskProject(projectId);
   }
 
   /**
@@ -557,39 +645,6 @@ export function WorkspaceApp() {
       .split(",")
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
-  }
-
-  /**
-   * Creates a task when the title is present, then clears the draft fields for the next entry.
-   */
-  function handleAddTask() {
-    if (!newTaskTitle.trim()) {
-      return;
-    }
-
-    setWorkspace((currentWorkspace) => {
-      const next = addTask(currentWorkspace, {
-        title: newTaskTitle,
-        details: newTaskDetails,
-        remindOn: newTaskRemindOn,
-        dueBy: newTaskDueBy,
-        projectId: newTaskProject,
-        tags: parseTagsFromString(newTaskTags),
-      });
-      const created = next.tasks.find((t) => !currentWorkspace.tasks.some((ct) => ct.id === t.id));
-
-      if (created) {
-        persistenceRef.current.saveTask(created);
-      }
-
-      return next;
-    });
-    setNewTaskTitle("");
-    setNewTaskDetails("");
-    setNewTaskRemindOn("");
-    setNewTaskDueBy("");
-    setNewTaskProject("");
-    setNewTaskTags("");
   }
 
   /**
@@ -612,10 +667,6 @@ export function WorkspaceApp() {
 
     if (editingTaskId === task.id && selectedTaskId === task.id) {
       return;
-    }
-
-    if (activeMenu === "inbox") {
-      setIsInboxComposerOpen(false);
     }
 
     setSelectedTaskId(task.id);
@@ -676,6 +727,7 @@ export function WorkspaceApp() {
     setEditDueBy("");
     setEditProject("");
     setEditTags("");
+    setThreadPanelOwner(null);
   }
 
   /**
@@ -1273,18 +1325,13 @@ export function WorkspaceApp() {
           editRemindOn={editRemindOn}
           editTags={editTags}
           editTitle={editTitle}
-          isComposerExpanded={isInboxComposerOpen}
-          newTaskDetails={newTaskDetails}
-          newTaskDueBy={newTaskDueBy}
-          newTaskProject={newTaskProject}
-          newTaskRemindOn={newTaskRemindOn}
-          newTaskTags={newTaskTags}
-          newTaskTitle={newTaskTitle}
-          onAddTask={handleAddTask}
+          onAddTask={handleAddTaskFromComposer}
           onCancelEdit={handleCancelEdit}
-          onSetComposerExpanded={setIsInboxComposerOpen}
           onDeleteTask={handleDeleteTask}
           onOpenTask={handleOpenTask}
+          onOpenThreadPanel={(taskId) =>
+            handleOpenThreadPanel({ ownerType: "task", ownerId: taskId })
+          }
           onSaveEdit={handleSaveEdit}
           onSetEditDetails={setEditDetails}
           onSetEditDueBy={setEditDueBy}
@@ -1292,12 +1339,6 @@ export function WorkspaceApp() {
           onSetEditRemindOn={setEditRemindOn}
           onSetEditTags={setEditTags}
           onSetEditTitle={setEditTitle}
-          onSetNewTaskDetails={setNewTaskDetails}
-          onSetNewTaskDueBy={setNewTaskDueBy}
-          onSetNewTaskProject={setNewTaskProject}
-          onSetNewTaskRemindOn={setNewTaskRemindOn}
-          onSetNewTaskTags={setNewTaskTags}
-          onSetNewTaskTitle={setNewTaskTitle}
           onToggleTaskCompleted={handleToggleTaskCompleted}
           projects={visibleProjects}
           tasks={activeTasks}
@@ -1315,10 +1356,13 @@ export function WorkspaceApp() {
           editRemindOn={editRemindOn}
           editTags={editTags}
           editTitle={editTitle}
-          onAddTask={handleAddTaskFromProject}
+          onAddTask={handleAddTaskFromComposer}
           onCancelEdit={handleCancelEdit}
           onDeleteTask={handleDeleteTask}
           onOpenTask={handleOpenTask}
+          onOpenThreadPanel={(taskId) =>
+            handleOpenThreadPanel({ ownerType: "task", ownerId: taskId })
+          }
           onSaveEdit={handleSaveEdit}
           onSetEditDetails={setEditDetails}
           onSetEditDueBy={setEditDueBy}
@@ -1337,50 +1381,16 @@ export function WorkspaceApp() {
       if (selectedInitiative) {
         return (
           <InitiativeDetailView
-            activeProviderLabel={activeProviderLabel}
-            activeProviderModel={activeProviderSettings.model}
             initiative={selectedInitiative}
             onAddProject={handleAddProject}
             onBack={() => setSelectedInitiativeId(null)}
             onDeleteInitiative={handleDeleteInitiative}
-            onDeleteThreadMessage={(initiativeId, messageId) =>
-              handleDeleteThreadMessage(
-                {
-                  ownerType: "initiative",
-                  ownerId: initiativeId,
-                },
-                messageId,
-              )
+            onOpenThreadPanel={(initiativeId) =>
+              handleOpenThreadPanel({ ownerType: "initiative", ownerId: initiativeId })
             }
             onSelectProject={handleSelectProject}
-            onSendThreadMessage={(initiativeId) =>
-              handleSendThreadMessage({
-                ownerType: "initiative",
-                ownerId: initiativeId,
-              })
-            }
-            onThreadDraftChange={(initiativeId, message) =>
-              handleThreadDraftChange(
-                {
-                  ownerType: "initiative",
-                  ownerId: initiativeId,
-                },
-                message,
-              )
-            }
             onUpdateInitiative={handleUpdateInitiative}
-            pendingThreadId={
-              pendingThreadOwnerKey?.startsWith("initiative:")
-                ? pendingThreadOwnerKey.slice("initiative:".length)
-                : null
-            }
             projects={visibleProjects}
-            readThreadDraft={(initiativeId) =>
-              readThreadDraft(threadDrafts, {
-                ownerType: "initiative",
-                ownerId: initiativeId,
-              })
-            }
           />
         );
       }
@@ -1399,8 +1409,6 @@ export function WorkspaceApp() {
       if (selectedProject) {
         return (
           <ProjectDetailView
-            activeProviderLabel={activeProviderLabel}
-            activeProviderModel={activeProviderSettings.model}
             editDetails={editDetails}
             editDueBy={editDueBy}
             editingTaskId={editingTaskId}
@@ -1409,58 +1417,29 @@ export function WorkspaceApp() {
             editTags={editTags}
             editTitle={editTitle}
             initiatives={workspace.initiatives}
-            onAddTask={handleAddTaskFromProject}
+            onAddTask={handleAddTaskFromComposer}
             onBack={() => setSelectedProjectId(null)}
             onCancelEdit={handleCancelEdit}
             onDeleteProject={handleDeleteProject}
-            onDeleteThreadMessage={(projectId, messageId) =>
-              handleDeleteThreadMessage(
-                {
-                  ownerType: "project",
-                  ownerId: projectId,
-                },
-                messageId,
-              )
-            }
             onDeleteTask={handleDeleteTask}
             onOpenInitiative={handleSelectInitiative}
             onOpenTask={handleOpenTask}
-            onSaveEdit={handleSaveEdit}
-            onSendThreadMessage={(projectId) =>
-              handleSendThreadMessage({
-                ownerType: "project",
-                ownerId: projectId,
-              })
+            onOpenTaskThreadPanel={(taskId) =>
+              handleOpenThreadPanel({ ownerType: "task", ownerId: taskId })
             }
+            onOpenThreadPanel={(projectId) =>
+              handleOpenThreadPanel({ ownerType: "project", ownerId: projectId })
+            }
+            onSaveEdit={handleSaveEdit}
             onSetEditDetails={setEditDetails}
             onSetEditDueBy={setEditDueBy}
             onSetEditProject={setEditProject}
             onSetEditRemindOn={setEditRemindOn}
             onSetEditTags={setEditTags}
             onSetEditTitle={setEditTitle}
-            onThreadDraftChange={(projectId, message) =>
-              handleThreadDraftChange(
-                {
-                  ownerType: "project",
-                  ownerId: projectId,
-                },
-                message,
-              )
-            }
             onUpdateProject={handleUpdateProject}
-            pendingThreadId={
-              pendingThreadOwnerKey?.startsWith("project:")
-                ? pendingThreadOwnerKey.slice("project:".length)
-                : null
-            }
             project={selectedProject}
             projects={visibleProjects}
-            readThreadDraft={(projectId) =>
-              readThreadDraft(threadDrafts, {
-                ownerType: "project",
-                ownerId: projectId,
-              })
-            }
             tasks={activeTasks}
           />
         );
@@ -1507,8 +1486,10 @@ export function WorkspaceApp() {
         onSaveApiKey={handleSaveApiKey}
         onSavedKeyModelChange={handleSavedKeyModelChange}
         onSetActiveKey={handleSetActiveKey}
+        onShortcutMapChange={setShortcutMap}
         onUpdateSavedKey={handleUpdateSavedKey}
         onThemeSelectionChange={handleSelectTheme}
+        shortcutMap={shortcutMap}
         themeSelection={themeSelection}
       />
     );
@@ -1516,7 +1497,7 @@ export function WorkspaceApp() {
 
   return (
     <main
-      className="workspace-theme-stage min-h-screen py-6 text-[color:var(--foreground)]"
+      className="workspace-theme-stage min-h-screen text-[color:var(--foreground)]"
       data-theme-mode={themeSelection.mode}
       data-theme-pair={themeSelection.themeId}
       style={buildWorkspaceThemeStyle(themeSelection)}
@@ -1531,51 +1512,91 @@ export function WorkspaceApp() {
         query={globalSearchQuery}
         results={globalSearchResults}
       />
-      {persistenceMode === "local" && <DatabaseUnavailableOverlay />}
-      <div
-        className={cn(
-          "flex min-h-[calc(100vh-3rem)]",
-          isSidebarVisible ? "gap-8" : "gap-0",
-        )}
-      >
-        <div
-          className={cn(
-            "shrink-0 pl-[5px] transition-all duration-200 ease-out",
-            isSidebarVisible ? "w-[272px] opacity-100" : "w-8 opacity-100",
-          )}
-        >
-          {isSidebarVisible ? (
-            <WorkspaceSidebar
-              activeMenu={activeMenu}
-              initiatives={workspace.initiatives}
-              isInitiativesExpanded={isInitiativesExpanded}
-              isProjectsExpanded={isProjectsExpanded}
-              onSelectInitiative={handleSelectInitiative}
-              onSelectMenu={handleSelectMenu}
-              onSelectProject={handleSelectProject}
-              onToggleInitiatives={() =>
-                setIsInitiativesExpanded((currentValue) => !currentValue)
-              }
-              onToggleProjects={() =>
-                setIsProjectsExpanded((currentValue) => !currentValue)
-              }
-              onToggleSidebar={handleToggleSidebar}
-              projects={workspace.projects}
-              selectedInitiativeId={selectedInitiativeId}
-              selectedProjectId={selectedProjectId}
-            />
-          ) : (
-            <WorkspaceCollapsedRail onExpand={handleToggleSidebar} />
-          )}
+      <QuickAddDialog
+        allTags={allTaskTags}
+        isOpen={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
+        onSubmit={handleAddTaskFromComposer}
+        projects={visibleProjects}
+      />
+      {persistenceMode === "local" && (
+        <DatabaseUnavailableOverlay message={databaseErrorMessage} />
+      )}
+
+      <div className="flex h-screen">
+        {/* Main content — shrinks when thread panel is open, scrolls independently */}
+        <div className="min-w-0 flex-1 overflow-y-auto py-6">
+          <div
+            className={cn(
+              "flex min-h-[calc(100vh-3rem)]",
+              isSidebarVisible ? "gap-8" : "gap-0",
+            )}
+          >
+            <div
+              className={cn(
+                "shrink-0 pl-[5px] transition-all duration-200 ease-out",
+                isSidebarVisible ? "w-[272px] opacity-100" : "w-8 opacity-100",
+              )}
+            >
+              {isSidebarVisible ? (
+                <WorkspaceSidebar
+                  activeMenu={activeMenu}
+                  initiatives={workspace.initiatives}
+                  isInitiativesExpanded={isInitiativesExpanded}
+                  isProjectsExpanded={isProjectsExpanded}
+                  onSelectInitiative={handleSelectInitiative}
+                  onSelectMenu={handleSelectMenu}
+                  onSelectProject={handleSelectProject}
+                  onToggleInitiatives={() =>
+                    setIsInitiativesExpanded((currentValue) => !currentValue)
+                  }
+                  onToggleProjects={() =>
+                    setIsProjectsExpanded((currentValue) => !currentValue)
+                  }
+                  onToggleSidebar={handleToggleSidebar}
+                  projects={workspace.projects}
+                  selectedInitiativeId={selectedInitiativeId}
+                  selectedProjectId={selectedProjectId}
+                />
+              ) : (
+                <WorkspaceCollapsedRail onExpand={handleToggleSidebar} />
+              )}
+            </div>
+
+            <section className="min-w-0 flex-1">
+              <div className="mx-auto max-w-7xl">
+                <div className="min-h-full px-1 py-2 sm:px-3">
+                  {renderActiveCenterContent()}
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
 
-        <section className="min-w-0 flex-1">
-          <div className="mx-auto max-w-7xl">
-            <div className="min-h-full px-1 py-2 sm:px-3">
-              {renderActiveCenterContent()}
-            </div>
-          </div>
-        </section>
+        {/* Thread side panel — tied to the active task/project/initiative */}
+        {threadPanelOwner && (() => {
+          const thread = readThreadForOwner(workspace, threadPanelOwner);
+          if (!thread) return null;
+
+          return (
+            <ThreadSidePanel
+              activeProviderLabel={activeProviderLabel}
+              activeProviderModel={activeProviderSettings.model}
+              draft={readThreadDraft(threadDrafts, threadPanelOwner)}
+              isPending={pendingThreadOwnerKey === buildThreadOwnerKey(threadPanelOwner)}
+              onClose={handleCloseThreadPanel}
+              onDeleteMessage={(messageId) =>
+                handleDeleteThreadMessage(threadPanelOwner, messageId)
+              }
+              onDraftChange={(message) =>
+                handleThreadDraftChange(threadPanelOwner, message)
+              }
+              onSend={() => handleSendThreadMessage(threadPanelOwner)}
+              ownerName={readThreadPanelOwnerName()}
+              thread={thread}
+            />
+          );
+        })()}
       </div>
     </main>
   );
@@ -1700,25 +1721,40 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * A blocking overlay shown when the PostgreSQL-backed API was unreachable at
+ * A blocking overlay shown when the database-backed API was unreachable at
  * startup and the app fell back to browser localStorage. Prevents interaction
- * until the user reloads after starting the database.
+ * until the user reloads after fixing the runtime database configuration.
  */
-function DatabaseUnavailableOverlay() {
+function DatabaseUnavailableOverlay({ message }: { message: string | null }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="mx-4 max-w-md space-y-4 rounded-lg bg-[color:var(--surface)] p-8 text-[color:var(--foreground)] shadow-lg">
         <h2 className="text-lg font-semibold">Database unavailable</h2>
         <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
-          Relay could not connect to the database. The app cannot operate
-          without the persistence layer.
+          {message ??
+            "Relay could not connect to the database. The app cannot operate without the persistence layer."}
         </p>
         <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
-          Start the database with{" "}
+          If you changed the connection URL in{" "}
           <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
-            docker compose up -d
+            .env
+          </code>
+          , restart{" "}
+          <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
+            npm run dev
           </code>{" "}
-          then reload the page.
+          before reloading the page.
+        </p>
+        <p className="text-sm leading-relaxed text-[color:var(--muted-strong)]">
+          Check that your{" "}
+          <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
+            SUPABASE_DATABASE_URL
+          </code>{" "}
+          or{" "}
+          <code className="rounded bg-[color:var(--surface-muted)] px-1.5 py-0.5 text-xs font-mono">
+            DATABASE_URL
+          </code>{" "}
+          is configured correctly, then reload the page.
         </p>
         <button
           className="mt-2 w-full rounded-md bg-[color:var(--foreground)] px-4 py-2 text-sm font-medium text-[color:var(--background)] transition-opacity hover:opacity-80"

@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { AgentConfigurationView } from "./agent-configuration-view";
+import { createDefaultShortcutMap } from "@/features/workspace/shortcuts";
 
 describe("agent configuration view", () => {
   /**
@@ -29,8 +30,10 @@ describe("agent configuration view", () => {
         onSaveApiKey={vi.fn()}
         onSavedKeyModelChange={vi.fn()}
         onSetActiveKey={vi.fn()}
+        onShortcutMapChange={vi.fn()}
         onUpdateSavedKey={vi.fn()}
         onThemeSelectionChange={vi.fn()}
+        shortcutMap={createDefaultShortcutMap()}
         themeSelection={{
           themeId: "relay-original",
           mode: "day",
@@ -50,7 +53,7 @@ describe("agent configuration view", () => {
     expect(markup).toContain("configuration-disclosure-meta");
     expect(markup).not.toContain("lucide-check");
     expect(markup).not.toContain("text-3xl");
-    expect(markup.match(/<details/g)).toHaveLength(3);
+    expect(markup.match(/<details/g)).toHaveLength(4);
     expect(markup).not.toContain("<details open");
     expect(markup).not.toContain("Separate workspace view");
     expect(markup).not.toContain("How this connects to the workspace");
@@ -102,8 +105,10 @@ describe("agent configuration view", () => {
         onSaveApiKey={vi.fn()}
         onSavedKeyModelChange={vi.fn()}
         onSetActiveKey={vi.fn()}
+        onShortcutMapChange={vi.fn()}
         onUpdateSavedKey={vi.fn()}
         onThemeSelectionChange={vi.fn()}
+        shortcutMap={createDefaultShortcutMap()}
         themeSelection={{
           themeId: "relay-original",
           mode: "day",
