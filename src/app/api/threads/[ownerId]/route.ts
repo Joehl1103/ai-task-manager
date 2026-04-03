@@ -1,6 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+import { internalServerError, notFoundError, readJsonObject, validationError } from "@/app/api/_shared";
 import { getDb, agentThreads, agentThreadMessages } from "@/db";
 
 /**
@@ -29,8 +30,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ own
 
     return NextResponse.json({ thread, messages });
   } catch (error) {
-    console.error("Failed to fetch thread:", error);
-    return NextResponse.json({ error: "Failed to fetch thread" }, { status: 500 });
+    return internalServerError("Failed to fetch thread.", error);
   }
 }
 
@@ -42,14 +42,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ own
   try {
     const { ownerId } = await params;
     const db = getDb();
-    const body = await request.json();
+    const json = await readJsonObject(request);
+    if (!json.ok) return json.response;
+    const body = json.value;
     const { threadId, ownerType, messageId, role, content, providerId, model, status, createdAt } = body;
 
-    if (!threadId || !ownerType || !messageId || !role || !content) {
-      return NextResponse.json(
-        { error: "threadId, ownerType, messageId, role, and content are required" },
-        { status: 400 },
-      );
+    const fields: Record<string, string> = {};
+    if (!threadId) fields.threadId = "required";
+    if (!ownerType) fields.ownerType = "required";
+    if (!messageId) fields.messageId = "required";
+    if (!role) fields.role = "required";
+    if (!content) fields.content = "required";
+    if (Object.keys(fields).length > 0) {
+      return validationError("Required fields are missing.", fields);
     }
 
     // Upsert thread — create if missing
@@ -79,8 +84,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ own
 
     return NextResponse.json(newMessage, { status: 201 });
   } catch (error) {
-    console.error("Failed to append thread message:", error);
-    return NextResponse.json({ error: "Failed to append thread message" }, { status: 500 });
+    return internalServerError("Failed to append thread message.", error);
   }
 }
 
@@ -95,7 +99,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ o
     const messageId = searchParams.get("messageId");
 
     if (!messageId) {
-      return NextResponse.json({ error: "messageId query param is required" }, { status: 400 });
+      return validationError("messageId query param is required.", { messageId: "required" });
     }
 
     // Find the thread for this owner first
@@ -105,7 +109,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ o
       .where(eq(agentThreads.ownerId, ownerId));
 
     if (!thread) {
-      return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+      return notFoundError("Thread not found.");
     }
 
     const [deleted] = await db
@@ -114,12 +118,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ o
       .returning();
 
     if (!deleted) {
-      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+      return notFoundError("Message not found.");
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete thread message:", error);
-    return NextResponse.json({ error: "Failed to delete thread message" }, { status: 500 });
+    return internalServerError("Failed to delete thread message.", error);
   }
 }
