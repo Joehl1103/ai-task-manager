@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { type Project, type Task } from "@/features/workspace/core";
+import { type Project, type Task, type TaskEditCallbacks, type TaskEditState } from "@/features/workspace/core";
 import { filterVisibleProjects, inboxProjectId, inboxProjectName } from "@/features/workspace/projects";
 import {
   type DateRangeFilter,
@@ -38,30 +38,11 @@ import {
 } from "@/features/workspace/storage";
 import { cn } from "@/lib/utils";
 
-interface TasksViewProps {
+interface TasksViewProps extends TaskEditState, TaskEditCallbacks {
   tasks: Task[];
   projects: Project[];
-  editingTaskId: string | null;
-  editTitle: string;
-  editDetails: string;
-  editDueBy: string;
-  editProject: string;
-  editRemindOn: string;
-  editTags: string;
-  onAddTask: (data: TaskComposerSubmitData) => void;
-  onOpenTask: (taskId: string) => void;
   /** Opens the thread side panel for a given task — wired in Task 3. */
   onOpenThreadPanel?: (taskId: string) => void;
-  onDeleteTask: (taskId: string) => void;
-  onSaveEdit: (taskId: string) => void;
-  onCancelEdit: () => void;
-  onSetEditTitle: (value: string) => void;
-  onSetEditDetails: (value: string) => void;
-  onSetEditDueBy: (value: string) => void;
-  onSetEditProject: (value: string) => void;
-  onSetEditRemindOn: (value: string) => void;
-  onSetEditTags: (value: string) => void;
-  onToggleTaskCompleted: (taskId: string) => void;
 }
 
 /**
