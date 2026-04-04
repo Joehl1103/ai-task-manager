@@ -3,15 +3,24 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // ---------------------------------------------------------------------------
 // Mock the supabase client module so tests never hit the network.
 // Each test can override mockFrom to simulate different query results.
+//
+// Typed as Mock<Procedure> (vi's base mock type) so mockResolvedValue can
+// accept simple objects like { error: null } without TypeScript narrowing
+// the return type from the initializer.
 // ---------------------------------------------------------------------------
 
-const mockSingle = vi.fn();
-const mockEq = vi.fn(() => ({ single: mockSingle, data: null, error: null }));
-const mockSelect = vi.fn(() => ({ eq: mockEq, data: null, error: null }));
-const mockInsert = vi.fn(() => ({ select: mockSelect, single: mockSingle }));
-const mockUpsert = vi.fn(() => ({ select: mockSelect, single: mockSingle, error: null, data: null }));
-const mockUpdate = vi.fn(() => ({ eq: mockEq }));
-const mockDelete = vi.fn(() => ({ eq: mockEq }));
+import type { Mock } from "vitest";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyFn = (...args: any[]) => any;
+
+const mockSingle: Mock<AnyFn> = vi.fn();
+const mockEq: Mock<AnyFn> = vi.fn(() => ({ single: mockSingle, data: null, error: null }));
+const mockSelect: Mock<AnyFn> = vi.fn(() => ({ eq: mockEq, data: null, error: null }));
+const mockInsert: Mock<AnyFn> = vi.fn(() => ({ select: mockSelect, single: mockSingle }));
+const mockUpsert: Mock<AnyFn> = vi.fn(() => ({ select: mockSelect, single: mockSingle, error: null, data: null }));
+const mockUpdate: Mock<AnyFn> = vi.fn(() => ({ eq: mockEq }));
+const mockDelete: Mock<AnyFn> = vi.fn(() => ({ eq: mockEq }));
 
 const mockFrom = vi.fn(() => ({
   select: mockSelect,
