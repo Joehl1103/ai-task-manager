@@ -62,6 +62,7 @@ import {
   createApiPersistence,
   createDefaultWorkspaceSnapshot,
   createLocalStoragePersistence,
+  createSupabasePersistence,
   type WorkspacePersistence,
   workspaceStorageKey,
 } from "@/features/workspace/storage";
@@ -112,7 +113,7 @@ export function WorkspaceApp() {
   const [hasLoadedAgentConfig, setHasLoadedAgentConfig] = useState(false);
   const [hasLoadedThemeSelection, setHasLoadedThemeSelection] = useState(false);
   const [hasLoadedShortcuts, setHasLoadedShortcuts] = useState(false);
-  const [persistenceMode, setPersistenceMode] = useState<"api" | "local" | null>(null);
+  const [persistenceMode, setPersistenceMode] = useState<"supabase" | "api" | "local" | null>(null);
   const [activeMenu, setActiveMenu] = useState(createDefaultWorkspaceMenu);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(true);
@@ -172,6 +173,38 @@ export function WorkspaceApp() {
     let cancelled = false;
 
     async function hydrate() {
+      // Supabase-first: when both env vars are present, bypass the Next.js API
+      // routes entirely. This makes the app compatible with Tauri (no Node server).
+      if (
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      ) {
+        const supabasePersistence = createSupabasePersistence();
+
+        try {
+          const snapshot = await supabasePersistence.loadWorkspace();
+
+          if (!cancelled) {
+            persistenceRef.current = supabasePersistence;
+            setPersistenceMode("supabase");
+            setDatabaseErrorMessage(null);
+            setWorkspace(snapshot);
+            setHasLoadedWorkspace(true);
+            return;
+          }
+        } catch (error) {
+          if (!cancelled) {
+            setDatabaseErrorMessage(
+              error instanceof Error && error.message.trim()
+                ? error.message.trim()
+                : "Relay could not load from Supabase.",
+            );
+          }
+
+          // Supabase unavailable — fall through to API route attempt
+        }
+      }
+
       const apiPersistence = createApiPersistence();
 
       try {
