@@ -182,7 +182,6 @@ async function saveTask(task: Task): Promise<void> {
     details: task.details,
     completed: task.completed,
     project_id: task.projectId || null,
-    deadline: task.dueBy,
     tags: task.tags,
     completed_at: task.completedAt,
     remind_on: task.remindOn,
