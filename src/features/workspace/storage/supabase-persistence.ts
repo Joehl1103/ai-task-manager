@@ -38,8 +38,14 @@ export function createSupabasePersistence(): WorkspacePersistence {
 /**
  * Returns the configured Supabase client or throws if env vars are missing.
  * This prevents subtle no-ops when the client silently returns null.
+ *
+ * Cast to `any` because the untyped createClient() call (no Database generic)
+ * makes Supabase type every .from() result as `never`. We access columns by
+ * string key and validate shapes in our own mapping functions, so `any` here
+ * is the correct tradeoff.
  */
-function requireClient() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function requireClient(): any {
   const client = getSupabaseClient();
   if (!client) {
     throw new Error(
@@ -87,18 +93,21 @@ async function loadWorkspace(): Promise<WorkspaceSnapshot> {
   const dbThreads = threadsRes.data ?? [];
   const dbMessages = messagesRes.data ?? [];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type Row = any;
+
   // Group messages by threadId for quick lookup
-  const messagesByThreadId = groupBy(dbMessages, (m) => m.thread_id);
+  const messagesByThreadId = groupBy(dbMessages as Row[], (m: Row) => m.thread_id as string);
 
   // Build thread lookup by ownerId
   const threadByOwnerId = new Map(
-    dbThreads.map((t) => [
-      t.owner_id,
+    (dbThreads as Row[]).map((t: Row) => [
+      t.owner_id as string,
       {
-        id: t.id,
-        ownerType: t.owner_type,
-        ownerId: t.owner_id,
-        messages: (messagesByThreadId[t.id] ?? []).map(dbMessageToApp),
+        id: t.id as string,
+        ownerType: t.owner_type as string,
+        ownerId: t.owner_id as string,
+        messages: (messagesByThreadId[t.id as string] ?? []).map(dbMessageToApp),
       },
     ]),
   );
@@ -112,32 +121,32 @@ async function loadWorkspace(): Promise<WorkspaceSnapshot> {
 
   // Map DB rows to app shapes, attaching thread data
   const raw = {
-    initiatives: dbInitiatives.map((i) => ({
-      id: i.id,
-      name: i.name,
-      description: i.description ?? "",
-      deadline: i.deadline ?? "",
-      agentThread: threadByOwnerId.get(i.id) ?? emptyThread("initiative", i.id),
+    initiatives: (dbInitiatives as Row[]).map((i: Row) => ({
+      id: i.id as string,
+      name: i.name as string,
+      description: (i.description ?? "") as string,
+      deadline: (i.deadline ?? "") as string,
+      agentThread: threadByOwnerId.get(i.id as string) ?? emptyThread("initiative", i.id as string),
     })),
-    projects: dbProjects.map((p) => ({
-      id: p.id,
-      name: p.name,
-      initiativeId: p.initiative_id ?? "",
-      deadline: p.deadline ?? "",
-      agentThread: threadByOwnerId.get(p.id) ?? emptyThread("project", p.id),
+    projects: (dbProjects as Row[]).map((p: Row) => ({
+      id: p.id as string,
+      name: p.name as string,
+      initiativeId: (p.initiative_id ?? "") as string,
+      deadline: (p.deadline ?? "") as string,
+      agentThread: threadByOwnerId.get(p.id as string) ?? emptyThread("project", p.id as string),
     })),
-    tasks: dbTasks.map((t) => ({
-      id: t.id,
-      title: t.title,
-      details: t.details ?? "",
-      completed: t.completed ?? false,
-      projectId: t.project_id ?? "",
-      dueBy: t.due_by ?? "",
-      remindOn: t.remind_on ?? "",
-      tags: t.tags ?? [],
+    tasks: (dbTasks as Row[]).map((t: Row) => ({
+      id: t.id as string,
+      title: t.title as string,
+      details: (t.details ?? "") as string,
+      completed: (t.completed ?? false) as boolean,
+      projectId: (t.project_id ?? "") as string,
+      dueBy: (t.due_by ?? "") as string,
+      remindOn: (t.remind_on ?? "") as string,
+      tags: (t.tags ?? []) as string[],
       createdAt: t.created_at ? String(t.created_at) : "",
-      completedAt: t.completed_at ?? "",
-      agentThread: threadByOwnerId.get(t.id) ?? emptyThread("task", t.id),
+      completedAt: (t.completed_at ?? "") as string,
+      agentThread: threadByOwnerId.get(t.id as string) ?? emptyThread("task", t.id as string),
     })),
   };
 
