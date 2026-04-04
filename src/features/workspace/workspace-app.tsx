@@ -166,8 +166,9 @@ export function WorkspaceApp() {
   const persistenceRef = useRef<WorkspacePersistence>(createLocalStoragePersistence());
 
   /**
-   * Hydrates workspace data after mount. Tries the API first (PostgreSQL-backed),
-   * then falls back to localStorage if the API is unavailable.
+   * Hydrates workspace data after mount. Tries Supabase first (when env vars
+   * are present), then API routes (PostgreSQL-backed), then falls back to
+   * localStorage if both are unavailable.
    */
   useEffect(() => {
     let cancelled = false;
