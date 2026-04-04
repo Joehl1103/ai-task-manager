@@ -17,7 +17,7 @@ export function addProject(
   workspace: WorkspaceSnapshot,
   input: AddProjectInput,
 ): WorkspaceSnapshot {
-  const nextProjectId = buildNextProjectId(workspace.projects);
+  const nextProjectId = crypto.randomUUID();
   const nextProject: Project = {
     id: nextProjectId,
     name: input.name.trim(),
@@ -106,14 +106,3 @@ export function getProjectsByInitiative(
   return workspace.projects.filter((p) => p.initiativeId === initiativeId);
 }
 
-/**
- * Builds a stable incremental project id.
- */
-function buildNextProjectId(projects: Project[]) {
-  const nextNumber = projects.reduce((highest, project) => {
-    const current = Number(project.id.replace("project-", ""));
-    return Number.isNaN(current) ? highest : Math.max(highest, current);
-  }, 0);
-
-  return `project-${nextNumber + 1}`;
-}
