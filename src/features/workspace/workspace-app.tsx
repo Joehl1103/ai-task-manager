@@ -64,6 +64,7 @@ import {
   createLocalStoragePersistence,
   type WorkspacePersistence,
   workspaceStorageKey,
+  useLocalStorageState,
 } from "@/features/workspace/storage";
 import {
   buildDeleteTaskConfirmationMessage,
@@ -107,11 +108,12 @@ import { cn } from "@/lib/utils";
  */
 export function WorkspaceApp() {
   const [workspace, setWorkspace] = useState(createDefaultWorkspaceSnapshot);
-  const [agentConfig, setAgentConfig] = useState<AgentConfigState>(createDefaultAgentConfig);
+  const [agentConfig, setAgentConfig, hasLoadedAgentConfig] = useLocalStorageState(
+    agentConfigStorageKey,
+    createDefaultAgentConfig,
+    normalizeAgentConfig,
+  );
   const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
-  const [hasLoadedAgentConfig, setHasLoadedAgentConfig] = useState(false);
-  const [hasLoadedThemeSelection, setHasLoadedThemeSelection] = useState(false);
-  const [hasLoadedShortcuts, setHasLoadedShortcuts] = useState(false);
   const [persistenceMode, setPersistenceMode] = useState<"api" | "local" | null>(null);
   const [activeMenu, setActiveMenu] = useState(createDefaultWorkspaceMenu);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -119,10 +121,16 @@ export function WorkspaceApp() {
   const [isInitiativesExpanded, setIsInitiativesExpanded] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedInitiativeId, setSelectedInitiativeId] = useState<string | null>(null);
-  const [themeSelection, setThemeSelection] = useState<WorkspaceThemeSelection>(
+  const [themeSelection, setThemeSelection, hasLoadedThemeSelection] = useLocalStorageState(
+    workspaceThemeSelectionStorageKey,
     defaultWorkspaceThemeSelection,
+    normalizeWorkspaceThemeSelection,
   );
-  const [shortcutMap, setShortcutMap] = useState<WorkspaceShortcutMap>(createDefaultShortcutMap);
+  const [shortcutMap, setShortcutMap, hasLoadedShortcuts] = useLocalStorageState(
+    workspaceShortcutsStorageKey,
+    createDefaultShortcutMap,
+    normalizeShortcutMap,
+  );
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const [activeGlobalSearchIndex, setActiveGlobalSearchIndex] = useState(0);
@@ -239,101 +247,8 @@ export function WorkspaceApp() {
     window.localStorage.setItem(workspaceStorageKey, JSON.stringify(workspace));
   }, [workspace, hasLoadedWorkspace]);
 
-  /**
-   * Hydrates saved provider settings after mount so browser-only storage stays optional.
-   */
-  useEffect(() => {
-    const savedConfig = window.localStorage.getItem(agentConfigStorageKey);
 
-    if (!savedConfig) {
-      setHasLoadedAgentConfig(true);
-      return;
-    }
 
-    try {
-      setAgentConfig(normalizeAgentConfig(JSON.parse(savedConfig)));
-    } catch {
-      setAgentConfig(createDefaultAgentConfig());
-    }
-
-    setHasLoadedAgentConfig(true);
-  }, []);
-
-  /**
-   * Persists provider settings locally after the initial browser hydration is complete.
-   */
-  useEffect(() => {
-    if (!hasLoadedAgentConfig) {
-      return;
-    }
-
-    window.localStorage.setItem(agentConfigStorageKey, JSON.stringify(agentConfig));
-  }, [agentConfig, hasLoadedAgentConfig]);
-
-  /**
-   * Hydrates the selected theme option and mode after mount so previews persist across refreshes.
-   */
-  useEffect(() => {
-    const savedSelection = window.localStorage.getItem(workspaceThemeSelectionStorageKey);
-
-    if (!savedSelection) {
-      setHasLoadedThemeSelection(true);
-      return;
-    }
-
-    try {
-      setThemeSelection(normalizeWorkspaceThemeSelection(JSON.parse(savedSelection)));
-    } catch {
-      setThemeSelection(defaultWorkspaceThemeSelection);
-    }
-
-    setHasLoadedThemeSelection(true);
-  }, []);
-
-  /**
-   * Persists the active theme option after the initial browser hydration is complete.
-   */
-  useEffect(() => {
-    if (!hasLoadedThemeSelection) {
-      return;
-    }
-
-    window.localStorage.setItem(
-      workspaceThemeSelectionStorageKey,
-      JSON.stringify(themeSelection),
-    );
-  }, [themeSelection, hasLoadedThemeSelection]);
-
-  /**
-   * Hydrates saved keyboard shortcuts after mount so user customizations persist across refreshes.
-   */
-  useEffect(() => {
-    const savedShortcuts = window.localStorage.getItem(workspaceShortcutsStorageKey);
-
-    if (!savedShortcuts) {
-      setHasLoadedShortcuts(true);
-      return;
-    }
-
-    try {
-      setShortcutMap(normalizeShortcutMap(JSON.parse(savedShortcuts)));
-    } catch {
-      setShortcutMap(createDefaultShortcutMap());
-    }
-
-    setHasLoadedShortcuts(true);
-  }, []);
-
-  /**
-   * Persists keyboard shortcuts locally after the initial browser hydration is complete.
-   */
-  useEffect(() => {
-    if (!hasLoadedShortcuts) {
-      return;
-    }
-
-    window.localStorage.setItem(workspaceShortcutsStorageKey, JSON.stringify(shortcutMap));
-  }, [shortcutMap, hasLoadedShortcuts]);
 
   /**
    * Unified keyboard shortcut listener that dispatches both command and navigation actions

@@ -32,6 +32,8 @@ import {
   type Initiative,
   type Project,
   type Task,
+  type TaskEditCallbacks,
+  type TaskEditState,
   type ThreadDraft,
 } from "@/features/workspace/core";
 
@@ -216,33 +218,15 @@ export function ProjectView({
   );
 }
 
-interface ProjectDetailViewProps {
-  editDetails: string;
-  editDueBy: string;
-  editingTaskId: string | null;
-  editProject: string;
-  editRemindOn: string;
-  editTags: string;
-  editTitle: string;
+interface ProjectDetailViewProps extends TaskEditState, Omit<TaskEditCallbacks, "onToggleTaskCompleted"> {
   initiatives: Initiative[];
-  onAddTask: (data: TaskComposerSubmitData) => void;
   onBack: () => void;
-  onCancelEdit: () => void;
   onDeleteProject: (projectId: string) => void;
-  onDeleteTask: (taskId: string) => void;
   onOpenInitiative: (initiativeId: string) => void;
-  onOpenTask: (taskId: string) => void;
   /** Opens the thread side panel for this project. */
   onOpenThreadPanel: (projectId: string) => void;
   /** Opens the thread side panel for a task within this project. */
   onOpenTaskThreadPanel?: (taskId: string) => void;
-  onSaveEdit: (taskId: string) => void;
-  onSetEditDetails: (value: string) => void;
-  onSetEditDueBy: (value: string) => void;
-  onSetEditProject: (value: string) => void;
-  onSetEditRemindOn: (value: string) => void;
-  onSetEditTags: (value: string) => void;
-  onSetEditTitle: (value: string) => void;
   onUpdateProject: (data: { id: string; name: string; initiativeId: string; deadline: string }) => void;
   project: Project | null;
   projects: Project[];

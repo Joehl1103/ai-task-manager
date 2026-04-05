@@ -17,7 +17,7 @@ export interface TaskGroup {
 /**
  * Creates a lookup map from project ID to project name.
  */
-export function createProjectNameMap(projects: Project[]): Map<string, string> {
+function createProjectNameMap(projects: Project[]): Map<string, string> {
   const map = new Map<string, string>();
   for (const project of projects) {
     map.set(project.id, project.name);
@@ -111,11 +111,4 @@ export function groupTasksByTag(tasks: Task[]): TaskGroup[] {
   }
 
   return groups;
-}
-
-/**
- * Returns the total task count across all groups for display purposes.
- */
-export function countGroupedTasks(groups: TaskGroup[]): number {
-  return groups.reduce((total, group) => total + group.tasks.length, 0);
 }
